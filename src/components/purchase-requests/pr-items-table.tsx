@@ -35,14 +35,6 @@ export function isProofSelectable(item: PurchaseRequestItem) {
   return item.status === "po-created";
 }
 
-/**
- * Every proof covering this item. The relationship is many-to-many — a proof
- * groups several lines under one vendor confirmation, and a line that arrives
- * in more than one delivery has more than one proof — so this is a list, not a
- * lookup. Neither the join nor `POST /purchase-request-proofs` carries a
- * filename; those live behind `GET /purchase-request-proofs/{id}`, which the
- * Proofs of Order section reads when a proof is opened.
- */
 function proofsForItem(
   item: PurchaseRequestItem,
   request: PurchaseRequestDetail,
@@ -52,7 +44,6 @@ function proofsForItem(
   );
 }
 
-/** The soonest confirmed delivery among an item's proofs. */
 function earliestDeliveryDate(proofs: PurchaseRequestProof[]) {
   return proofs
     .map((proof) => proof.delivery_date)
@@ -72,7 +63,6 @@ export function PurchaseRequestItemsTable({
   selectedIds: Set<string>;
   onToggleItem: (id: string, checked: boolean) => void;
   onToggleAll: (checked: boolean) => void;
-  /** Rings this item's proofs in the Proofs of Order section and scrolls to them. */
   onHighlightProofs: (itemId: string) => void;
 }) {
   const selectableItems = request.items.filter(isProofSelectable);
@@ -156,8 +146,6 @@ export function PurchaseRequestItemsTable({
                 </StatusBadge>
               </TableCell>
               <TableCell>
-                {/* An item still in canvassing has no proof to count yet, and
-                    the route to its quotes is the more useful affordance. */}
                 {proofs.length === 0 && item.status === "canvassing" ? (
                   <Link
                     href={`/purchase-requests/${request._id}/canvassing`}
@@ -167,9 +155,6 @@ export function PurchaseRequestItemsTable({
                     <ArrowRightIcon className="size-3.5" aria-hidden />
                   </Link>
                 ) : proofs.length === 0 ? (
-                  // Not a button: there is nothing in the section below to ring
-                  // yet, and an affordance that does nothing reads as broken.
-                  // Padded like the button so both align down the column.
                   <span className="-ml-2 inline-flex h-7 items-center gap-1.5 px-2.5 text-[0.8rem] text-muted-foreground">
                     <StatusDot tone="warning" />
                     No proof

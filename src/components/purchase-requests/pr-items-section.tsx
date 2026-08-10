@@ -36,7 +36,6 @@ export function PurchaseRequestItemsSection({
   onHighlightProofs,
 }: {
   request: PurchaseRequestDetail;
-  /** Passed through to the table's proof indicator; owned by the detail view. */
   onHighlightProofs: (itemId: string) => void;
 }) {
   const queryClient = useQueryClient();

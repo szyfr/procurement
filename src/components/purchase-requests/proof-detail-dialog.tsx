@@ -27,11 +27,6 @@ function isImage(filename: string) {
   return IMAGE_EXTENSIONS.test(filename);
 }
 
-/**
- * The document's type, taken from its filename. No size is stored — the
- * document join carries `_id`, `filename` and `url` and nothing else — so the
- * row names the type alone rather than inventing a size for it.
- */
 function documentKind(filename: string) {
   const extension = filename.split(".").pop();
 
@@ -54,24 +49,13 @@ function DocumentSkeletonRow() {
   );
 }
 
-/**
- * Read-only detail for one proof of order.
- *
- * Everything except the documents is already on the request's `proofs` join,
- * so the summary and covered items render immediately and only the documents
- * wait on `GET /purchase-request-proofs/{id}`. That read is enabled by `open`
- * alone, so nothing is fetched until a proof is clicked, and TanStack keeps the
- * result under the proof's own key — reopening the same proof is instant.
- */
 export function ProofDetailDialog({
   proof,
   coveredItems,
   open,
   onOpenChange,
 }: {
-  /** The list row's proof; null until one is clicked, which also keeps the query off. */
   proof: PurchaseRequestProof | null;
-  /** Already resolved against the request's items — the section owns that lookup. */
   coveredItems: PurchaseRequestItem[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -125,8 +109,6 @@ export function ProofDetailDialog({
           <div className="flex flex-col gap-2">
             <span className="text-[13px] font-medium">Items covered</span>
             {coveredItems.length === 0 ? (
-              // Every id missed the request's items — the proof covers lines
-              // this request no longer carries, so there is nothing to name.
               <p className="text-xs text-muted-foreground">
                 No items on this request are covered by this proof.
               </p>
@@ -201,9 +183,6 @@ export function ProofDetailDialog({
                   >
                     <span className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-muted">
                       {isImage(document.filename) ? (
-                        // The url is pre-signed upstream, so it is loaded as
-                        // given — a proxy or a Next loader would strip the
-                        // signature.
                         // biome-ignore lint/performance/noImgElement: presigned S3 urls aren't a configured next/image host.
                         <img
                           src={document.url}
@@ -225,8 +204,7 @@ export function ProofDetailDialog({
                         {documentKind(document.filename)}
                       </span>
                     </span>
-                    {/* An anchor rather than a Button rendering one: the file
-                        opens in a new tab, so it has to behave like a link. */}
+                    {}
                     <a
                       href={document.url}
                       target="_blank"

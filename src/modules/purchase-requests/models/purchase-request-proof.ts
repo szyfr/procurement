@@ -20,14 +20,12 @@ export interface PurchaseRequestProof {
   updated_at: string;
 }
 
-/** An uploaded proof file. `url` is pre-signed upstream — link to it as given. */
 export interface PurchaseRequestProofDocument {
   _id: string;
   filename: string;
   url: string;
 }
 
-/** `GET /purchase-request-proofs/{id}` — the only read that carries documents. */
 export interface PurchaseRequestProofDetail extends PurchaseRequestProof {
   documents: PurchaseRequestProofDocument[];
 }

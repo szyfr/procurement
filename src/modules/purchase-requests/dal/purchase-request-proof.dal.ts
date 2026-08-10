@@ -11,11 +11,6 @@ import type {
 
 const NOT_FOUND = "We couldn't find that proof of order.";
 
-/**
- * One proof in full, including its documents. The `proofs` array joined onto
- * the purchase request detail carries no document list, so the dialog reads
- * this instead.
- */
 export function getPurchaseRequestProof(
   id: string,
 ): Promise<PurchaseRequestProofDetail> {

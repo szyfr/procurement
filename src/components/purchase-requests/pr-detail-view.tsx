@@ -101,12 +101,6 @@ export function PurchaseRequestDetailView({ id }: { id: string }) {
     null,
   );
 
-  /**
-   * Which item's proofs the Proofs of Order section is ringing. Owned here
-   * because the indicator that sets it lives in the Items table and the cards
-   * that read it are in a sibling section; clicking the same indicator twice
-   * clears it.
-   */
   const [highlightedItemId, setHighlightedItemId] = React.useState<
     string | null
   >(null);

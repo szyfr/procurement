@@ -109,10 +109,6 @@ export function createPurchaseRequestProof(
   });
 }
 
-/**
- * One proof with its documents. The request detail's `proofs` join carries no
- * filenames, so the proof dialog reads this on demand.
- */
 export function fetchPurchaseRequestProof(id: string, signal?: AbortSignal) {
   return bffRequest<PurchaseRequestProofDetail>(
     purchaseRequestEndpoints.proofDetail(id),

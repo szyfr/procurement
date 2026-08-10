@@ -74,16 +74,6 @@ export function purchaseRequestDetailQuery(id: string) {
   });
 }
 
-/**
- * A single proof of order, including its documents. The caller enables this
- * only while the proof dialog is open, so nothing is fetched per row.
- *
- * Never stale: reopening a proof that has already been viewed must not refetch,
- * and the proofs list keeps a disabled observer per proof so the cache survives
- * for the life of the page. The tradeoff is that a document's presigned url is
- * only as fresh as the first open — a page left open past the signature's
- * lifetime needs a reload, not a reopen.
- */
 export function purchaseRequestProofQuery(proofId: string) {
   return queryOptions({
     queryKey: purchaseRequestKeys.proof(proofId),

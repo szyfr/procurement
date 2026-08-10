@@ -16,12 +16,6 @@ import {
   purchaseRequestProofQuery,
 } from "@/modules/purchase-requests";
 
-/**
- * The items a proof covers. Proofs and items are many-to-many — one vendor
- * confirmation can cover several lines and a line can be confirmed by several
- * proofs — so this resolves the whole id list, and drops any id the request no
- * longer carries rather than falling back to a raw ObjectId.
- */
 export function resolveProofItems(
   proof: PurchaseRequestProof,
   items: PurchaseRequestItem[],
@@ -37,22 +31,11 @@ function documentCountLabel(count: number) {
   return `${count} document${count === 1 ? "" : "s"}`;
 }
 
-/**
- * The proofs joined onto the request detail, one card each.
- *
- * The join carries no documents (see `models/purchase-request-proof.ts`), so a
- * card opens the dialog, which reads the proof by id. The document count is
- * therefore unknown until a proof has been opened once: these observers are
- * disabled — they never fetch — and only read whatever the dialog has already
- * put in the cache, so the badge fills in for proofs that have been viewed and
- * stays a neutral "Documents" for the rest.
- */
 export function PurchaseRequestProofsSection({
   request,
   highlightedItemId,
 }: {
   request: PurchaseRequestDetail;
-  /** Set by the Items table's proof indicator; rings the proofs covering that item. */
   highlightedItemId: string | null;
 }) {
   const [openProofId, setOpenProofId] = React.useState<string | null>(null);
