@@ -3,6 +3,7 @@
 import {
   useInfiniteQuery,
   useMutation,
+  useQueries,
   useQueryClient,
 } from "@tanstack/react-query";
 import { SearchIcon } from "lucide-react";
@@ -28,7 +29,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/components/ui/toast";
 import { LOOKUP_PAGE_SIZE } from "@/lib/lookup";
-import { fetchRoles, roleKeys } from "@/modules/roles";
+import type { RoleDetail } from "@/modules/roles";
+import { fetchRoles, roleDetailQuery, roleKeys } from "@/modules/roles";
 import { updateUserRoles, userKeys } from "@/modules/users";
 
 const SEARCH_DEBOUNCE_MS = 300;
@@ -109,7 +111,28 @@ export function AssignRolesDialog({
     () => data?.pages.flatMap((page) => page.data) ?? [],
     [data],
   );
-  const totalRoles = data?.pages[0]?.pagination.total_items ?? 0;
+
+  // A role assigned to the user can fall outside the current search or
+  // outside the pages loaded so far — fetch those by id so they stay visible
+  // (and uncheckable) instead of silently vanishing from the list.
+  const visibleIds = React.useMemo(
+    () => new Set(visibleRoles.map((role) => role._id)),
+    [visibleRoles],
+  );
+  const missingSelectedIds = React.useMemo(
+    () => Array.from(selected).filter((id) => !visibleIds.has(id)),
+    [selected, visibleIds],
+  );
+  const missingRoleQueries = useQueries({
+    queries: missingSelectedIds.map((id) => ({
+      ...roleDetailQuery(id),
+      enabled: open,
+    })),
+  });
+  const pinnedRoles = missingRoleQueries
+    .map((query) => query.data)
+    .filter((role): role is RoleDetail => Boolean(role));
+  const pinnedLoading = missingRoleQueries.some((query) => query.isPending);
 
   const selectedCount = selected.size;
 
@@ -184,9 +207,38 @@ export function AssignRolesDialog({
               </InputGroupAddon>
             </InputGroup>
             <p className="text-xs text-muted-foreground tabular-nums">
-              {selectedCount} of {totalRoles} roles selected
+              {selectedCount} role{selectedCount === 1 ? "" : "s"} selected
             </p>
           </div>
+
+          {missingSelectedIds.length > 0 ? (
+            <div className="flex flex-col gap-1 border-b px-5 py-3">
+              <p className="text-xs font-medium text-muted-foreground">
+                Assigned, not shown by current search
+              </p>
+              {pinnedRoles.map((role) => (
+                <Label
+                  key={role._id}
+                  htmlFor={`assign-role-pinned-${role._id}`}
+                  className="items-start gap-2.5 rounded-lg px-2 py-1.5 font-normal hover:bg-accent"
+                >
+                  <Checkbox
+                    id={`assign-role-pinned-${role._id}`}
+                    className="mt-0.5"
+                    checked={selected.has(role._id)}
+                    onCheckedChange={(checked) => toggleRole(role._id, checked)}
+                  />
+                  <span className="flex min-w-0 flex-col gap-0.5">
+                    <span className="font-medium">{role.title}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {role.description}
+                    </span>
+                  </span>
+                </Label>
+              ))}
+              {pinnedLoading ? <Skeleton className="h-10 w-full" /> : null}
+            </div>
+          ) : null}
 
           <div className="flex flex-col gap-1 px-5 py-4">
             {isError ? (
