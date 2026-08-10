@@ -11,8 +11,22 @@ import { realtimeEndpoints } from "@/modules/realtime";
  *
  * The client authenticates against our own origin (`authUrl`) rather than
  * holding a key — `/api/realtime/token` signs a capability-scoped JWT for
- * whoever the session cookie belongs to. Built once via `useState`'s lazy
- * initializer, not on every render, so remounts don't leak connections.
+ * whoever the session cookie belongs to.
+ *
+ * Built once via `useState`'s lazy initializer so children (the sidebar, the
+ * page) render immediately — including during SSR, where "use client" still
+ * executes on the server — rather than waiting on an effect. `autoConnect`
+ * is `false` for exactly that reason: construction must stay side-effect
+ * free, both because it runs on the server (where Ably's Node transport
+ * would otherwise immediately try to auth against the relative `authUrl`
+ * and fail) and because React Strict Mode invokes `useState` initializers
+ * twice in dev — with `autoConnect` on, the discarded instance from that
+ * second call would still open a real connection.
+ *
+ * Connecting is left to the effect below, which also means it's the only
+ * thing Strict Mode's dev-only mount→cleanup→mount replay touches: it closes
+ * the connection and reconnects the same client, rather than leaving it
+ * closed with nothing to reopen it.
  *
  * No channel is subscribed here — this is connection plumbing only. A
  * feature that needs a channel calls `useChannel`/`usePresence` from
@@ -27,17 +41,14 @@ export function AblyRealtimeProvider({
     () =>
       new Ably.Realtime({
         authUrl: realtimeEndpoints.token,
-        // The lazy initializer also runs during SSR, where "use client" still
-        // executes on the server. There, Ably picks its Node transport (`got`)
-        // and would immediately try to auth against the relative `authUrl`,
-        // which `got` rejects outright. `autoConnect` skips that: the SSR
-        // instance is thrown away unconnected, and the real one made on
-        // hydration connects normally through the browser's fetch.
-        autoConnect: typeof window !== "undefined",
+        autoConnect: false,
       }),
   );
 
-  useEffect(() => () => client.close(), [client]);
+  useEffect(() => {
+    client.connect();
+    return () => client.close();
+  }, [client]);
 
   return <BaseAblyProvider client={client}>{children}</BaseAblyProvider>;
 }

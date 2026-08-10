@@ -1,6 +1,6 @@
 import { ApiError, toErrorResponse } from "@/lib/api/errors";
 import { getOptionalUser } from "@/modules/auth/dal/auth.dal";
-import { issueAblyToken } from "@/modules/realtime/dal/ably-token.dal";
+import { issueAblyToken } from "@/modules/realtime/services/ably-token.service";
 
 /**
  * `authUrl` target for the Ably client — returns a signed JWT as plain text,
@@ -20,7 +20,10 @@ export async function GET() {
     const token = await issueAblyToken(user);
 
     return new Response(token, {
-      headers: { "Content-Type": "text/plain" },
+      headers: {
+        "Content-Type": "text/plain",
+        "Cache-Control": "no-store",
+      },
     });
   } catch (error) {
     return toErrorResponse(error);
