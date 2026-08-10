@@ -42,6 +42,7 @@ import {
   purchaseRequestDetailQuery,
   purchaseRequestItemStatusLabels,
   purchaseRequestItemTone,
+  usePurchaseRequestUpdates,
 } from "@/modules/purchase-requests";
 
 /**
@@ -54,6 +55,8 @@ import {
  * once items can actually be grouped.
  */
 export function CanvassingItemsView({ id }: { id: string }) {
+  usePurchaseRequestUpdates();
+
   const {
     data: request,
     isPending,

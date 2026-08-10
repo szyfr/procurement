@@ -16,6 +16,7 @@ export {
   canvassingStatusTone,
 } from "@/modules/canvassing/constants";
 export type { CreateQuotationDto } from "@/modules/canvassing/dto";
+export { useCanvassingUpdates } from "@/modules/canvassing/hooks/use-canvassing-updates";
 export type {
   AwardQuotationResult,
   CanvassAward,
