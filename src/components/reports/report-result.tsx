@@ -35,7 +35,6 @@ function Cell({ cell }: { cell: ReportCell }) {
   return <span className={toneClasses[cell.tone]}>{cell.value}</span>;
 }
 
-/** A generated report: heading, chart, and the table behind it. */
 export function ReportResult({ report }: { report: ReportDefinition }) {
   return (
     <Card>

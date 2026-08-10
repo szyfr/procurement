@@ -19,7 +19,6 @@ import { formatDate } from "@/lib/date";
 import type { Role } from "@/modules/roles";
 import { roleDetailQuery } from "@/modules/roles";
 
-/** Label above value, the shape both the role and audit grids use. */
 function Field({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-0.5">

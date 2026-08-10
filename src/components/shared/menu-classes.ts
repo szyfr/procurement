@@ -7,9 +7,7 @@
  * in the sidebar footer.
  */
 
-/** 196px panel on the 10px corner, with the menu elevation. */
 export const dropdownContentClass = "w-[196px] rounded-lg p-[5px] shadow-md";
 
-/** 32px rows at 13px with a 15px leading icon. */
 export const dropdownItemClass =
   "h-8 gap-2 rounded-md px-2 text-[13px] [&_svg]:size-[15px]";

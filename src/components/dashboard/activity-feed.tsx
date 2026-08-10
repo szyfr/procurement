@@ -9,7 +9,6 @@ import {
 } from "@/components/ui/empty";
 import type { ActivityEntry } from "@/lib/types";
 
-/** Timeline of recent events, each with a marker dot. */
 export function ActivityFeed({ entries }: { entries: ActivityEntry[] }) {
   if (entries.length === 0) {
     return (

@@ -2,7 +2,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatShortDate } from "@/lib/date";
 import type { PurchaseRequestDetail } from "@/modules/purchase-requests";
 
-/** The read-only requester/department/date facts sitting beside the items. */
 export function PurchaseRequestDetailsPanel({
   request,
 }: {

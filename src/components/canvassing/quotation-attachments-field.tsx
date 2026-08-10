@@ -12,7 +12,6 @@ export const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
 export const ACCEPTED_ATTACHMENTS =
   ".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx,.xls,.xlsx,.csv";
 
-/** Upload well plus the running list of files picked for a new quote. */
 export function QuotationAttachmentsField({
   attachments,
   error,

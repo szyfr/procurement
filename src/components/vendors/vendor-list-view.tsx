@@ -9,7 +9,6 @@ import { VendorTable } from "@/components/vendors/vendor-table";
 import { buildPageHref } from "@/lib/page-href";
 import { vendorListQuery } from "@/modules/vendors";
 
-/** Vendor list, fetched from the BFF in the browser via TanStack Query. */
 export function VendorListView({ page }: { page: number }) {
   const { data, isPending, isError, error } = useQuery(vendorListQuery(page));
 

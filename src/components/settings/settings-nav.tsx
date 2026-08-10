@@ -6,7 +6,6 @@ import { usePathname } from "next/navigation";
 import { settingsNav } from "@/data/navigation";
 import { cn } from "@/lib/utils";
 
-/** Panel switcher for the settings section. */
 export function SettingsNav() {
   const pathname = usePathname();
 

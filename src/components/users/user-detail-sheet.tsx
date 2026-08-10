@@ -20,7 +20,6 @@ import { formatDate } from "@/lib/date";
 import type { User } from "@/modules/users";
 import { userDetailQuery } from "@/modules/users";
 
-/** Label above value, the shape the identity and audit grids both use. */
 function Field({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-0.5">
@@ -30,7 +29,6 @@ function Field({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
-/** Section heading, matching the roles detail sheet's. */
 function SectionLabel(props: React.ComponentProps<"p">) {
   return (
     <p

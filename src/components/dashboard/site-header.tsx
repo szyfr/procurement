@@ -4,10 +4,6 @@ import { NotificationsMenu } from "@/components/dashboard/notifications-menu";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 
-/**
- * Sticky application header: sidebar toggle, breadcrumb trail, global search,
- * and notifications. The account menu lives in the sidebar footer.
- */
 export function SiteHeader() {
   return (
     <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center border-b bg-background">

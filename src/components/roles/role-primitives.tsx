@@ -8,7 +8,6 @@ import { cn } from "@/lib/utils";
  * appears.
  */
 
-/** Section heading used inside the dialog and the sheet. */
 export function SectionLabel({
   className,
   ...props

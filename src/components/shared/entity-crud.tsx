@@ -486,7 +486,6 @@ export function DeleteEntityDialog<
   );
 }
 
-/** Entity list, fetched from the BFF in the browser via TanStack Query. */
 export function EntityListView<
   TEntity extends TitleDescriptionEntity,
   TDto extends TitleDescriptionDto,

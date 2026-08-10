@@ -9,7 +9,6 @@ export interface KpiCardData {
   isPending?: boolean;
 }
 
-/** Summary counts across the top of the dashboard. */
 export function KpiCards({ items }: { items: KpiCardData[] }) {
   return (
     <dl className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-5">
