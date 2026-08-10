@@ -8,6 +8,6 @@
 const BASE = "/api/realtime";
 
 export const realtimeEndpoints = {
-  /** Signed JWT for the caller, as plain text. 401 when signed out. */
+  /** Signed JWT for the caller, as the bare body. 401 when signed out. */
   token: `${BASE}/token`,
 } as const;

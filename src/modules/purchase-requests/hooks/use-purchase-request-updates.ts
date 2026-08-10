@@ -27,11 +27,10 @@ export function usePurchaseRequestUpdates() {
       const request = message.data as PurchaseRequestDetail;
       if (!request?._id) return;
 
-      // The channel fans every transition out to every signed-in subscriber,
-      // so most of what arrives here is for requests this browser has never
-      // asked for. Only an entry the cache already holds gets refreshed —
-      // seeding the rest would make a later navigation render a pushed
-      // document instead of an authoritative read through the BFF.
+      // The channel fans every transition out to every subscriber, so most of
+      // what arrives is for requests this browser never asked for. Seeding
+      // those would make a later navigation render a pushed document instead
+      // of an authoritative read, so only existing entries are refreshed.
       const detailKey = purchaseRequestKeys.detail(request._id);
       if (queryClient.getQueryData(detailKey) !== undefined) {
         queryClient.setQueryData(detailKey, request);

@@ -13,11 +13,6 @@ import { PURCHASE_REQUESTS_CHANNEL } from "@/modules/purchase-requests/constants
  * there is no round trip to Ably's servers and capabilities can be scoped
  * per caller. `ABLY_API_KEY` never leaves this module — the browser only
  * ever sees the signed JWT via the Route Handler.
- *
- * Lives under `services/` rather than `dal/`: it never calls `serverFetch`
- * or reaches FastAPI, so it doesn't fit this repo's DAL convention (FastAPI
- * reads/writes) — it's still server-only and kept out of the module barrel
- * for the same reason a DAL would be.
  */
 
 const JWT_TTL_SECONDS = 60 * 60;
@@ -62,10 +57,8 @@ export async function issueAblyToken(user: AuthenticatedUser): Promise<string> {
     throw new ApiError(500, "internal_error", "Signed-in user has no id.");
   }
 
-  // `id` is embedded into the capability's namespace pattern and the
-  // clientId claim below, so anything other than a plain Mongo id — in
-  // particular ":" or "*", which are meaningful in Ably's capability syntax
-  // — must not reach either.
+  // `id` is interpolated into the capability's namespace pattern below, where
+  // ":" and "*" are meaningful — only a plain Mongo id may reach it.
   if (!isObjectId(id)) {
     throw new ApiError(500, "internal_error", "Signed-in user has no id.");
   }

@@ -10,22 +10,17 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "@/components/ui/toast";
 import { realtimeEndpoints } from "@/modules/realtime";
 
-/** Hoisted so the listener effect keys off a stable identity, not a fresh
- *  array literal on every render. */
+/** Hoisted: `useConnectionStateListener` keys its effect on this identity, so
+ *  an inline array would resubscribe on every render. */
 const OFFLINE_STATES: Ably.ConnectionState[] = ["suspended", "failed"];
 
 /**
- * Tells the user when the connection is down, because nothing else can:
- * a stalled realtime feed looks exactly like a quiet one, so the pages would
- * silently stop being live.
+ * A stalled feed is indistinguishable from a quiet one, so connection loss
+ * has to be said out loud or the pages silently stop being live.
  *
- * Only `suspended` (offline long enough that the SDK backed off) and `failed`
- * (terminal — most often a rejected `authUrl` after the session cookie
- * expired) are surfaced. Transient `disconnected` blips stay silent; the SDK
- * recovers from those unaided and a toast per network hiccup is just noise.
- *
- * The notice has no timeout because the condition it reports doesn't expire
- * on its own — it's dismissed when the connection actually returns.
+ * Only `suspended` and `failed` are surfaced — the SDK recovers from
+ * `disconnected` unaided, and a toast per network blip is noise. `failed` is
+ * terminal, and usually means the session cookie behind `authUrl` expired.
  */
 function RealtimeConnectionMonitor() {
   const noticeId = useRef<string | null>(null);
@@ -61,30 +56,18 @@ function RealtimeConnectionMonitor() {
 }
 
 /**
- * Wraps the dashboard in a single Ably realtime connection.
+ * Wraps the dashboard in a single Ably realtime connection, authenticated
+ * against our own origin — `/api/realtime/token` signs a capability-scoped
+ * JWT for whoever the session cookie belongs to, so no key reaches the
+ * browser.
  *
- * The client authenticates against our own origin (`authUrl`) rather than
- * holding a key — `/api/realtime/token` signs a capability-scoped JWT for
- * whoever the session cookie belongs to.
- *
- * Built once via `useState`'s lazy initializer so children (the sidebar, the
- * page) render immediately — including during SSR, where "use client" still
- * executes on the server — rather than waiting on an effect. `autoConnect`
- * is `false` for exactly that reason: construction must stay side-effect
- * free, both because it runs on the server (where Ably's Node transport
- * would otherwise immediately try to auth against the relative `authUrl`
- * and fail) and because React Strict Mode invokes `useState` initializers
- * twice in dev — with `autoConnect` on, the discarded instance from that
- * second call would still open a real connection.
- *
- * Connecting is left to the effect below, which also means it's the only
- * thing Strict Mode's dev-only mount→cleanup→mount replay touches: it closes
- * the connection and reconnects the same client, rather than leaving it
- * closed with nothing to reopen it.
- *
- * No channel is subscribed here — this is connection plumbing only. A
- * feature that needs a channel calls `useChannel`/`usePresence` from
- * `ably/react` in its own components, underneath this provider.
+ * Built in a `useState` initializer rather than at module scope as Ably's
+ * React guide suggests: this file also runs on the server during SSR, where a
+ * module-scope client would be shared across requests and users.
+ * `autoConnect: false` keeps construction side-effect free — the relative
+ * `authUrl` cannot resolve on the server, and Strict Mode's double-invoked
+ * initializer would otherwise leave the discarded instance holding a real
+ * connection.
  */
 export function AblyRealtimeProvider({
   children,
@@ -99,6 +82,8 @@ export function AblyRealtimeProvider({
       }),
   );
 
+  // Closing on cleanup is safe under Strict Mode's dev-only
+  // mount→cleanup→mount replay: `connect()` reopens the same client.
   useEffect(() => {
     client.connect();
     return () => client.close();

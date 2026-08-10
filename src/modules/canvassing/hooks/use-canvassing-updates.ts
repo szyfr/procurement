@@ -11,11 +11,10 @@ import {
 
 /**
  * Keeps the quote comparison live when an award happens elsewhere. Awarding
- * writes the item's `quotation_id` directly and then triggers the same
- * StatusService pass the PR list/detail hook listens to, so this reuses that
- * event and invalidates the quotations query wholesale — item ids aren't
- * known outside the awarded PR, same tradeoff the list invalidation already
- * makes.
+ * writes the item's `quotation_id` and then triggers the same StatusService
+ * pass the PR hook listens to, so there is no award-specific event to
+ * subscribe to — this reuses that one and invalidates the quotations query
+ * wholesale, since the message names the PR but not the items that changed.
  */
 export function useCanvassingUpdates(purchaseRequestId: string) {
   const queryClient = useQueryClient();
