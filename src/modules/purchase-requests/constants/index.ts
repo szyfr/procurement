@@ -9,6 +9,11 @@ export { DEFAULT_PAGE_SIZE } from "@/lib/api/pagination";
 /** Shared with Canvassing's pickers, so it lives in `@/lib/lookup` now. */
 export { LOOKUP_PAGE_SIZE } from "@/lib/lookup";
 
+/** Ably channel FastAPI's StatusService publishes PR status transitions on. */
+export const PURCHASE_REQUESTS_CHANNEL = "purchase-requests";
+/** Event name for the above — must match StatusService's `title` verbatim. */
+export const PURCHASE_REQUEST_UPDATED_EVENT = "Purchase Request Updated";
+
 /**
  * Status pill copy. Presentation only — the backend stores the slug and no
  * richer label (no PO number, no item counts), so these are the plain names.

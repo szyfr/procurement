@@ -3,6 +3,7 @@ import { SignJWT } from "jose";
 import { ApiError } from "@/lib/api/errors";
 import type { AuthenticatedUser } from "@/modules/auth/models/session";
 import { userId } from "@/modules/auth/models/session";
+import { PURCHASE_REQUESTS_CHANNEL } from "@/modules/purchase-requests/constants";
 
 /**
  * Mints the JWT an Ably client trades for a realtime connection.
@@ -34,14 +35,18 @@ function readApiKey(): { keyName: string; keySecret: string } {
 }
 
 /**
- * No realtime feature is wired to a channel yet, so capability is scoped to
- * a namespace under the caller's own id and nothing else — enough for a
- * future feature to subscribe on, not enough to read anyone else's channel.
- * Publish is deliberately withheld; server-side code publishes via the REST
- * SDK once a feature needs to.
+ * Every signed-in caller can subscribe to `purchase-requests` — FastAPI's
+ * StatusService broadcasts every status transition there, and any viewer of
+ * a list or detail page needs to hear it, not just the request's own
+ * requester. `user:{clientId}:*` stays as a private namespace for a future
+ * per-user feature. Publish is deliberately withheld either way; FastAPI's
+ * ably-python service owns publishing.
  */
 function capabilityFor(clientId: string) {
-  return { [`user:${clientId}:*`]: ["subscribe"] };
+  return {
+    [`user:${clientId}:*`]: ["subscribe"],
+    [PURCHASE_REQUESTS_CHANNEL]: ["subscribe"],
+  };
 }
 
 /** Signs a short-lived, capability-scoped JWT for the given caller. */

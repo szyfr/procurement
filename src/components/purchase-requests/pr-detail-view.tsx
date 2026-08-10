@@ -26,6 +26,7 @@ import {
   purchaseRequestStatusLabels,
   purchaseRequestTone,
   setPurchaseRequestStatus,
+  usePurchaseRequestUpdates,
 } from "@/modules/purchase-requests";
 
 /**
@@ -79,6 +80,9 @@ function DetailSkeleton() {
 
 export function PurchaseRequestDetailView({ id }: { id: string }) {
   const queryClient = useQueryClient();
+
+  usePurchaseRequestUpdates();
+
   const {
     data: request,
     isPending,

@@ -27,6 +27,13 @@ export function AblyRealtimeProvider({
     () =>
       new Ably.Realtime({
         authUrl: realtimeEndpoints.token,
+        // The lazy initializer also runs during SSR, where "use client" still
+        // executes on the server. There, Ably picks its Node transport (`got`)
+        // and would immediately try to auth against the relative `authUrl`,
+        // which `got` rejects outright. `autoConnect` skips that: the SSR
+        // instance is thrown away unconnected, and the real one made on
+        // hydration connects normally through the browser's fetch.
+        autoConnect: typeof window !== "undefined",
       }),
   );
 
