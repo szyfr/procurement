@@ -14,6 +14,7 @@ export const purchaseRequestEndpoints = {
     `${BASE}/${encodeURIComponent(id)}/status/${encodeURIComponent(status)}`,
   itemRequests: `${BASE}/item-requests`,
   proofs: `${BASE}/proofs`,
+  proofDetail: (id: string) => `${BASE}/proofs/${encodeURIComponent(id)}`,
   departments: `${BASE}/lookups/departments`,
   materials: `${BASE}/lookups/materials`,
   vendors: `${BASE}/lookups/vendors`,

@@ -5,6 +5,7 @@ import {
   dataTableClass,
   numericCellClass,
 } from "@/components/shared/table-classes";
+import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
@@ -19,6 +20,7 @@ import { cn } from "@/lib/utils";
 import {
   type PurchaseRequestDetail,
   type PurchaseRequestItem,
+  type PurchaseRequestProof,
   purchaseRequestItemStatusLabels,
   purchaseRequestItemTone,
 } from "@/modules/purchase-requests";
@@ -34,18 +36,28 @@ export function isProofSelectable(item: PurchaseRequestItem) {
 }
 
 /**
- * The proof record joined onto the request that covers this item, if any —
- * `POST /purchase-request-proofs` never echoes a filename back (only
- * `GET /purchase-request-proofs/{id}` does, which this app doesn't call), so
- * there's nothing to display beyond that a proof exists.
+ * Every proof covering this item. The relationship is many-to-many — a proof
+ * groups several lines under one vendor confirmation, and a line that arrives
+ * in more than one delivery has more than one proof — so this is a list, not a
+ * lookup. Neither the join nor `POST /purchase-request-proofs` carries a
+ * filename; those live behind `GET /purchase-request-proofs/{id}`, which the
+ * Proofs of Order section reads when a proof is opened.
  */
-function resolveProof(
+function proofsForItem(
   item: PurchaseRequestItem,
   request: PurchaseRequestDetail,
 ) {
-  return request.proofs.find((proof) =>
+  return request.proofs.filter((proof) =>
     proof.purchase_request_item_ids.includes(item._id),
   );
+}
+
+/** The soonest confirmed delivery among an item's proofs. */
+function earliestDeliveryDate(proofs: PurchaseRequestProof[]) {
+  return proofs
+    .map((proof) => proof.delivery_date)
+    .sort()
+    .at(0);
 }
 
 /** Per-item sourcing status, plus proof-of-order state where one has been recorded. */
@@ -54,11 +66,14 @@ export function PurchaseRequestItemsTable({
   selectedIds,
   onToggleItem,
   onToggleAll,
+  onHighlightProofs,
 }: {
   request: PurchaseRequestDetail;
   selectedIds: Set<string>;
   onToggleItem: (id: string, checked: boolean) => void;
   onToggleAll: (checked: boolean) => void;
+  /** Rings this item's proofs in the Proofs of Order section and scrolls to them. */
+  onHighlightProofs: (itemId: string) => void;
 }) {
   const selectableItems = request.items.filter(isProofSelectable);
   const allSelected =
@@ -95,7 +110,8 @@ export function PurchaseRequestItemsTable({
       <TableBody>
         {request.items.map((item) => {
           const selectable = isProofSelectable(item);
-          const proof = resolveProof(item, request);
+          const proofs = proofsForItem(item, request);
+          const deliveryDate = earliestDeliveryDate(proofs);
 
           return (
             <TableRow
@@ -140,21 +156,9 @@ export function PurchaseRequestItemsTable({
                 </StatusBadge>
               </TableCell>
               <TableCell>
-                {proof ? (
-                  <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <StatusDot tone="success" />
-                    Uploaded
-                  </span>
-                ) : selectable ? (
-                  <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <StatusDot tone="warning" />
-                    Not uploaded
-                  </span>
-                ) : item.status === "completed" ? (
-                  <span className="text-xs text-muted-foreground">
-                    Proof on file
-                  </span>
-                ) : item.status === "canvassing" ? (
+                {/* An item still in canvassing has no proof to count yet, and
+                    the route to its quotes is the more useful affordance. */}
+                {proofs.length === 0 && item.status === "canvassing" ? (
                   <Link
                     href={`/purchase-requests/${request._id}/canvassing`}
                     className="flex items-center gap-1 text-xs text-muted-foreground hover:underline"
@@ -162,13 +166,29 @@ export function PurchaseRequestItemsTable({
                     View Canvassing
                     <ArrowRightIcon className="size-3.5" aria-hidden />
                   </Link>
+                ) : proofs.length === 0 ? (
+                  // Not a button: there is nothing in the section below to ring
+                  // yet, and an affordance that does nothing reads as broken.
+                  // Padded like the button so both align down the column.
+                  <span className="-ml-2 inline-flex h-7 items-center gap-1.5 px-2.5 text-[0.8rem] text-muted-foreground">
+                    <StatusDot tone="warning" />
+                    No proof
+                  </span>
                 ) : (
-                  <span className="text-xs text-muted-foreground">—</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="-ml-2 gap-1.5 font-normal text-muted-foreground"
+                    onClick={() => onHighlightProofs(item._id)}
+                  >
+                    <StatusDot tone="success" />
+                    {proofs.length} proof{proofs.length === 1 ? "" : "s"}
+                  </Button>
                 )}
               </TableCell>
               <TableCell>
-                {proof ? (
-                  formatShortDate(proof.delivery_date)
+                {deliveryDate ? (
+                  formatShortDate(deliveryDate)
                 ) : (
                   <span className="text-muted-foreground">—</span>
                 )}

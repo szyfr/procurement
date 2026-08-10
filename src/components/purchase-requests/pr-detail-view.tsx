@@ -7,6 +7,7 @@ import { CancelPurchaseRequestDialog } from "@/components/purchase-requests/canc
 import { PurchaseRequestActionPanel } from "@/components/purchase-requests/pr-action-panel";
 import { PurchaseRequestDetailsPanel } from "@/components/purchase-requests/pr-details-panel";
 import { PurchaseRequestItemsSection } from "@/components/purchase-requests/pr-items-section";
+import { PurchaseRequestProofsSection } from "@/components/purchase-requests/pr-proofs-section";
 import { PurchaseRequestStepper } from "@/components/purchase-requests/pr-stepper";
 import { PageHeader } from "@/components/shared/page-header";
 import { PriorityBadge } from "@/components/shared/priority-badge";
@@ -99,6 +100,16 @@ export function PurchaseRequestDetailView({ id }: { id: string }) {
   const [validationError, setValidationError] = React.useState<string | null>(
     null,
   );
+
+  /**
+   * Which item's proofs the Proofs of Order section is ringing. Owned here
+   * because the indicator that sets it lives in the Items table and the cards
+   * that read it are in a sibling section; clicking the same indicator twice
+   * clears it.
+   */
+  const [highlightedItemId, setHighlightedItemId] = React.useState<
+    string | null
+  >(null);
 
   const {
     mutate: submit,
@@ -267,7 +278,19 @@ export function PurchaseRequestDetailView({ id }: { id: string }) {
 
       <div className="grid gap-5 lg:grid-cols-3">
         <div className="flex min-w-0 flex-col gap-5 lg:col-span-2">
-          <PurchaseRequestItemsSection request={request} />
+          <PurchaseRequestItemsSection
+            request={request}
+            onHighlightProofs={(itemId) =>
+              setHighlightedItemId((current) =>
+                current === itemId ? null : itemId,
+              )
+            }
+          />
+
+          <PurchaseRequestProofsSection
+            request={request}
+            highlightedItemId={highlightedItemId}
+          />
 
           <Card>
             <CardHeader className="border-b">

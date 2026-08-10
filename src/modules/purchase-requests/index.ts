@@ -12,6 +12,7 @@ export {
   createPurchaseRequestProof,
   fetchDepartmentOptions,
   fetchMaterialOptions,
+  fetchPurchaseRequestProof,
   fetchPurchaseRequests,
   fetchVendorOptions,
   setPurchaseRequestStatus,
@@ -42,12 +43,17 @@ export type {
   PurchaseRequestStatus,
   SettablePurchaseRequestStatus,
 } from "@/modules/purchase-requests/models/purchase-request";
-export type { PurchaseRequestProof } from "@/modules/purchase-requests/models/purchase-request-proof";
+export type {
+  PurchaseRequestProof,
+  PurchaseRequestProofDetail,
+  PurchaseRequestProofDocument,
+} from "@/modules/purchase-requests/models/purchase-request-proof";
 export type { PurchaseRequestListFilters } from "@/modules/purchase-requests/queries/purchase-request.queries";
 export {
   departmentOptionsQuery,
   purchaseRequestDetailQuery,
   purchaseRequestKeys,
   purchaseRequestListQuery,
+  purchaseRequestProofQuery,
 } from "@/modules/purchase-requests/queries/purchase-request.queries";
 export type { DraftLineItem } from "@/modules/purchase-requests/types";

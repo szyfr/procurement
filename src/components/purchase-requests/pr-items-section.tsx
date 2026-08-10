@@ -33,8 +33,11 @@ import {
  */
 export function PurchaseRequestItemsSection({
   request,
+  onHighlightProofs,
 }: {
   request: PurchaseRequestDetail;
+  /** Passed through to the table's proof indicator; owned by the detail view. */
+  onHighlightProofs: (itemId: string) => void;
 }) {
   const queryClient = useQueryClient();
   const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
@@ -183,6 +186,7 @@ export function PurchaseRequestItemsSection({
               selectedIds={selectedIds}
               onToggleItem={toggleItem}
               onToggleAll={toggleAll}
+              onHighlightProofs={onHighlightProofs}
             />
           </>
         )}

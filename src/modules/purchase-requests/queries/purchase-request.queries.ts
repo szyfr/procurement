@@ -3,6 +3,7 @@ import { queryOptions } from "@tanstack/react-query";
 import {
   fetchDepartmentOptions,
   fetchPurchaseRequest,
+  fetchPurchaseRequestProof,
   fetchPurchaseRequests,
 } from "@/modules/purchase-requests/api/client";
 
@@ -30,6 +31,8 @@ export const purchaseRequestKeys = {
   list: (page: number, filters: PurchaseRequestListFilters = {}) =>
     [...purchaseRequestKeys.all, "list", page, filters] as const,
   detail: (id: string) => [...purchaseRequestKeys.all, "detail", id] as const,
+  proof: (proofId: string) =>
+    [...purchaseRequestKeys.all, "proof", proofId] as const,
   /**
    * Reference data. Kept under this module's prefix because it is served by
    * the purchase request lookup routes — the standalone Vendors module owns
@@ -68,6 +71,24 @@ export function purchaseRequestDetailQuery(id: string) {
   return queryOptions({
     queryKey: purchaseRequestKeys.detail(id),
     queryFn: ({ signal }) => fetchPurchaseRequest(id, signal),
+  });
+}
+
+/**
+ * A single proof of order, including its documents. The caller enables this
+ * only while the proof dialog is open, so nothing is fetched per row.
+ *
+ * Never stale: reopening a proof that has already been viewed must not refetch,
+ * and the proofs list keeps a disabled observer per proof so the cache survives
+ * for the life of the page. The tradeoff is that a document's presigned url is
+ * only as fresh as the first open — a page left open past the signature's
+ * lifetime needs a reload, not a reopen.
+ */
+export function purchaseRequestProofQuery(proofId: string) {
+  return queryOptions({
+    queryKey: purchaseRequestKeys.proof(proofId),
+    queryFn: ({ signal }) => fetchPurchaseRequestProof(proofId, signal),
+    staleTime: Number.POSITIVE_INFINITY,
   });
 }
 
