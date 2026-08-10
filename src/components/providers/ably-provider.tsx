@@ -1,10 +1,64 @@
 "use client";
 
 import * as Ably from "ably";
-import { AblyProvider as BaseAblyProvider } from "ably/react";
-import { useEffect, useState } from "react";
+import {
+  AblyProvider as BaseAblyProvider,
+  useConnectionStateListener,
+} from "ably/react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
+import { toast } from "@/components/ui/toast";
 import { realtimeEndpoints } from "@/modules/realtime";
+
+/** Hoisted so the listener effect keys off a stable identity, not a fresh
+ *  array literal on every render. */
+const OFFLINE_STATES: Ably.ConnectionState[] = ["suspended", "failed"];
+
+/**
+ * Tells the user when the connection is down, because nothing else can:
+ * a stalled realtime feed looks exactly like a quiet one, so the pages would
+ * silently stop being live.
+ *
+ * Only `suspended` (offline long enough that the SDK backed off) and `failed`
+ * (terminal — most often a rejected `authUrl` after the session cookie
+ * expired) are surfaced. Transient `disconnected` blips stay silent; the SDK
+ * recovers from those unaided and a toast per network hiccup is just noise.
+ *
+ * The notice has no timeout because the condition it reports doesn't expire
+ * on its own — it's dismissed when the connection actually returns.
+ */
+function RealtimeConnectionMonitor() {
+  const noticeId = useRef<string | null>(null);
+
+  useConnectionStateListener(
+    OFFLINE_STATES,
+    useCallback((stateChange: Ably.ConnectionStateChange) => {
+      if (noticeId.current) return;
+
+      noticeId.current = toast.add({
+        title: "Live updates are offline",
+        description:
+          stateChange.current === "failed"
+            ? "Reload the page to reconnect — your session may have expired."
+            : "Reconnecting. Pages will catch up on their own once it's back.",
+        type: "error",
+        timeout: 0,
+      });
+    }, []),
+  );
+
+  useConnectionStateListener(
+    "connected",
+    useCallback(() => {
+      if (!noticeId.current) return;
+
+      toast.close(noticeId.current);
+      noticeId.current = null;
+    }, []),
+  );
+
+  return null;
+}
 
 /**
  * Wraps the dashboard in a single Ably realtime connection.
@@ -50,5 +104,10 @@ export function AblyRealtimeProvider({
     return () => client.close();
   }, [client]);
 
-  return <BaseAblyProvider client={client}>{children}</BaseAblyProvider>;
+  return (
+    <BaseAblyProvider client={client}>
+      <RealtimeConnectionMonitor />
+      {children}
+    </BaseAblyProvider>
+  );
 }

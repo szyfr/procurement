@@ -15,7 +15,12 @@ npm run format   # biome format --write
 
 There is no test runner in this project. `npm run lint && npm run build` is the definition of done for a change — both must be clean (TypeScript errors, Biome issues, hydration errors, build errors).
 
-Env vars live in `.env.local`: `FASTAPI_BASE_URL` (where the BFF reaches FastAPI). Server-only, must never be read from a Client Component.
+Env vars live in `.env.local`, which is gitignored — there is no committed example file, so a fresh clone has to be told:
+
+- `FASTAPI_BASE_URL` — where the BFF reaches FastAPI.
+- `ABLY_API_KEY` — `keyId:keySecret`, the same key the backend publishes with. `/api/realtime/token` signs client JWTs with the secret half; the key itself never leaves the server.
+
+Both are server-only and must never be read from a Client Component.
 
 ## What this is
 
@@ -69,7 +74,9 @@ index.ts             public surface (no DAL)
 
 There is no `mappers/`. A response has one shape and it is the backend's: `models/` declares it and every layer above reads it directly. `dto/` holds request bodies only — a resource whose writes take the same fields it returns needs no response DTO at all, and vendors (read-only) have no `dto/` directory.
 
-`purchase-requests`, `departments`, `vendors`, `payment-terms`, `canvassing` and `auth` exist. New modules should mirror this. `auth` adds `hooks/` (the sign-in and sign-out mutations) and keeps its cookie writer beside the DAL, so both stay out of the barrel.
+`purchase-requests`, `departments`, `vendors`, `payment-terms`, `canvassing`, `realtime` and `auth` exist. New modules should mirror this. `auth` adds `hooks/` (the sign-in and sign-out mutations) and keeps its cookie writer beside the DAL, so both stay out of the barrel.
+
+`realtime` has no DAL — it never reaches FastAPI. Its JWT signer sits in `services/` instead and is kept out of the barrel for the same reason a DAL would be: it reads `ABLY_API_KEY`.
 
 Route Handlers stay thin: parse params → call DAL → wrap in `Response.json({ data })` → `catch` → `toErrorResponse(error)`.
 
