@@ -6,6 +6,9 @@ export const roleKeys = {
   list: (page: number, search: string, pageSize?: number) =>
     [...roleKeys.all, "list", page, search, pageSize ?? null] as const,
   detail: (id: string) => [...roleKeys.all, "detail", id] as const,
+  /** Keyed by search term only — `useInfiniteQuery` owns the page dimension. */
+  infiniteList: (search: string) =>
+    [...roleKeys.all, "infinite", search] as const,
 };
 
 export function roleListQuery(page: number, search = "", pageSize?: number) {

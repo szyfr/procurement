@@ -1,6 +1,10 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { SearchIcon } from "lucide-react";
 import * as React from "react";
 
@@ -21,16 +25,20 @@ import {
 } from "@/components/ui/input-group";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/components/ui/toast";
-import { MAX_PAGE_SIZE } from "@/lib/api/pagination";
-import { roleListQuery } from "@/modules/roles";
+import { LOOKUP_PAGE_SIZE } from "@/lib/lookup";
+import { fetchRoles, roleKeys } from "@/modules/roles";
 import { updateUserRoles, userKeys } from "@/modules/users";
+
+const SEARCH_DEBOUNCE_MS = 300;
 
 /**
  * Assigns roles to one user via `PATCH /users/{id}/roles`. The role catalogue
- * comes from `GET /roles`, fetched at the backend's page-size cap the same
- * way the role form dialog loads the permission catalogue — roles are a
- * small, admin-managed list, not a collection worth paginating through here.
+ * comes from `GET /roles`, searched and paged on the backend the same way
+ * `LookupPicker` drives materials and vendors: a debounced search term keyed
+ * into `useInfiniteQuery` so paging restarts from the top on its own, with
+ * more pages pulled in as the list is scrolled.
  */
 export function AssignRolesDialog({
   open,
@@ -50,6 +58,7 @@ export function AssignRolesDialog({
     () => new Set(assignedRoleIds),
   );
   const [search, setSearch] = React.useState("");
+  const [debouncedSearch, setDebouncedSearch] = React.useState("");
   const queryClient = useQueryClient();
 
   // Reopening for a different user has to reset the whole form, including the
@@ -59,28 +68,61 @@ export function AssignRolesDialog({
     setLastOpenedFor(userId);
     setSelected(new Set(assignedRoleIds));
     setSearch("");
+    setDebouncedSearch("");
   }
 
+  React.useEffect(() => {
+    const timer = setTimeout(
+      () => setDebouncedSearch(search),
+      SEARCH_DEBOUNCE_MS,
+    );
+
+    return () => clearTimeout(timer);
+  }, [search]);
+
   const {
-    data: rolesPage,
+    data,
     isPending,
+    isFetching,
+    hasNextPage,
+    fetchNextPage,
     isError,
     error,
-  } = useQuery({ ...roleListQuery(1, "", MAX_PAGE_SIZE), enabled: open });
+  } = useInfiniteQuery({
+    queryKey: roleKeys.infiniteList(debouncedSearch),
+    enabled: open,
+    initialPageParam: 1,
+    queryFn: ({ pageParam, signal }) =>
+      fetchRoles({
+        page: pageParam,
+        pageSize: LOOKUP_PAGE_SIZE,
+        search: debouncedSearch || undefined,
+        signal,
+      }),
+    getNextPageParam: (lastPage, allPages) =>
+      allPages.length < lastPage.pagination.total_pages
+        ? allPages.length + 1
+        : undefined,
+  });
 
-  const roles = rolesPage?.data ?? [];
-  const totalRoles = rolesPage?.pagination.total_items ?? 0;
-
-  const query = search.trim().toLowerCase();
-  const visibleRoles = query
-    ? roles.filter(
-        (role) =>
-          role.title.toLowerCase().includes(query) ||
-          role.description.toLowerCase().includes(query),
-      )
-    : roles;
+  const visibleRoles = React.useMemo(
+    () => data?.pages.flatMap((page) => page.data) ?? [],
+    [data],
+  );
+  const totalRoles = data?.pages[0]?.pagination.total_items ?? 0;
 
   const selectedCount = selected.size;
+
+  function handleScroll(event: React.UIEvent<HTMLDivElement>) {
+    if (isFetching || !hasNextPage) return;
+
+    const { scrollTop, scrollHeight, clientHeight } = event.currentTarget;
+    if (scrollHeight <= clientHeight) return;
+
+    if (scrollHeight - scrollTop - clientHeight < 48) {
+      fetchNextPage();
+    }
+  }
 
   function toggleRole(id: string, checked: boolean) {
     setSelected((current) => {
@@ -127,7 +169,7 @@ export function AssignRolesDialog({
         </DialogHeader>
 
         {/* The role list is the only scroller, so the toolbar and footer stay put. */}
-        <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="min-h-0 flex-1 overflow-y-auto" onScroll={handleScroll}>
           <div className="sticky top-0 z-10 flex flex-wrap items-center gap-2 border-b bg-accent px-5 py-3">
             <InputGroup className="w-[220px] bg-background">
               <InputGroupInput
@@ -158,7 +200,9 @@ export function AssignRolesDialog({
               </div>
             ) : visibleRoles.length === 0 ? (
               <p className="py-8 text-center text-muted-foreground">
-                No roles match &ldquo;{search.trim()}&rdquo;
+                {search.trim()
+                  ? `No roles match “${search.trim()}”`
+                  : "No roles found."}
               </p>
             ) : (
               visibleRoles.map((role) => (
@@ -182,6 +226,13 @@ export function AssignRolesDialog({
                 </Label>
               ))
             )}
+
+            {isFetching && !isPending ? (
+              <p className="flex items-center justify-center gap-2 py-3 text-xs text-muted-foreground">
+                <Spinner className="size-3.5" />
+                Loading more…
+              </p>
+            ) : null}
           </div>
         </div>
 
