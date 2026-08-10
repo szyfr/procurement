@@ -60,7 +60,11 @@ export async function issueAblyToken(user: AuthenticatedUser): Promise<string> {
   // `id` is interpolated into the capability's namespace pattern below, where
   // ":" and "*" are meaningful — only a plain Mongo id may reach it.
   if (!isObjectId(id)) {
-    throw new ApiError(500, "internal_error", "Signed-in user has no id.");
+    throw new ApiError(
+      500,
+      "internal_error",
+      "Signed-in user id is not a valid ObjectId.",
+    );
   }
 
   const { keyName, keySecret } = readApiKey();
