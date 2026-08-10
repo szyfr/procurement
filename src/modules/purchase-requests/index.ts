@@ -19,6 +19,8 @@ export {
 } from "@/modules/purchase-requests/api/client";
 export {
   LOOKUP_PAGE_SIZE,
+  PURCHASE_REQUEST_UPDATED_EVENT,
+  PURCHASE_REQUESTS_CHANNEL,
   purchaseRequestItemStatusLabels,
   purchaseRequestItemTone,
   purchaseRequestStatusLabels,
@@ -30,6 +32,7 @@ export type {
   CreatePurchaseRequestProofDto,
   UpdatePurchaseRequestDto,
 } from "@/modules/purchase-requests/dto";
+export { usePurchaseRequestUpdates } from "@/modules/purchase-requests/hooks/use-purchase-request-updates";
 export type { Material } from "@/modules/purchase-requests/models/material";
 export type {
   Priority,

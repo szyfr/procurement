@@ -31,6 +31,7 @@ import { cn, formatCurrency } from "@/lib/utils";
 import {
   canvassingQuotationsQuery,
   type Quotation,
+  useCanvassingUpdates,
 } from "@/modules/canvassing";
 import {
   type PurchaseRequestItem,
@@ -61,6 +62,8 @@ function unitPriceFor(quotation: Quotation, itemId: string) {
  * than living only in this component's state.
  */
 export function CanvassingQuotationsView({ id }: { id: string }) {
+  useCanvassingUpdates(id);
+
   // The same query the items card runs, so this shares its cache entry rather
   // than fetching the request twice.
   const { data: request, isError: requestFailed } = useQuery(

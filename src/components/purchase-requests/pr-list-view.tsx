@@ -17,6 +17,7 @@ import { buildPageHref } from "@/lib/page-href";
 import {
   departmentOptionsQuery,
   purchaseRequestListQuery,
+  usePurchaseRequestUpdates,
 } from "@/modules/purchase-requests";
 
 /**
@@ -71,6 +72,8 @@ export function PurchaseRequestListView({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+
+  usePurchaseRequestUpdates();
 
   const [searchInput, setSearchInput] = React.useState(search);
 
