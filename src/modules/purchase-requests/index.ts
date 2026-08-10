@@ -12,6 +12,7 @@ export {
   createPurchaseRequestProof,
   fetchDepartmentOptions,
   fetchMaterialOptions,
+  fetchPurchaseRequests,
   fetchVendorOptions,
   setPurchaseRequestStatus,
   updatePurchaseRequest,

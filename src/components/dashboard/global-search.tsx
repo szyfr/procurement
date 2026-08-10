@@ -1,52 +1,65 @@
 "use client";
 
-import { ArrowRightIcon, SearchIcon, XIcon } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { SearchIcon, XIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 
-import { StatusBadge } from "@/components/shared/status-badge";
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupButton,
   InputGroupInput,
 } from "@/components/ui/input-group";
-import { Separator } from "@/components/ui/separator";
-import {
-  maxResultsPerGroup,
-  searchProcurement,
-  searchResultGroups,
-} from "@/data/search";
+import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
+import {
+  fetchPurchaseRequests,
+  purchaseRequestKeys,
+  purchaseRequestStatusLabels,
+} from "@/modules/purchase-requests";
+
+const SEARCH_DEBOUNCE_MS = 300;
+const MIN_QUERY_LENGTH = 2;
+const MAX_RESULTS = 5;
 
 /**
- * Global search. Results are grouped by record type and capped per group, with
- * a "see all" row once anything was truncated.
+ * Global search. Scoped to Purchase Requests: the query goes straight to the
+ * PR list endpoint's `search` param, which only matches `title` and
+ * `justification` today — not PR number or requester/department name. That's
+ * backend behavior, not something to fake here.
  */
 export function GlobalSearch({ className }: { className?: string }) {
   const router = useRouter();
   const [query, setQuery] = React.useState("");
+  const [debouncedQuery, setDebouncedQuery] = React.useState("");
   const [open, setOpen] = React.useState(false);
   const containerRef = React.useRef<HTMLDivElement>(null);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
-  const matches = React.useMemo(() => searchProcurement(query), [query]);
+  React.useEffect(() => {
+    const timeout = setTimeout(() => {
+      setDebouncedQuery(query);
+    }, SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(timeout);
+  }, [query]);
 
-  const groups = React.useMemo(
-    () =>
-      searchResultGroups
-        .map((type) => ({
-          type,
-          results: matches.filter((result) => result.type === type),
-        }))
-        .filter((group) => group.results.length > 0),
-    [matches],
-  );
+  const trimmedQuery = debouncedQuery.trim();
+  const searchEnabled = trimmedQuery.length >= MIN_QUERY_LENGTH;
 
-  const truncated = groups.some(
-    (group) => group.results.length > maxResultsPerGroup,
-  );
+  const { data, isFetching, isError } = useQuery({
+    queryKey: [...purchaseRequestKeys.all, "nav-search", trimmedQuery],
+    queryFn: ({ signal }) =>
+      fetchPurchaseRequests({
+        search: trimmedQuery,
+        pageSize: MAX_RESULTS,
+        signal,
+      }),
+    enabled: searchEnabled,
+  });
+
+  const results = data?.data ?? [];
 
   // Close when focus or a click lands outside the search box.
   React.useEffect(() => {
@@ -64,6 +77,7 @@ export function GlobalSearch({ className }: { className?: string }) {
 
   function clear() {
     setQuery("");
+    setDebouncedQuery("");
     setOpen(false);
     inputRef.current?.focus();
   }
@@ -72,14 +86,14 @@ export function GlobalSearch({ className }: { className?: string }) {
     if (event.key === "Escape") {
       clear();
     }
-    if (event.key === "Enter" && matches.length > 0) {
+    if (event.key === "Enter" && results.length > 0) {
       event.preventDefault();
-      router.push(matches[0].href);
+      router.push(`/purchase-requests/${results[0]._id}`);
       setOpen(false);
     }
   }
 
-  const showDropdown = open && query.trim().length > 0;
+  const showDropdown = open && query.trim().length >= MIN_QUERY_LENGTH;
 
   return (
     <div ref={containerRef} className={cn("relative", className)}>
@@ -90,8 +104,8 @@ export function GlobalSearch({ className }: { className?: string }) {
           // our own clear button.
           type="text"
           value={query}
-          placeholder="Search PRs, POs, vendors, items…"
-          aria-label="Search purchase requests, purchase orders, vendors, and items"
+          placeholder="Search purchase requests..."
+          aria-label="Search purchase requests"
           aria-expanded={showDropdown}
           aria-controls="global-search-results"
           role="combobox"
@@ -123,66 +137,50 @@ export function GlobalSearch({ className }: { className?: string }) {
           id="global-search-results"
           className="absolute top-full right-0 left-0 z-50 mt-1 overflow-hidden rounded-lg border bg-popover text-popover-foreground shadow-md"
         >
-          {groups.length === 0 ? (
+          {isFetching ? (
+            <div className="flex items-center justify-center gap-2 px-4 py-6 text-xs text-muted-foreground">
+              <Spinner className="size-3.5" />
+              Searching…
+            </div>
+          ) : isError ? (
+            <div className="px-4 py-6 text-center text-xs text-muted-foreground">
+              Couldn&apos;t load results. Try again.
+            </div>
+          ) : results.length === 0 ? (
             <div className="px-4 py-6 text-center">
               <p className="text-xs text-foreground">
                 No results for &ldquo;{query}&rdquo;
               </p>
               <p className="text-xs text-muted-foreground">
-                Try a PR number, vendor name, or item keyword
+                Try a purchase request title or justification keyword
               </p>
             </div>
           ) : (
             <>
-              {groups.map((group, index) => (
-                <div key={group.type}>
-                  {index > 0 ? <Separator /> : null}
-                  <p className="px-3 py-2 text-xs text-muted-foreground">
-                    {group.type}
-                  </p>
-                  <ul>
-                    {group.results
-                      .slice(0, maxResultsPerGroup)
-                      .map((result) => (
-                        <li key={result.id}>
-                          <Link
-                            href={result.href}
-                            onClick={() => setOpen(false)}
-                            className="flex items-center justify-between gap-2 px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
-                          >
-                            <span className="truncate">
-                              {result.label}{" "}
-                              <span className="text-muted-foreground">
-                                — {result.detail}
-                              </span>
-                            </span>
-                            {result.badge ? (
-                              <StatusBadge
-                                tone={result.badgeTone ?? "neutral"}
-                                className="shrink-0"
-                              >
-                                {result.badge}
-                              </StatusBadge>
-                            ) : null}
-                          </Link>
-                        </li>
-                      ))}
-                  </ul>
-                </div>
-              ))}
-              {truncated ? (
-                <>
-                  <Separator />
-                  <Link
-                    href="/purchase-requests"
-                    onClick={() => setOpen(false)}
-                    className="flex items-center gap-1.5 px-3 py-2 text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                  >
-                    See all results for &ldquo;{query}&rdquo;
-                    <ArrowRightIcon className="size-3.5" aria-hidden />
-                  </Link>
-                </>
-              ) : null}
+              <p className="px-3 py-2 text-xs text-muted-foreground">
+                Purchase Requests
+              </p>
+              <ul>
+                {results.map((request) => (
+                  <li key={request._id}>
+                    <Link
+                      href={`/purchase-requests/${request._id}`}
+                      onClick={() => setOpen(false)}
+                      className="flex flex-col gap-0.5 px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
+                    >
+                      <span className="truncate font-medium">{request.no}</span>
+                      <span className="truncate text-muted-foreground">
+                        {request.title}
+                      </span>
+                      <span className="truncate text-xs text-muted-foreground">
+                        {request.department_name ?? "—"} ·{" "}
+                        {request.requester_name ?? "—"} ·{" "}
+                        {purchaseRequestStatusLabels[request.status]}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
             </>
           )}
         </div>

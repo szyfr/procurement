@@ -1,7 +1,6 @@
 /**
- * Types for the screens that are still mock-driven — dashboard, reports,
- * notifications and global search — plus the one presentation vocabulary
- * every screen shares.
+ * Types for the screens that are still mock-driven — dashboard, reports and
+ * notifications — plus the one presentation vocabulary every screen shares.
  *
  * Purchase requests, canvassing, roles, users and the rest of the
  * backend-wired features do not appear here: their shapes are the FastAPI
@@ -46,21 +45,5 @@ export interface Notification {
   timestamp: string;
   group: NotificationGroup;
   read: boolean;
-  href: string;
-}
-
-export type SearchResultType =
-  | "Purchase Requests"
-  | "Purchase Orders"
-  | "Items"
-  | "Vendors";
-
-export interface SearchResult {
-  id: string;
-  type: SearchResultType;
-  label: string;
-  detail: string;
-  badge?: string;
-  badgeTone?: StatusTone;
   href: string;
 }
