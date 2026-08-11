@@ -9,11 +9,6 @@ import {
 } from "@/modules/purchase-requests/dal/purchase-request.dal";
 import { parseCreatePayload } from "@/modules/purchase-requests/validation/purchase-request.validation";
 
-/**
- * BFF for the purchase request collection. The browser reaches FastAPI only
- * through here, and never learns its address.
- */
-
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = request.nextUrl;

@@ -6,10 +6,6 @@ export const metadata: Metadata = {
   title: "Users",
 };
 
-/**
- * Thin server shell: it owns the page metadata and reads the URL state, then
- * hands off to the client view that fetches from the BFF.
- */
 export default async function UsersPage({
   searchParams,
 }: {

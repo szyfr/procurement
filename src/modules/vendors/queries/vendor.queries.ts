@@ -2,15 +2,6 @@ import { queryOptions } from "@tanstack/react-query";
 
 import { fetchVendors } from "@/modules/vendors/api/client";
 
-/**
- * Query definitions for the Vendors UI.
- *
- * These live in the module rather than the component so the cache key and the
- * fetcher stay next to the rest of the vendor surface. The fetcher is still
- * the module's API client, which talks to the BFF — the FastAPI call itself
- * stays in the DAL, server-side.
- */
-
 export const vendorKeys = {
   list: (page: number) => ["vendors", page] as const,
 };

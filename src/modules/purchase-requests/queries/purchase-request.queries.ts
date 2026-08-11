@@ -7,15 +7,6 @@ import {
   fetchPurchaseRequests,
 } from "@/modules/purchase-requests/api/client";
 
-/**
- * Query definitions for the Purchase Requests UI.
- *
- * These live in the module rather than the components so cache keys and
- * fetchers stay next to the rest of the purchase request surface. The fetchers
- * are still the module's API client, which talks to the BFF — the FastAPI
- * calls themselves stay in the DAL, server-side.
- */
-
 export interface PurchaseRequestListFilters {
   search?: string;
   priority?: string;

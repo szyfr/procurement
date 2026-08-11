@@ -17,10 +17,9 @@ import { userListQuery } from "@/modules/users";
 /**
  * Administration → Users, wired to the BFF.
  *
- * List and view only: FastAPI exposes `GET /users` and `GET /users/{id}`
- * today and nothing else, so invite, edit, role assignment, deactivate and
- * delete stay out of scope here — the row action menu keeps those items
- * visible but disabled until their endpoints exist.
+ * Role assignment is the only write FastAPI exposes for users, and it happens
+ * from the detail sheet — invite, edit, deactivate and delete stay visible in
+ * the row action menu but disabled until their endpoints exist.
  */
 export function UsersPageContent({ page }: { page: number }) {
   const pathname = usePathname();

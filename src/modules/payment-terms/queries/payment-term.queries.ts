@@ -3,8 +3,6 @@ import { queryOptions } from "@tanstack/react-query";
 import { fetchPaymentTerms } from "@/modules/payment-terms/api/client";
 
 /**
- * Query definitions for the Payment Terms UI.
- *
  * `options()` is the cache key the shared `LookupPicker` builds its own
  * `useInfiniteQuery` from; its page loader is `fetchPaymentTerms`, passed
  * directly by the consumer. `list()`/`listQuery()` back the management table.

@@ -30,7 +30,6 @@ export interface ReportDefinition {
   title: string;
   description: string;
   icon: typeof TimerIcon;
-  /** Heading of the generated result panel. */
   resultTitle: string;
   /** Right-aligned summary beside the result heading. */
   summary: string;

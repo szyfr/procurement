@@ -20,12 +20,6 @@ import type {
 } from "@/modules/purchase-requests/models/purchase-request-proof";
 import type { Vendor } from "@/modules/vendors";
 
-/**
- * Purchase request calls against the BFF. Runs in the browser and knows nothing
- * about FastAPI's address — Route Handlers pass the upstream response through
- * untouched. The transport itself lives in `lib/api/bff-client`.
- */
-
 export interface ListPurchaseRequestsParams {
   page?: number;
   pageSize?: number;

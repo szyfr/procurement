@@ -7,11 +7,7 @@ export const metadata: Metadata = {
   title: "Vendors",
 };
 
-/**
- * Thin server shell: it owns the page metadata and reads the URL state, then
- * hands off to the client view that fetches from the BFF. Read-only — vendors
- * are maintained upstream.
- */
+/** Read-only — vendors are maintained upstream. */
 export default async function VendorsPage({
   searchParams,
 }: {
