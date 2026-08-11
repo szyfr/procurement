@@ -55,8 +55,10 @@ function groupKey(item: PurchaseRequestItem) {
   return item.vendor_id ?? UNSET_VENDOR_KEY;
 }
 
-function vendorLabel(key: string) {
-  return key === UNSET_VENDOR_KEY ? "Vendor not set" : key;
+/** The detail pipeline joins the vendor; the raw id stands in if the lookup missed. */
+function vendorLabel(key: string, items: PurchaseRequestItem[]) {
+  if (key === UNSET_VENDOR_KEY) return "Vendor not set";
+  return items[0]?.vendor?.name || key;
 }
 
 const ACCEPTED_PROOF_EXTENSIONS = ACCEPTED_PROOF_FILES.split(",");
@@ -280,7 +282,9 @@ function VendorGroupForm({
   return (
     <div className="rounded-lg border">
       <div className="flex items-center gap-2 border-b bg-muted px-3 py-2">
-        <span className="text-sm font-medium">{vendorLabel(vendorKey)}</span>
+        <span className="text-sm font-medium">
+          {vendorLabel(vendorKey, items)}
+        </span>
         <Badge variant="outline">
           {items.length} item{items.length === 1 ? "" : "s"}
         </Badge>
@@ -473,7 +477,7 @@ export function ProofOfOrderDialog({
 
   const subtitleVendor =
     isSingleVendor && firstGroup
-      ? vendorLabel(firstGroup[0])
+      ? vendorLabel(firstGroup[0], firstGroup[1])
       : `${groups.length} vendor${groups.length === 1 ? "" : "s"}`;
 
   return (

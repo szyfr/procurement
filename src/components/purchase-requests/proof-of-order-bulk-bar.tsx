@@ -1,12 +1,17 @@
 import { Button } from "@/components/ui/button";
 import type { PurchaseRequestItem } from "@/modules/purchase-requests";
 
-/** Vendor context shown next to the count — the backend joins no vendor name, so this is ids only. */
+/** Vendor context shown next to the count — the detail pipeline joins the vendor, so ids only stand in when that join missed. */
 function vendorSummary(items: PurchaseRequestItem[]) {
   const vendorIds = [...new Set(items.map((item) => item.vendor_id))];
 
   if (vendorIds.length === 1) {
-    return vendorIds[0] ?? "Vendor not set";
+    const vendorId = vendorIds[0];
+    if (!vendorId) return "Vendor not set";
+    return (
+      items.find((item) => item.vendor_id === vendorId)?.vendor?.name ??
+      vendorId
+    );
   }
   return `${vendorIds.length} vendors`;
 }

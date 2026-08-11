@@ -16,6 +16,7 @@ export interface Material {
   is_needs_canvass: boolean;
   /** Declared by the backend schema but absent from every synced material. */
   last_cost?: number | null;
+  consumption_qty?: number | null;
   created_at: string;
   updated_at: string;
 }

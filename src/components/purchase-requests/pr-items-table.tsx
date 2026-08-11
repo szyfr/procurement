@@ -131,8 +131,9 @@ export function PurchaseRequestItemsTable({
                 {item.quantity}
               </TableCell>
               <TableCell>
-                {/* The backend joins no vendor, so the id is the only label. */}
-                {item.vendor_id || (
+                {/* The detail pipeline joins the vendor; the raw id stands in
+                    if the lookup missed. */}
+                {item.vendor?.name || item.vendor_id || (
                   <span className="text-muted-foreground italic">
                     {item.is_needs_canvass
                       ? "Empty — in canvassing"
