@@ -7,8 +7,8 @@
  * The detail pipeline (`purchase_request.py:get_full_details`) `$lookup`s
  * every proof touching one of the request's items onto `PurchaseRequest.proofs`
  * — but only this shape, not the S3-backed document list. That join only
- * happens on `GET /purchase-request-proofs/{id}`, which this app doesn't call,
- * so a proof's filename is known only for the session that just uploaded it.
+ * happens on `GET /purchase-request-proofs/{id}`, which the detail page reads
+ * lazily when a proof is opened.
  */
 export interface PurchaseRequestProof {
   _id: string;
@@ -18,4 +18,14 @@ export interface PurchaseRequestProof {
   purchase_request_item_ids: string[];
   created_at: string;
   updated_at: string;
+}
+
+export interface PurchaseRequestProofDocument {
+  _id: string;
+  filename: string;
+  url: string;
+}
+
+export interface PurchaseRequestProofDetail extends PurchaseRequestProof {
+  documents: PurchaseRequestProofDocument[];
 }

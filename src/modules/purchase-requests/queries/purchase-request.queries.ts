@@ -3,6 +3,7 @@ import { queryOptions } from "@tanstack/react-query";
 import {
   fetchDepartmentOptions,
   fetchPurchaseRequest,
+  fetchPurchaseRequestProof,
   fetchPurchaseRequests,
 } from "@/modules/purchase-requests/api/client";
 
@@ -30,6 +31,8 @@ export const purchaseRequestKeys = {
   list: (page: number, filters: PurchaseRequestListFilters = {}) =>
     [...purchaseRequestKeys.all, "list", page, filters] as const,
   detail: (id: string) => [...purchaseRequestKeys.all, "detail", id] as const,
+  proof: (proofId: string) =>
+    [...purchaseRequestKeys.all, "proof", proofId] as const,
   /**
    * Reference data. Kept under this module's prefix because it is served by
    * the purchase request lookup routes — the standalone Vendors module owns
@@ -68,6 +71,14 @@ export function purchaseRequestDetailQuery(id: string) {
   return queryOptions({
     queryKey: purchaseRequestKeys.detail(id),
     queryFn: ({ signal }) => fetchPurchaseRequest(id, signal),
+  });
+}
+
+export function purchaseRequestProofQuery(proofId: string) {
+  return queryOptions({
+    queryKey: purchaseRequestKeys.proof(proofId),
+    queryFn: ({ signal }) => fetchPurchaseRequestProof(proofId, signal),
+    staleTime: Number.POSITIVE_INFINITY,
   });
 }
 

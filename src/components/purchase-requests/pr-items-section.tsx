@@ -33,8 +33,10 @@ import {
  */
 export function PurchaseRequestItemsSection({
   request,
+  onHighlightProofs,
 }: {
   request: PurchaseRequestDetail;
+  onHighlightProofs: (itemId: string) => void;
 }) {
   const queryClient = useQueryClient();
   const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
@@ -183,6 +185,7 @@ export function PurchaseRequestItemsSection({
               selectedIds={selectedIds}
               onToggleItem={toggleItem}
               onToggleAll={toggleAll}
+              onHighlightProofs={onHighlightProofs}
             />
           </>
         )}

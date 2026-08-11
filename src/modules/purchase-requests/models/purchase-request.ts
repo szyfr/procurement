@@ -2,6 +2,7 @@ import type { Priority } from "@/lib/types";
 import type { Department } from "@/modules/departments";
 import type { Material } from "@/modules/purchase-requests/models/material";
 import type { PurchaseRequestProof } from "@/modules/purchase-requests/models/purchase-request-proof";
+import type { Vendor } from "@/modules/vendors";
 
 /**
  * The `/purchase-requests` responses, verbatim — snake_case, `_id` keys, and
@@ -59,6 +60,10 @@ export interface PurchaseRequestItem {
   purchase_request_id: string;
   material_id: string;
   vendor_id: string | null;
+  /** Set by `PATCH /canvassing/award/{quotation_id}` once a vendor is awarded. */
+  quotation_id?: string | null;
+  /** Out of scope for now — always null, no partial-delivery flow exists yet. */
+  partial_delivered: unknown | null;
   created_at: string;
   updated_at: string;
   /**
@@ -66,6 +71,8 @@ export interface PurchaseRequestItem {
    * material, so callers fall back to `material_id` for a row's name.
    */
   material?: Material | null;
+  /** Joined by the detail pipeline only, alongside `material`. */
+  vendor?: Vendor | null;
 }
 
 export interface PurchaseRequest {

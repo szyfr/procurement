@@ -14,7 +14,10 @@ import type {
   PurchaseRequestDetail,
   SettablePurchaseRequestStatus,
 } from "@/modules/purchase-requests/models/purchase-request";
-import type { PurchaseRequestProof } from "@/modules/purchase-requests/models/purchase-request-proof";
+import type {
+  PurchaseRequestProof,
+  PurchaseRequestProofDetail,
+} from "@/modules/purchase-requests/models/purchase-request-proof";
 import type { Vendor } from "@/modules/vendors";
 
 /**
@@ -104,6 +107,13 @@ export function createPurchaseRequestProof(
     method: "POST",
     body: form,
   });
+}
+
+export function fetchPurchaseRequestProof(id: string, signal?: AbortSignal) {
+  return bffRequest<PurchaseRequestProofDetail>(
+    purchaseRequestEndpoints.proofDetail(id),
+    { signal },
+  );
 }
 
 export interface LookupParams {

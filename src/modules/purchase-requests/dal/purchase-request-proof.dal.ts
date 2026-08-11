@@ -1,9 +1,25 @@
 import { serverFetch } from "@/lib/api/fetcher";
+import { assertObjectId } from "@/lib/api/object-id";
 import {
   buildPurchaseRequestProofForm,
   type CreatePurchaseRequestProofDto,
 } from "@/modules/purchase-requests/dto";
-import type { PurchaseRequestProof } from "@/modules/purchase-requests/models/purchase-request-proof";
+import type {
+  PurchaseRequestProof,
+  PurchaseRequestProofDetail,
+} from "@/modules/purchase-requests/models/purchase-request-proof";
+
+const NOT_FOUND = "We couldn't find that proof of order.";
+
+export function getPurchaseRequestProof(
+  id: string,
+): Promise<PurchaseRequestProofDetail> {
+  assertObjectId(id, NOT_FOUND);
+
+  return serverFetch<PurchaseRequestProofDetail>(
+    `/purchase-request-proofs/${id}`,
+  );
+}
 
 /** Server-side only, called from the Route Handler. */
 export function createPurchaseRequestProof(
