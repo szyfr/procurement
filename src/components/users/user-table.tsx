@@ -41,8 +41,8 @@ import type { User } from "@/modules/users";
  * The users list. The whole row opens the read-only sheet; the actions menu
  * stops the click from reaching it so a menu item never opens both.
  *
- * Edit, deactivate and delete stay in the menu but disabled — FastAPI has no
- * write endpoints for users yet, so only "View details" does anything.
+ * Edit, deactivate and delete stay in the menu but disabled — role assignment
+ * is the only user write FastAPI exposes, and it lives in the detail sheet.
  * Department and status have no backend source at all, so those columns
  * render a literal em-dash.
  */

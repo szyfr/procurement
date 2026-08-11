@@ -6,8 +6,6 @@ import { DEFAULT_PAGE_SIZE } from "@/modules/roles/constants";
 import { createRole, listRoles } from "@/modules/roles/dal/role.dal";
 import { parseCreateRolePayload } from "@/modules/roles/validation/role.validation";
 
-/** BFF for the role collection. */
-
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = request.nextUrl;

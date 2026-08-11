@@ -6,15 +6,6 @@ import {
   fetchQuotation,
 } from "@/modules/canvassing/api/client";
 
-/**
- * Query definitions for the Canvassing UI.
- *
- * These live in the module rather than the component so the cache key and the
- * fetcher stay next to the rest of the canvassing surface. The fetcher is still
- * the module's API client, which talks to the BFF — the FastAPI call itself
- * stays in the DAL, server-side.
- */
-
 export const canvassingKeys = {
   all: ["canvassing"] as const,
   list: (page: number) => ["canvassing", page] as const,

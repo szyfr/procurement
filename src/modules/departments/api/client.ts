@@ -7,13 +7,6 @@ import type {
 } from "@/modules/departments/dto";
 import type { Department } from "@/modules/departments/models/department";
 
-/**
- * Department calls against the BFF. Runs in the browser and knows nothing about
- * FastAPI's address — but it does speak FastAPI's shapes, because Route
- * Handlers pass the upstream response through untouched. The transport itself
- * lives in `lib/api/bff-client`.
- */
-
 export interface ListDepartmentsParams {
   page?: number;
   pageSize?: number;

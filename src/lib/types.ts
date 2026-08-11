@@ -31,12 +31,6 @@ export interface ActivityEntry {
   timestamp: string;
 }
 
-/**
- * Canvassing's wireframe types are gone — batches, quote minimums and
- * exemption flags described a model the backend never grew; those screens now
- * read `modules/canvassing` instead.
- */
-
 export type NotificationGroup = "today" | "earlier";
 
 export interface Notification {

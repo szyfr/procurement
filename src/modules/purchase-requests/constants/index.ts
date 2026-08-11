@@ -6,7 +6,6 @@ import type {
 
 export { DEFAULT_PAGE_SIZE } from "@/lib/api/pagination";
 
-/** Shared with Canvassing's pickers, so it lives in `@/lib/lookup` now. */
 export { LOOKUP_PAGE_SIZE } from "@/lib/lookup";
 
 /** Ably channel FastAPI's StatusService publishes PR status transitions on. */

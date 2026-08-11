@@ -17,5 +17,4 @@ export interface SelectedOption {
   label: string;
 }
 
-/** Page size for the reference pickers. */
 export const LOOKUP_PAGE_SIZE = 50;

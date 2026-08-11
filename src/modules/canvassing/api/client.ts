@@ -13,12 +13,6 @@ import type {
   QuotationDetail,
 } from "@/modules/canvassing/models/quotation";
 
-/**
- * Canvassing calls against the BFF. Runs in the browser and knows nothing about
- * FastAPI's address — Route Handlers pass the upstream response through
- * untouched. The transport itself lives in `lib/api/bff-client`.
- */
-
 export interface ListCanvassingParams {
   page?: number;
   signal?: AbortSignal;

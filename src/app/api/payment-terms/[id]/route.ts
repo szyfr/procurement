@@ -8,8 +8,6 @@ import {
 } from "@/modules/payment-terms/dal/payment-term.dal";
 import { parsePaymentTermPayload } from "@/modules/payment-terms/validation/payment-term.validation";
 
-/** BFF for a single payment term. */
-
 export async function GET(
   _request: NextRequest,
   context: RouteContext<"/api/payment-terms/[id]">,

@@ -8,10 +8,6 @@ import type {
 import type { PaymentTerm } from "@/modules/payment-terms/models/payment-term";
 
 /**
- * Payment term calls against the BFF. Runs in the browser and knows nothing
- * about FastAPI's address — Route Handlers pass the upstream response through
- * untouched. The transport itself lives in `lib/api/bff-client`.
- *
  * One list serves two screens: the management table and the quotation form's
  * picker, which pages through the same endpoint with its own `pageSize` and
  * `search` and reads the records as they arrive.

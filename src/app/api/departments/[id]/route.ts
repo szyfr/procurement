@@ -8,8 +8,6 @@ import {
 } from "@/modules/departments/dal/department.dal";
 import { parseDepartmentPayload } from "@/modules/departments/validation/department.validation";
 
-/** BFF for a single department. */
-
 export async function GET(
   _request: NextRequest,
   context: RouteContext<"/api/departments/[id]">,

@@ -6,11 +6,8 @@ import { DEFAULT_PAGE_SIZE } from "@/modules/vendors/constants";
 import { listVendors } from "@/modules/vendors/dal/vendor.dal";
 
 /**
- * BFF for the vendor collection. The browser reaches FastAPI only through
- * here, and never learns its address.
- *
- * Read-only for now — vendors are synced upstream and FastAPI exposes no
- * write endpoints for them yet.
+ * Read-only — vendors are synced upstream and FastAPI exposes no write
+ * endpoints for them yet.
  */
 
 export async function GET(request: NextRequest) {

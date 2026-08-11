@@ -16,5 +16,4 @@ export function getApiBaseUrl() {
   return baseUrl.replace(/\/+$/, "");
 }
 
-/** Upstream requests are abandoned after this long. */
 export const REQUEST_TIMEOUT_MS = 15_000;

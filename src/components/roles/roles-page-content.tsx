@@ -28,11 +28,9 @@ import type { Role } from "@/modules/roles";
 import { roleListQuery } from "@/modules/roles";
 
 /**
- * Administration → Roles & Permissions, wired to the BFF.
- *
- * Create, edit and delete stay UI-only: FastAPI has no write endpoints for
- * roles yet, so those dialogs still open but only confirm with a toast (edit)
- * or disable the destructive action outright (delete).
+ * Administration → Roles & Permissions. Create and edit persist through the
+ * BFF; delete stays a dead end, since FastAPI has no delete endpoint for roles
+ * yet and the dialog disables the destructive action rather than hiding it.
  */
 
 const SEARCH_DEBOUNCE_MS = 300;

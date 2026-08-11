@@ -9,11 +9,6 @@ import {
 } from "@/modules/departments/dal/department.dal";
 import { parseDepartmentPayload } from "@/modules/departments/validation/department.validation";
 
-/**
- * BFF for the department collection. The browser reaches FastAPI only
- * through here, and never learns its address.
- */
-
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = request.nextUrl;

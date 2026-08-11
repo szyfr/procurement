@@ -21,7 +21,6 @@ export function getPurchaseRequestProof(
   );
 }
 
-/** Server-side only, called from the Route Handler. */
 export function createPurchaseRequestProof(
   payload: CreatePurchaseRequestProofDto,
   attachments: File[] = [],
