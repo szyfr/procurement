@@ -4,6 +4,12 @@ import type { QuotationItemPricing } from "@/modules/canvassing/models/quotation
  * What the UI submits to record a quote — `POST /quotations`, in the field
  * names the endpoint declares.
  *
+ * `PUT /quotations/{id}` takes the same shape: it declares the identical
+ * `get_quotation_create` dependency upstream, so there is no separate update
+ * DTO. That endpoint is a full replace rather than a patch — it writes every
+ * field it is handed, `item_pricing` included — so a caller editing a quote
+ * has to send the whole thing back, not just what changed.
+ *
  * The write is `multipart/form-data` because it accepts attachments, and every
  * scalar is a form part rather than a JSON key. Attachments travel alongside
  * this rather than inside it: the payload has to survive being read back out of
@@ -26,9 +32,10 @@ export interface CreateQuotationDto {
 
 /**
  * Serializes a quote into the `multipart/form-data` body `POST /quotations`
- * expects — every scalar as its own part, `item_pricing` as a single JSON
- * string part, attachments appended last. Shared by the browser client and
- * the server DAL so the two can't drift on field names or ordering.
+ * and `PUT /quotations/{id}` expect — every scalar as its own part,
+ * `item_pricing` as a single JSON string part, attachments appended last.
+ * Shared by the browser client and the server DAL so the two can't drift on
+ * field names or ordering.
  */
 export function buildQuotationForm(
   payload: CreateQuotationDto,

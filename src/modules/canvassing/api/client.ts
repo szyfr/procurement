@@ -66,6 +66,32 @@ export function createQuotation({
 }
 
 /**
+ * Rewrites an existing quote, in the same `multipart/form-data` contract the
+ * create uses. The upstream replaces rather than patches, so `payload` has to
+ * carry every field the quote keeps — `item_pricing` included, down to the
+ * rows the user didn't touch.
+ *
+ * `attachments` are additions only; the upstream can't remove a document
+ * without one being added in the same call, so nothing here offers to.
+ */
+export function updateQuotation({
+  quotationId,
+  payload,
+  attachments = [],
+}: {
+  quotationId: string;
+  payload: CreateQuotationDto;
+  attachments?: File[];
+}) {
+  const form = buildQuotationForm(payload, attachments);
+
+  return bffRequest<Quotation>(canvassingEndpoints.quotation(quotationId), {
+    method: "PUT",
+    body: form,
+  });
+}
+
+/**
  * Awards a quotation the items it won. `issues` names any item that already
  * had an award on record for that (purchase request, material) pair — the
  * write for it was refused, not applied, so callers should treat it as a

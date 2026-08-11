@@ -5,7 +5,7 @@ import {
   createQuotation,
   listItemQuotations,
 } from "@/modules/canvassing/dal/quotation.dal";
-import { parseCreateQuotationForm } from "@/modules/canvassing/validation/quotation.validation";
+import { parseQuotationForm } from "@/modules/canvassing/validation/quotation.validation";
 
 /**
  * BFF for the quotes covering a set of purchase request items, and for
@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { payload, attachments } = parseCreateQuotationForm(
+    const { payload, attachments } = parseQuotationForm(
       await request.formData(),
     );
 

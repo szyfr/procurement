@@ -7,30 +7,27 @@ import { useRouter } from "next/navigation";
 import * as React from "react";
 
 import {
-  MAX_ATTACHMENT_BYTES,
+  acceptAttachments,
   QuotationAttachmentsField,
 } from "@/components/canvassing/quotation-attachments-field";
+import {
+  clearPatchedErrors,
+  emptyQuotationDraft,
+  type QuotationDraft,
+  type QuotationFieldErrors,
+  QuotationFormFields,
+  quotationTotal,
+  validateQuotationDraft,
+} from "@/components/canvassing/quotation-form-fields";
 import { QuotationItemPricingTable } from "@/components/canvassing/quotation-item-pricing-table";
-import { LookupPicker } from "@/components/shared/lookup-picker";
 import { PageHeader } from "@/components/shared/page-header";
 import { EmptyState, ErrorAlert } from "@/components/shared/query-states";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Field,
-  FieldDescription,
-  FieldError,
-  FieldGroup,
-  FieldLabel,
-} from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/toast";
-import type { SelectedOption } from "@/lib/lookup";
 import { canvassingKeys, createQuotation } from "@/modules/canvassing";
-import { fetchPaymentTerms, paymentTermKeys } from "@/modules/payment-terms";
 import {
-  fetchVendorOptions,
   purchaseRequestDetailQuery,
   purchaseRequestKeys,
 } from "@/modules/purchase-requests";
@@ -45,20 +42,6 @@ import {
  * Saving records the quote and nothing more; awarding a vendor is a separate
  * step on the comparison screen.
  */
-
-/** Both pickers page through the BFF; only their fetcher differs. */
-const loadVendorPage = fetchVendorOptions;
-const loadPaymentTermPage = fetchPaymentTerms;
-
-interface FieldErrors {
-  vendor?: string;
-  referenceNo?: string;
-  date?: string;
-  deliveryDate?: string;
-  paymentTerm?: string;
-  pricing?: string;
-  attachments?: string;
-}
 
 export function NewQuotationView({
   purchaseRequestId,
@@ -78,18 +61,11 @@ export function NewQuotationView({
     error,
   } = useQuery(purchaseRequestDetailQuery(purchaseRequestId));
 
-  const [vendor, setVendor] = React.useState<SelectedOption | null>(null);
-  const [paymentTerm, setPaymentTerm] = React.useState<SelectedOption | null>(
-    null,
-  );
-  const [referenceNo, setReferenceNo] = React.useState("");
-  const [date, setDate] = React.useState("");
-  const [deliveryDate, setDeliveryDate] = React.useState("");
-  const [unitPrices, setUnitPrices] = React.useState<Record<string, string>>(
+  const [draft, setDraft] = React.useState<QuotationDraft>(emptyQuotationDraft);
+  const [attachments, setAttachments] = React.useState<File[]>([]);
+  const [fieldErrors, setFieldErrors] = React.useState<QuotationFieldErrors>(
     {},
   );
-  const [attachments, setAttachments] = React.useState<File[]>([]);
-  const [fieldErrors, setFieldErrors] = React.useState<FieldErrors>({});
 
   const canvassingHref = `/purchase-requests/${purchaseRequestId}/canvassing`;
 
@@ -117,13 +93,9 @@ export function NewQuotationView({
     },
   });
 
-  function clearFieldError(field: keyof FieldErrors) {
-    setFieldErrors((current) => {
-      if (!current[field]) return current;
-      const next = { ...current };
-      delete next[field];
-      return next;
-    });
+  function patchDraft(patch: Partial<QuotationDraft>) {
+    setDraft((current) => ({ ...current, ...patch }));
+    setFieldErrors((current) => clearPatchedErrors(current, patch));
   }
 
   if (isError) {
@@ -181,74 +153,31 @@ export function NewQuotationView({
     );
   }
 
-  const total = items.reduce(
-    (sum, item) => sum + item.quantity * (Number(unitPrices[item._id]) || 0),
-    0,
-  );
+  function submit() {
+    const result = validateQuotationDraft(
+      draft,
+      items.map((item) => item._id),
+    );
 
-  function validate() {
-    const nextErrors: FieldErrors = {};
-
-    if (!vendor) nextErrors.vendor = "Pick the vendor this quote came from.";
-    if (!referenceNo.trim())
-      nextErrors.referenceNo = "Quote reference number is required.";
-    if (!date) nextErrors.date = "Quote date is required.";
-    if (!deliveryDate) nextErrors.deliveryDate = "Delivery date is required.";
-    if (!paymentTerm) nextErrors.paymentTerm = "Payment terms are required.";
-
-    const priced = items.map((item) => ({
-      item_id: item._id,
-      unit_price: Number(unitPrices[item._id]),
-    }));
-
-    if (priced.some((price) => !Number.isFinite(price.unit_price))) {
-      nextErrors.pricing = "Every item needs a unit price.";
-    } else if (priced.some((price) => price.unit_price < 0)) {
-      nextErrors.pricing = "Unit prices can't be negative.";
+    if ("errors" in result) {
+      // An oversized-file warning is about the picker, not the draft, so it
+      // survives a failed check of the fields.
+      setFieldErrors({
+        ...result.errors,
+        attachments: fieldErrors.attachments,
+      });
+      return;
     }
 
-    setFieldErrors(nextErrors);
-
-    if (Object.keys(nextErrors).length > 0) return null;
-
-    return {
-      payload: {
-        reference_no: referenceNo.trim(),
-        date,
-        delivery_date: deliveryDate,
-        // The picker's id is the vendor's Mongo `_id`, which is what the
-        // upstream `vendor_id` wants — not the ERP field of the same name.
-        vendor_id: vendor?.id ?? "",
-        payment_term_id: paymentTerm?.id ?? "",
-        item_pricing: priced,
-      },
-      attachments,
-    };
-  }
-
-  function submit() {
-    const input = validate();
-    if (input) save(input);
+    setFieldErrors({});
+    save({ payload: result.payload, attachments });
   }
 
   function addAttachments(files: FileList | null) {
-    if (!files || files.length === 0) return;
+    const { accepted, error: rejected } = acceptAttachments(files);
 
-    const picked = Array.from(files);
-    const oversized = picked.filter((file) => file.size > MAX_ATTACHMENT_BYTES);
-
-    setAttachments((current) => [
-      ...current,
-      ...picked.filter((file) => file.size <= MAX_ATTACHMENT_BYTES),
-    ]);
-
-    setFieldErrors((current) => ({
-      ...current,
-      attachments:
-        oversized.length > 0
-          ? `${oversized.map((file) => file.name).join(", ")} — each file must be under 10 MB.`
-          : undefined,
-    }));
+    setAttachments((current) => [...current, ...accepted]);
+    setFieldErrors((current) => ({ ...current, attachments: rejected }));
   }
 
   return (
@@ -284,141 +213,23 @@ export function NewQuotationView({
           <CardTitle>Vendor &amp; Quote Details</CardTitle>
         </CardHeader>
         <CardContent>
-          <FieldGroup className="sm:grid sm:grid-cols-2 sm:gap-4">
-            <Field
-              className="sm:col-span-2"
-              data-invalid={fieldErrors.vendor ? true : undefined}
-            >
-              <FieldLabel>Vendor</FieldLabel>
-              <LookupPicker
-                value={vendor}
-                queryKey={purchaseRequestKeys.vendorOptions()}
-                loadPage={loadVendorPage}
-                toOption={(record) => ({
-                  id: record._id,
-                  // Some synced vendors have a blank name; the number is the
-                  // only other thing that identifies them.
-                  label: record.name?.trim() || record.no,
-                  hint: record.no,
-                })}
-                placeholder="Select vendor"
-                searchPlaceholder="Search vendors…"
-                ariaLabel="Vendor"
-                aria-invalid={fieldErrors.vendor ? true : undefined}
-                onSelect={(record) => {
-                  setVendor({
-                    id: record._id,
-                    label: record.name?.trim() || record.no,
-                  });
-                  clearFieldError("vendor");
-                }}
-              />
-              {fieldErrors.vendor ? (
-                <FieldError>{fieldErrors.vendor}</FieldError>
-              ) : null}
-            </Field>
-
-            <Field data-invalid={fieldErrors.referenceNo ? true : undefined}>
-              <FieldLabel htmlFor="quote-ref">Quote Reference No.</FieldLabel>
-              <Input
-                id="quote-ref"
-                name="referenceNo"
-                value={referenceNo}
-                placeholder="Vendor's quotation number"
-                aria-invalid={fieldErrors.referenceNo ? true : undefined}
-                onChange={(event) => {
-                  setReferenceNo(event.target.value);
-                  clearFieldError("referenceNo");
-                }}
-              />
-              {fieldErrors.referenceNo ? (
-                <FieldError>{fieldErrors.referenceNo}</FieldError>
-              ) : null}
-            </Field>
-
-            <Field data-invalid={fieldErrors.paymentTerm ? true : undefined}>
-              <FieldLabel>Payment Terms</FieldLabel>
-              <LookupPicker
-                value={paymentTerm}
-                queryKey={paymentTermKeys.options()}
-                loadPage={loadPaymentTermPage}
-                toOption={(record) => ({
-                  id: record._id,
-                  // Seeded terms occasionally have a blank title; the
-                  // description is the only other thing that names them.
-                  label:
-                    record.title?.trim() || record.description || record._id,
-                  hint: record.description || undefined,
-                })}
-                placeholder="Select terms"
-                searchPlaceholder="Search payment terms…"
-                ariaLabel="Payment terms"
-                aria-invalid={fieldErrors.paymentTerm ? true : undefined}
-                onSelect={(record) => {
-                  setPaymentTerm({
-                    id: record._id,
-                    label:
-                      record.title?.trim() || record.description || record._id,
-                  });
-                  clearFieldError("paymentTerm");
-                }}
-              />
-              {fieldErrors.paymentTerm ? (
-                <FieldError>{fieldErrors.paymentTerm}</FieldError>
-              ) : null}
-            </Field>
-
-            <Field data-invalid={fieldErrors.date ? true : undefined}>
-              <FieldLabel htmlFor="quote-date">Quote Date</FieldLabel>
-              <Input
-                id="quote-date"
-                name="date"
-                type="date"
-                value={date}
-                aria-invalid={fieldErrors.date ? true : undefined}
-                onChange={(event) => {
-                  setDate(event.target.value);
-                  clearFieldError("date");
-                }}
-              />
-              {fieldErrors.date ? (
-                <FieldError>{fieldErrors.date}</FieldError>
-              ) : null}
-            </Field>
-
-            <Field data-invalid={fieldErrors.deliveryDate ? true : undefined}>
-              <FieldLabel htmlFor="delivery-date">Delivery Date</FieldLabel>
-              <Input
-                id="delivery-date"
-                name="deliveryDate"
-                type="date"
-                value={deliveryDate}
-                aria-invalid={fieldErrors.deliveryDate ? true : undefined}
-                onChange={(event) => {
-                  setDeliveryDate(event.target.value);
-                  clearFieldError("deliveryDate");
-                }}
-              />
-              <FieldDescription>
-                A date, not a lead time — the backend stores no estimate.
-              </FieldDescription>
-              {fieldErrors.deliveryDate ? (
-                <FieldError>{fieldErrors.deliveryDate}</FieldError>
-              ) : null}
-            </Field>
-          </FieldGroup>
+          <QuotationFormFields
+            draft={draft}
+            errors={fieldErrors}
+            onChange={patchDraft}
+            disabled={saving}
+          />
         </CardContent>
       </Card>
 
       <QuotationItemPricingTable
         items={items}
-        unitPrices={unitPrices}
+        unitPrices={draft.unitPrices}
         pricingError={fieldErrors.pricing}
-        total={total}
-        onPriceChange={(itemId, value) => {
-          setUnitPrices((current) => ({ ...current, [itemId]: value }));
-          clearFieldError("pricing");
-        }}
+        total={quotationTotal(items, draft.unitPrices)}
+        onPriceChange={(itemId, value) =>
+          patchDraft({ unitPrices: { ...draft.unitPrices, [itemId]: value } })
+        }
       />
 
       <QuotationAttachmentsField

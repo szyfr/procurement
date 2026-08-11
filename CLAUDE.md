@@ -120,4 +120,4 @@ Base UI composition differs from Radix: render a Button as a link with `render={
 
 ## Comment style
 
-Existing code carries file-header docblocks explaining *why* a layer exists and inline comments that record backend quirks and deliberate omissions (e.g. "the create response carries no material join", "`last_cost` is absent from every synced material"). Match that: comments explain constraints and decisions, not mechanics.
+Do not add comments unless they are necessary to explain non-obvious behavior, backend constraints, security considerations, or intentional deviations from the expected implementation.

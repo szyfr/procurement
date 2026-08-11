@@ -1,12 +1,23 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { InboxIcon, PlusIcon } from "lucide-react";
+import {
+  EyeIcon,
+  InboxIcon,
+  MoreVerticalIcon,
+  PencilIcon,
+  PlusIcon,
+} from "lucide-react";
 import Link from "next/link";
 import * as React from "react";
 
 import { AwardVendorDialog } from "@/components/canvassing/award-vendor-dialog";
-import { QuotationDetailDialog } from "@/components/canvassing/quotation-detail-dialog";
+import { EditQuotationDialog } from "@/components/canvassing/edit-quotation-dialog";
+import { QuotationDetailSheet } from "@/components/canvassing/quotation-detail-sheet";
+import {
+  dropdownContentClass,
+  dropdownItemClass,
+} from "@/components/shared/menu-classes";
 import { ErrorAlert } from "@/components/shared/query-states";
 import { StatusBadge } from "@/components/shared/status-badge";
 import {
@@ -16,6 +27,12 @@ import {
 } from "@/components/shared/table-classes";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -47,6 +64,23 @@ function unitPriceFor(quotation: Quotation, itemId: string) {
       ?.unit_price ?? null
   );
 }
+
+/** The detail pipeline joins the material; the raw id stands in if it missed. */
+function itemName(item: PurchaseRequestItem) {
+  return item.material?.description || item.material_id;
+}
+
+/**
+ * Whichever overlay is on top of the comparison; only one is ever open. It
+ * carries the item it was opened from, because a quote may price several and
+ * only that one has a name to hand.
+ */
+type Overlay = {
+  kind: "view" | "edit";
+  quotation: Quotation;
+  itemId: string;
+  itemName: string;
+} | null;
 
 /**
  * The quote comparison: one section per item out for canvassing, listing the
@@ -85,6 +119,9 @@ export function CanvassingQuotationsView({ id }: { id: string }) {
 
   const [selected, setSelected] = React.useState<Record<string, string>>({});
 
+  // One sheet and one dialog for the whole screen, however many items it lists.
+  const [overlay, setOverlay] = React.useState<Overlay>(null);
+
   // The request itself failing is already reported by the items card above.
   if (requestFailed) return null;
   if (request && canvassingItems.length === 0) return null;
@@ -104,6 +141,10 @@ export function CanvassingQuotationsView({ id }: { id: string }) {
 
   const byItemId = new Map(quoted.map((entry) => [entry._id, entry]));
 
+  function closeOverlay(next: boolean) {
+    if (!next) setOverlay(null);
+  }
+
   return (
     <>
       {canvassingItems.map((item) => (
@@ -118,8 +159,30 @@ export function CanvassingQuotationsView({ id }: { id: string }) {
             setSelected((current) => ({ ...current, [item._id]: quotationId }))
           }
           awardedQuotationId={byItemId.get(item._id)?.quotation_id ?? null}
+          onOpen={setOverlay}
         />
       ))}
+
+      <QuotationDetailSheet
+        quotation={overlay?.kind === "view" ? overlay.quotation : null}
+        open={overlay?.kind === "view"}
+        onOpenChange={closeOverlay}
+        onEdit={(quotation) =>
+          setOverlay((current) =>
+            current ? { ...current, kind: "edit", quotation } : null,
+          )
+        }
+        itemId={overlay?.itemId ?? ""}
+        itemName={overlay?.itemName ?? ""}
+      />
+
+      <EditQuotationDialog
+        quotation={overlay?.kind === "edit" ? overlay.quotation : null}
+        open={overlay?.kind === "edit"}
+        onOpenChange={closeOverlay}
+        purchaseRequestId={id}
+        items={request.items}
+      />
     </>
   );
 }
@@ -131,6 +194,7 @@ function QuoteComparison({
   selected,
   onSelect,
   awardedQuotationId,
+  onOpen,
 }: {
   purchaseRequestId: string;
   item: PurchaseRequestItem;
@@ -138,12 +202,14 @@ function QuoteComparison({
   selected: string | null;
   onSelect: (quotationId: string) => void;
   awardedQuotationId: string | null;
+  onOpen: (overlay: Overlay) => void;
 }) {
-  // The detail pipeline joins the material; the raw id stands in if it missed.
-  const name = item.material?.description || item.material_id;
+  const name = itemName(item);
   const unit = item.material?.uom || null;
   const quantity = `${item.quantity}${unit ? ` ${unit}` : ""}`;
 
+  // An awarded item shows a locked summary instead of the table, so neither
+  // the quote rows nor their View/Edit menu are reachable once a vendor is in.
   if (awardedQuotationId) {
     const winner =
       quotations.find((quotation) => quotation._id === awardedQuotationId) ??
@@ -353,11 +419,55 @@ function QuoteComparison({
                           {formatShortDate(quotation.date) ?? "—"}
                         </TableCell>
                         <TableCell>
-                          <QuotationDetailDialog
-                            quotationId={quotation._id}
-                            itemId={item._id}
-                            itemName={name}
-                          />
+                          <DropdownMenu>
+                            <DropdownMenuTrigger
+                              render={
+                                <Button
+                                  variant="ghost"
+                                  size="icon-sm"
+                                  aria-label={`Actions for ${name} quote`}
+                                />
+                              }
+                            >
+                              <MoreVerticalIcon />
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent
+                              align="end"
+                              className={cn(
+                                dropdownContentClass,
+                                "min-w-[196px]",
+                              )}
+                            >
+                              <DropdownMenuItem
+                                className={dropdownItemClass}
+                                onClick={() =>
+                                  onOpen({
+                                    kind: "view",
+                                    quotation,
+                                    itemId: item._id,
+                                    itemName: name,
+                                  })
+                                }
+                              >
+                                <EyeIcon />
+                                View
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                className={dropdownItemClass}
+                                onClick={() =>
+                                  onOpen({
+                                    kind: "edit",
+                                    quotation,
+                                    itemId: item._id,
+                                    itemName: name,
+                                  })
+                                }
+                              >
+                                <PencilIcon />
+                                Edit
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </TableCell>
                       </TableRow>
                     );

@@ -4,13 +4,17 @@ import type { CreateQuotationDto } from "@/modules/canvassing/dto";
 import type { QuotationItemPricing } from "@/modules/canvassing/models/quotation";
 
 /**
- * Request-body parsing for the quotation Route Handler.
+ * Request-body parsing for the quotation Route Handlers.
  *
  * This layer earns its keep more than most. `POST /quotations` builds its form
  * fields inside a FastAPI dependency, which runs *before* the handler's own
  * `try` — so a malformed `item_pricing` string or a single bad ObjectId
  * escapes as an opaque 500 rather than a 422 naming the field. Everything the
  * upstream would choke on is therefore checked here first.
+ *
+ * One parser serves both writes: `PUT /quotations/{id}` declares the same
+ * `get_quotation_create` dependency as the POST, so the update takes exactly
+ * the fields the create does.
  *
  * `validation_failed` is also the one code whose message `toPublicMessage`
  * passes through, so these strings are what the user actually reads.
@@ -85,7 +89,7 @@ function parseItemPricing(raw: string): QuotationItemPricing[] {
  * The browser posts `multipart/form-data` because the upstream does, so the
  * scalars arrive as strings and `item_pricing` as a JSON blob in one field.
  */
-export function parseCreateQuotationForm(form: FormData): {
+export function parseQuotationForm(form: FormData): {
   payload: CreateQuotationDto;
   attachments: File[];
 } {

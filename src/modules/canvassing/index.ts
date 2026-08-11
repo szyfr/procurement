@@ -10,6 +10,7 @@
 export {
   awardQuotation,
   createQuotation,
+  updateQuotation,
 } from "@/modules/canvassing/api/client";
 export {
   canvassingStatusOptions,

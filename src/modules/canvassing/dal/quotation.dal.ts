@@ -15,8 +15,8 @@ import type {
  * Handlers — never from a component. The upstream response is handed back as
  * it arrived.
  *
- * The read hangs off `/canvassing`, but quotations are their own top-level
- * router upstream, so the write posts to `/quotations` instead.
+ * The comparison read hangs off `/canvassing`, but quotations are their own
+ * top-level router upstream, so every other call goes to `/quotations`.
  */
 
 const NOT_FOUND = "We couldn't find that item.";
@@ -75,6 +75,34 @@ export function createQuotation(
   // no uploaded-document list, so there is nothing else to read back.
   return serverFetch<Quotation>("/quotations", {
     method: "POST",
+    body: form,
+  });
+}
+
+/**
+ * Rewrites an existing quote, on the same form contract as the create.
+ *
+ * It is a full replace, not a patch: the upstream hands its whole request
+ * model to the update, so the caller must send the complete `item_pricing`,
+ * rows it isn't changing included. Anything omitted is dropped from the quote.
+ *
+ * Attachments are add-only. The upstream takes a `to_delete` list, but it is
+ * declared without `Form(...)` — so FastAPI reads it off the query string, not
+ * the body — and the deletion loop is nested inside its `if attachments:`
+ * branch, meaning removal without an accompanying upload does nothing at all.
+ * Rather than expose a control that silently fails, this doesn't wire it.
+ */
+export function updateQuotation(
+  id: string,
+  payload: CreateQuotationDto,
+  attachments: File[] = [],
+): Promise<Quotation> {
+  assertObjectId(id, QUOTATION_NOT_FOUND);
+
+  const form = buildQuotationForm(payload, attachments);
+
+  return serverFetch<Quotation>(`/quotations/${id}`, {
+    method: "PUT",
     body: form,
   });
 }
