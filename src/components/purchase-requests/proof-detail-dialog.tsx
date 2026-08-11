@@ -120,10 +120,10 @@ export function ProofDetailDialog({
                     className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 px-3.5 py-2.5"
                   >
                     <span className="min-w-[200px] flex-1 text-[13px]">
-                      {item.material?.description}
+                      {item.material?.description ?? "Unknown material"}
                     </span>
                     <span className="text-xs text-muted-foreground">
-                      {item.quantity} {item.material?.uom}
+                      {item.quantity} {item.material?.uom ?? ""}
                     </span>
                   </li>
                 ))}

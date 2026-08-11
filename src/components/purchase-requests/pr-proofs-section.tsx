@@ -22,7 +22,7 @@ export function resolveProofItems(
 ) {
   return proof.purchase_request_item_ids
     .map((id) => items.find((item) => item._id === id))
-    .filter((item): item is PurchaseRequestItem => Boolean(item?.material));
+    .filter((item): item is PurchaseRequestItem => Boolean(item));
 }
 
 function documentCountLabel(count: number) {
@@ -41,8 +41,19 @@ export function PurchaseRequestProofsSection({
   const [openProofId, setOpenProofId] = React.useState<string | null>(null);
   const sectionRef = React.useRef<HTMLDivElement>(null);
 
+  const visibleProofs = React.useMemo(
+    () =>
+      request.proofs
+        .map((proof) => ({
+          proof,
+          items: resolveProofItems(proof, request.items),
+        }))
+        .filter((entry) => entry.items.length > 0),
+    [request.proofs, request.items],
+  );
+
   const cachedDetails = useQueries({
-    queries: request.proofs.map((proof) => ({
+    queries: visibleProofs.map(({ proof }) => ({
       ...purchaseRequestProofQuery(proof._id),
       enabled: false,
     })),
@@ -55,19 +66,19 @@ export function PurchaseRequestProofsSection({
   }, [highlightedItemId]);
 
   const openProof =
-    request.proofs.find((proof) => proof._id === openProofId) ?? null;
+    visibleProofs.find(({ proof }) => proof._id === openProofId)?.proof ?? null;
 
   return (
     <Card ref={sectionRef}>
       <CardHeader className="flex flex-row items-baseline gap-2.5 border-b">
         <CardTitle>Proofs of Order</CardTitle>
         <span className="text-xs text-muted-foreground">
-          {request.proofs.length}{" "}
-          {request.proofs.length === 1 ? "proof" : "proofs"}
+          {visibleProofs.length}{" "}
+          {visibleProofs.length === 1 ? "proof" : "proofs"}
         </span>
       </CardHeader>
       <CardContent className="p-3">
-        {request.proofs.length === 0 ? (
+        {visibleProofs.length === 0 ? (
           <div className="flex flex-col items-center gap-1.5 px-6 py-8 text-center">
             <span className="text-[13px] font-medium">
               No proofs of order yet
@@ -78,8 +89,7 @@ export function PurchaseRequestProofsSection({
           </div>
         ) : (
           <ul className="flex flex-col gap-2.5">
-            {request.proofs.map((proof, index) => {
-              const coveredItems = resolveProofItems(proof, request.items);
+            {visibleProofs.map(({ proof, items: coveredItems }, index) => {
               const documents = cachedDetails[index]?.data?.documents;
               const highlighted =
                 highlightedItemId !== null &&
@@ -118,23 +128,21 @@ export function PurchaseRequestProofsSection({
                       </div>
                     </div>
 
-                    {coveredItems.length > 0 ? (
-                      <div className="flex flex-col gap-1.5 border-l-2 pl-3">
-                        {coveredItems.map((item) => (
-                          <div
-                            key={item._id}
-                            className="flex flex-wrap items-baseline gap-x-3 gap-y-1"
-                          >
-                            <span className="text-[13px]">
-                              {item.material?.description}
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                              {item.quantity} {item.material?.uom}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    ) : null}
+                    <div className="flex flex-col gap-1.5 border-l-2 pl-3">
+                      {coveredItems.map((item) => (
+                        <div
+                          key={item._id}
+                          className="flex flex-wrap items-baseline gap-x-3 gap-y-1"
+                        >
+                          <span className="text-[13px]">
+                            {item.material?.description ?? "Unknown material"}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {item.quantity} {item.material?.uom ?? ""}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
 
                     <span className="flex items-center justify-end gap-1.5 text-[13px] font-medium group-hover:underline">
                       View proof
