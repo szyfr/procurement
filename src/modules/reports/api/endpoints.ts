@@ -7,4 +7,5 @@ const BASE = "/api/reports";
 
 export const reportEndpoints = {
   vendorPerformance: `${BASE}/vendor`,
+  prCycle: `${BASE}/pr-cycle`,
 } as const;

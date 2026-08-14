@@ -1,5 +1,6 @@
 import { bffRequest } from "@/lib/api/bff-client";
 import { reportEndpoints } from "@/modules/reports/api/endpoints";
+import type { PrStatusCount } from "@/modules/reports/models/pr-cycle-report";
 import type { VendorPerformanceRow } from "@/modules/reports/models/vendor-report";
 
 export interface VendorPerformanceParams {
@@ -18,6 +19,23 @@ export function fetchVendorPerformance({
 }: VendorPerformanceParams) {
   return bffRequest<VendorPerformanceRow[]>(reportEndpoints.vendorPerformance, {
     query: { start_date: startDate, end_date: endDate, search },
+    signal,
+  });
+}
+
+export interface PrStatusBreakdownParams {
+  startDate: string;
+  endDate: string;
+  signal?: AbortSignal;
+}
+
+export function fetchPrStatusBreakdown({
+  startDate,
+  endDate,
+  signal,
+}: PrStatusBreakdownParams) {
+  return bffRequest<PrStatusCount[]>(reportEndpoints.prCycle, {
+    query: { start_date: startDate, end_date: endDate },
     signal,
   });
 }

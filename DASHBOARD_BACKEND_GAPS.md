@@ -26,9 +26,15 @@ The Dashboard UI is now wired to every endpoint that exists on the backend today
 - No pagination and no total count — the response is a plain array, so the table renders it whole.
 - `sort_by`/`sort_order` exist upstream but sorting is out of scope for the UI; rows arrive sorted by rating.
 
-The other four reports have **no endpoint at all** and remain mock-driven (`src/data/reports.ts`):
+**PR Status Breakdown** is wired to `GET /reports/pr-cycle?start_date=&end_date=`. The endpoint is named for cycle time but does not answer it:
 
-- **PR Cycle Time** — needs per-stage timestamps on a purchase request (submitted → canvassed → PO → delivered).
+- It counts purchase requests per status — the controller loops the `Status` enum and returns `{category, value}` for all eight, zeros included. The range matches the request's own `created_at`, which is the right meaning here.
+- **Actual cycle time has no source.** Days from submission to PO needs per-stage timestamps on a purchase request (submitted → canvassed → PO → delivered); the schema carries only `created_at`/`updated_at` and a current status. The card is titled for what the data is until that exists.
+- `category` arrives pre-titled by the backend (`"Po Created"`, `"Pending"`), which is not this app's copy. The UI maps it back to a status slug and uses `purchaseRequestStatusLabels`/`purchaseRequestTone`.
+- No parameters beyond the dates — no department, no vendor, no search.
+
+The other three reports have **no endpoint at all** and remain mock-driven (`src/data/reports.ts`):
+
 - **Spend by Department** — needs a stored PO/PR amount; nothing in the schema carries one (`last_cost` is absent from every synced material).
 - **Purchaser Performance** — needs PRs attributable to the procurement officer who handled them.
 - **Canvassing Compliance** — needs the 3-quote minimum and its exemptions represented server-side.

@@ -1,8 +1,9 @@
 import {
+  ChartPieIcon,
   ClipboardCheckIcon,
   GaugeIcon,
+  type LucideIcon,
   StarIcon,
-  TimerIcon,
   UserCheckIcon,
 } from "lucide-react";
 import type { ChartConfig } from "@/components/ui/chart";
@@ -29,7 +30,7 @@ export interface ReportDefinition {
   id: string;
   title: string;
   description: string;
-  icon: typeof TimerIcon;
+  icon: LucideIcon;
   resultTitle: string;
   /** Right-aligned summary beside the result heading. */
   summary: string;
@@ -49,10 +50,15 @@ export interface ReportDefinition {
 
 export const reports: ReportDefinition[] = [
   {
+    // Wired to `GET /reports/pr-cycle`: only the card copy below is still read —
+    // `PrStatusBreakdownReport` renders the result from live data, so this
+    // entry's `chart` and `table` are never displayed. The id is the workspace
+    // key and stays as it is; the title says what the endpoint can answer,
+    // which is a status distribution rather than cycle time.
     id: "pr-cycle-time",
-    title: "PR Cycle Time",
-    description: "Avg. days from submission to PO",
-    icon: TimerIcon,
+    title: "PR Status Breakdown",
+    description: "Purchase requests created in the period, grouped by status",
+    icon: ChartPieIcon,
     resultTitle: "PR Cycle Time — Last 90 Days",
     summary: "Avg. overall: 5.6 days",
     chart: {

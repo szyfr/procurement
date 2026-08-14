@@ -3,6 +3,7 @@
 import { ChartNoAxesColumnIcon } from "lucide-react";
 import * as React from "react";
 
+import { PrStatusBreakdownReport } from "@/components/reports/pr-status-breakdown-report";
 import { ReportResult } from "@/components/reports/report-result";
 import { VendorPerformanceReport } from "@/components/reports/vendor-performance-report";
 import { Badge } from "@/components/ui/badge";
@@ -23,16 +24,16 @@ import { cn } from "@/lib/utils";
 /** How long the mock "generating" phase runs before the result appears. */
 const GENERATE_DELAY_MS = 900;
 
-/** The one report with a backend behind it; its own query owns its states. */
-const LIVE_REPORT_ID = "vendor-performance";
+/** The reports with a backend behind them; their own queries own their states. */
+const LIVE_REPORT_IDS = new Set(["vendor-performance", "pr-cycle-time"]);
 
 /**
  * Report picker plus the generated result. One report is active at a time;
- * generating another shows the loading state before swapping in the result.
+ * generating a mock one shows the loading state before swapping in the result.
  *
- * Vendor Performance skips that staged phase — a real request is already in
- * flight and the panel renders its own pending state. It also re-runs on its
- * own when the date range changes, because the dates are part of its query key.
+ * The live reports skip that staged phase — a real request is already in flight
+ * and each panel renders its own pending state. They also re-run on their own
+ * when the date range changes, because the dates are part of their query keys.
  */
 export function ReportWorkspace({
   startDate,
@@ -110,7 +111,7 @@ export function ReportWorkspace({
                   className="w-full"
                   disabled={Boolean(generatingId)}
                   onClick={() =>
-                    report.id === LIVE_REPORT_ID
+                    LIVE_REPORT_IDS.has(report.id)
                       ? setActiveId(report.id)
                       : setGeneratingId(report.id)
                   }
@@ -150,12 +151,14 @@ export function ReportWorkspace({
             <Skeleton className="h-3 w-2/3" />
           </CardContent>
         </Card>
-      ) : activeId === LIVE_REPORT_ID ? (
+      ) : activeId === "vendor-performance" ? (
         <VendorPerformanceReport
           startDate={startDate}
           endDate={endDate}
           search={search}
         />
+      ) : activeId === "pr-cycle-time" ? (
+        <PrStatusBreakdownReport startDate={startDate} endDate={endDate} />
       ) : activeReport ? (
         <ReportResult report={activeReport} />
       ) : null}
