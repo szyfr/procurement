@@ -120,4 +120,4 @@ Base UI composition differs from Radix: render a Button as a link with `render={
 
 ## Comment style
 
-Existing code carries file-header docblocks explaining *why* a layer exists and inline comments that record backend quirks and deliberate omissions (e.g. "the create response carries no material join", "`last_cost` is absent from every synced material"). Match that: comments explain constraints and decisions, not mechanics.
+Remove comments that are unnecessary, redundant, or only explain obvious mechanics. Shorten verbose comments when the context is still useful. Preserve comments that document important constraints, decisions, backend quirks, business rules, or deliberate omissions. Comments should add context that cannot be inferred from the code.
