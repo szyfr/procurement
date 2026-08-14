@@ -1,18 +1,33 @@
 import { DownloadIcon } from "lucide-react";
 import type { Metadata } from "next";
 
+import { ReportFilters } from "@/components/reports/report-filters";
 import { ReportWorkspace } from "@/components/reports/report-workspace";
-import { FilterSelect } from "@/components/shared/filter-select";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
-import { departments, vendors } from "@/data/reference";
-import { dateRanges } from "@/data/reports";
+import { resolveDateRange } from "@/modules/reports";
 
 export const metadata: Metadata = {
   title: "Reports",
 };
 
-export default function ReportsPage() {
+export default async function ReportsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    range?: string;
+    start?: string;
+    end?: string;
+    search?: string;
+  }>;
+}) {
+  const { range, start, end, search } = await searchParams;
+
+  // Resolved here rather than in the client view: a preset is relative to
+  // "today", and resolving it once on the server keeps the dates identical
+  // across the hydration boundary.
+  const dateRange = resolveDateRange(range, start, end);
+
   return (
     <>
       <PageHeader
@@ -26,13 +41,13 @@ export default function ReportsPage() {
         }
       />
 
-      <div className="flex flex-wrap items-center gap-3">
-        <FilterSelect label="Date Range: Last 90 days" options={dateRanges} />
-        <FilterSelect label="Department" options={departments} />
-        <FilterSelect label="Vendor" options={vendors} />
-      </div>
+      <ReportFilters range={dateRange} search={search ?? ""} />
 
-      <ReportWorkspace />
+      <ReportWorkspace
+        startDate={dateRange.startDate}
+        endDate={dateRange.endDate}
+        search={search ?? ""}
+      />
     </>
   );
 }

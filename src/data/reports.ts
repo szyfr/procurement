@@ -112,6 +112,9 @@ export const reports: ReportDefinition[] = [
     },
   },
   {
+    // Wired to `GET /reports/vendor`: only the card copy below is still read —
+    // `VendorPerformanceReport` renders the result from live data, so this
+    // entry's `chart` and `table` are never displayed.
     id: "vendor-performance",
     title: "Vendor Performance",
     description:
@@ -213,10 +216,3 @@ export const defaultReportId = "spend-by-department";
 export function getReport(id: string) {
   return reports.find((report) => report.id === id);
 }
-
-export const dateRanges = [
-  "Last 7 days",
-  "Last 30 days",
-  "Last 90 days",
-  "Year to date",
-];

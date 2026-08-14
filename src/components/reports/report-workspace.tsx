@@ -4,6 +4,7 @@ import { ChartNoAxesColumnIcon } from "lucide-react";
 import * as React from "react";
 
 import { ReportResult } from "@/components/reports/report-result";
+import { VendorPerformanceReport } from "@/components/reports/vendor-performance-report";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,11 +23,26 @@ import { cn } from "@/lib/utils";
 /** How long the mock "generating" phase runs before the result appears. */
 const GENERATE_DELAY_MS = 900;
 
+/** The one report with a backend behind it; its own query owns its states. */
+const LIVE_REPORT_ID = "vendor-performance";
+
 /**
  * Report picker plus the generated result. One report is active at a time;
  * generating another shows the loading state before swapping in the result.
+ *
+ * Vendor Performance skips that staged phase — a real request is already in
+ * flight and the panel renders its own pending state. It also re-runs on its
+ * own when the date range changes, because the dates are part of its query key.
  */
-export function ReportWorkspace() {
+export function ReportWorkspace({
+  startDate,
+  endDate,
+  search,
+}: {
+  startDate: string;
+  endDate: string;
+  search: string;
+}) {
   const [activeId, setActiveId] = React.useState(defaultReportId);
   const [generatingId, setGeneratingId] = React.useState<string | null>(null);
 
@@ -93,7 +109,11 @@ export function ReportWorkspace() {
                   size="sm"
                   className="w-full"
                   disabled={Boolean(generatingId)}
-                  onClick={() => setGeneratingId(report.id)}
+                  onClick={() =>
+                    report.id === LIVE_REPORT_ID
+                      ? setActiveId(report.id)
+                      : setGeneratingId(report.id)
+                  }
                 >
                   {isGenerating ? (
                     <>
@@ -130,6 +150,12 @@ export function ReportWorkspace() {
             <Skeleton className="h-3 w-2/3" />
           </CardContent>
         </Card>
+      ) : activeId === LIVE_REPORT_ID ? (
+        <VendorPerformanceReport
+          startDate={startDate}
+          endDate={endDate}
+          search={search}
+        />
       ) : activeReport ? (
         <ReportResult report={activeReport} />
       ) : null}
