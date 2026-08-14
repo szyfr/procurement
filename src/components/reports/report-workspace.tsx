@@ -3,6 +3,7 @@
 import { ChartNoAxesColumnIcon } from "lucide-react";
 import * as React from "react";
 
+import { CanvassingComplianceReport } from "@/components/reports/canvassing-compliance-report";
 import { DepartmentSpendingReport } from "@/components/reports/department-spending-report";
 import { PrStatusBreakdownReport } from "@/components/reports/pr-status-breakdown-report";
 import { ReportResult } from "@/components/reports/report-result";
@@ -30,6 +31,7 @@ const LIVE_REPORT_IDS = new Set([
   "vendor-performance",
   "pr-cycle-time",
   "spend-by-department",
+  "canvassing-compliance",
 ]);
 
 /**
@@ -166,6 +168,8 @@ export function ReportWorkspace({
         <PrStatusBreakdownReport startDate={startDate} endDate={endDate} />
       ) : activeId === "spend-by-department" ? (
         <DepartmentSpendingReport startDate={startDate} endDate={endDate} />
+      ) : activeId === "canvassing-compliance" ? (
+        <CanvassingComplianceReport startDate={startDate} endDate={endDate} />
       ) : activeReport ? (
         <ReportResult report={activeReport} />
       ) : null}

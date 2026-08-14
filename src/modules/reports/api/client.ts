@@ -1,5 +1,6 @@
 import { bffRequest } from "@/lib/api/bff-client";
 import { reportEndpoints } from "@/modules/reports/api/endpoints";
+import type { CanvassingComplianceRow } from "@/modules/reports/models/canvassing-compliance-report";
 import type { DepartmentSpendingReport } from "@/modules/reports/models/department-spending-report";
 import type { PrStatusCount } from "@/modules/reports/models/pr-cycle-report";
 import type { VendorPerformanceRow } from "@/modules/reports/models/vendor-report";
@@ -54,6 +55,26 @@ export function fetchDepartmentSpending({
 }: DepartmentSpendingParams) {
   return bffRequest<DepartmentSpendingReport>(
     reportEndpoints.departmentSpending,
+    {
+      query: { start_date: startDate, end_date: endDate },
+      signal,
+    },
+  );
+}
+
+export interface CanvassingComplianceParams {
+  startDate: string;
+  endDate: string;
+  signal?: AbortSignal;
+}
+
+export function fetchCanvassingCompliance({
+  startDate,
+  endDate,
+  signal,
+}: CanvassingComplianceParams) {
+  return bffRequest<CanvassingComplianceRow[]>(
+    reportEndpoints.canvassingCompliance,
     {
       query: { start_date: startDate, end_date: endDate },
       signal,

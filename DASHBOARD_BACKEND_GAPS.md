@@ -40,7 +40,14 @@ The Dashboard UI is now wired to every endpoint that exists on the backend today
 - Unlike the other two reports this one answers an object (`{total, data}`) with the grand total computed upstream, and its route registers `""` rather than `"/"` — so it must be called **without** a trailing slash.
 - Every department comes back, including those that raised nothing; the UI drops the empty ones.
 
-The other two reports have **no endpoint at all** and remain mock-driven (`src/data/reports.ts`):
+**Canvassing Compliance** is wired to `GET /reports/canvassing-compliance?start_date=&end_date=`. The minimum itself is now evaluated upstream (an item is compliant at ≥3 quotations), but the unit is not what the field names suggest:
+
+- `pr_canvassed` counts **canvassing request items, not purchase requests** — the controller sums `len(items)` over every matching request, so a request with four items canvassed counts four times. The columns are labelled "Items Canvassed" for that reason. A per-request rollup would need the count done on the request rather than its items.
+- Only items sitting at `canvassing` are considered, and only inside a request that drew at least one quotation. The filter is applied to the *request*, so `below_minimum` can include items with **no quotation at all** — it is "not compliant", not "canvassed but short".
+- **Exemptions still have no server-side representation.** A request excused from the three-quote rule is indistinguishable from one that fell short, so the wireframe's "Exempted" bar and column are gone rather than faked. Restoring them needs an exemption flag (and ideally a reason) on the request or its items.
+- The range matches the request's own `created_at`. No parameters beyond the dates — no department, no search.
+- Like `department-spending`, the route registers `""` rather than `"/"`, so it must be called **without** a trailing slash. Every department comes back, all-zero rows included; the UI drops them.
+
+One report has **no endpoint at all** and remains mock-driven (`src/data/reports.ts`):
 
 - **Purchaser Performance** — needs PRs attributable to the procurement officer who handled them.
-- **Canvassing Compliance** — needs the 3-quote minimum and its exemptions represented server-side.

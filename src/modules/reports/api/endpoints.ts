@@ -9,4 +9,5 @@ export const reportEndpoints = {
   vendorPerformance: `${BASE}/vendor`,
   prCycle: `${BASE}/pr-cycle`,
   departmentSpending: `${BASE}/department-spending`,
+  canvassingCompliance: `${BASE}/canvassing-compliance`,
 } as const;

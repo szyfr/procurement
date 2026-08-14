@@ -186,9 +186,14 @@ export const reports: ReportDefinition[] = [
     },
   },
   {
+    // Wired to `GET /reports/canvassing-compliance`: only the card copy below
+    // is still read — `CanvassingComplianceReport` renders the result from live
+    // data, so this entry's `chart` and `table` are never displayed. Their
+    // "Exempted" bar and column have no backend source and are gone from the
+    // live panel.
     id: "canvassing-compliance",
     title: "Canvassing Compliance",
-    description: "PRs meeting the 3-quote minimum",
+    description: "Canvassed items meeting the 3-quote minimum",
     icon: ClipboardCheckIcon,
     resultTitle: "Canvassing Compliance — Last 90 Days",
     summary: "88% met the 3-quote minimum",
