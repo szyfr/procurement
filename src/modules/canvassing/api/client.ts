@@ -3,7 +3,7 @@ import type { Paginated } from "@/lib/api/pagination";
 import { canvassingEndpoints } from "@/modules/canvassing/api/endpoints";
 import {
   buildQuotationForm,
-  type CreateQuotationDto,
+  type CreateQuotationInput,
 } from "@/modules/canvassing/dto";
 import type { AwardQuotationResult } from "@/modules/canvassing/models/award";
 import type { CanvassingEntry } from "@/modules/canvassing/models/canvassing";
@@ -48,13 +48,14 @@ export function fetchQuotation(quotationId: string, signal?: AbortSignal) {
  * Records a vendor's quote. Goes up as `multipart/form-data` rather than JSON
  * because the upstream endpoint takes attachments, and the parts carry the
  * upstream's own field names — the Route Handler validates them and passes
- * them straight on.
+ * them straight on. `user_id` is not among them — the BFF adds it from the
+ * session on the server leg.
  */
 export function createQuotation({
   payload,
   attachments = [],
 }: {
-  payload: CreateQuotationDto;
+  payload: CreateQuotationInput;
   attachments?: File[];
 }) {
   const form = buildQuotationForm(payload, attachments);

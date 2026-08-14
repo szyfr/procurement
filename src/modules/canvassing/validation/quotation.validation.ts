@@ -1,6 +1,6 @@
 import { ApiError } from "@/lib/api/errors";
 import { isObjectId } from "@/lib/api/object-id";
-import type { CreateQuotationDto } from "@/modules/canvassing/dto";
+import type { CreateQuotationInput } from "@/modules/canvassing/dto";
 import type { QuotationItemPricing } from "@/modules/canvassing/models/quotation";
 
 /**
@@ -84,15 +84,18 @@ function parseItemPricing(raw: string): QuotationItemPricing[] {
 /**
  * The browser posts `multipart/form-data` because the upstream does, so the
  * scalars arrive as strings and `item_pricing` as a JSON blob in one field.
+ *
+ * A `user_id` part is deliberately ignored rather than validated: the DAL takes
+ * that one from the session.
  */
 export function parseCreateQuotationForm(form: FormData): {
-  payload: CreateQuotationDto;
+  payload: CreateQuotationInput;
   attachments: File[];
 } {
   const referenceNo = readText(form, "reference_no");
   if (!referenceNo) throw invalid("Quote reference number is required.");
 
-  const payload: CreateQuotationDto = {
+  const payload: CreateQuotationInput = {
     reference_no: referenceNo,
     date: readDate(form, "date", "Quote date"),
     delivery_date: readDate(form, "delivery_date", "Delivery date"),

@@ -1,8 +1,10 @@
 import { serverFetch } from "@/lib/api/fetcher";
 import { assertObjectId } from "@/lib/api/object-id";
+import { getCurrentUser } from "@/modules/auth/dal/auth.dal";
+import { userId } from "@/modules/auth/models/session";
 import {
   buildQuotationForm,
-  type CreateQuotationDto,
+  type CreateQuotationInput,
 } from "@/modules/canvassing/dto";
 import type {
   ItemQuotations,
@@ -65,11 +67,19 @@ export function getQuotation(id: string): Promise<QuotationDetail> {
  * The form is rebuilt from the validated payload rather than forwarded from
  * the Route Handler, so nothing reaches FastAPI that hasn't been checked.
  */
-export function createQuotation(
-  payload: CreateQuotationDto,
+export async function createQuotation(
+  input: CreateQuotationInput,
   attachments: File[] = [],
 ): Promise<Quotation> {
-  const form = buildQuotationForm(payload, attachments);
+  // Supplied server-side from the session cookie; the browser never picks the
+  // user a quote is recorded under. Also means an unauthenticated POST fails
+  // here with the same 401 `getCurrentUser` throws for any other read.
+  const user = await getCurrentUser();
+
+  const form = buildQuotationForm(
+    { ...input, user_id: userId(user) },
+    attachments,
+  );
 
   // Answers 200 with the bare inserted document — no `{ data }` envelope and
   // no uploaded-document list, so there is nothing else to read back.
