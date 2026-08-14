@@ -33,8 +33,14 @@ The Dashboard UI is now wired to every endpoint that exists on the backend today
 - `category` arrives pre-titled by the backend (`"Po Created"`, `"Pending"`), which is not this app's copy. The UI maps it back to a status slug and uses `purchaseRequestStatusLabels`/`purchaseRequestTone`.
 - No parameters beyond the dates — no department, no vendor, no search.
 
-The other three reports have **no endpoint at all** and remain mock-driven (`src/data/reports.ts`):
+**Spend by Department** is wired to `GET /reports/department-spending?start_date=&end_date=`. Note what the amounts are made of:
 
-- **Spend by Department** — needs a stored PO/PR amount; nothing in the schema carries one (`last_cost` is absent from every synced material).
+- There is still no stored PO or PR amount. Spend is derived upstream as Σ `quantity × material.last_cost` over `po-created` request items, so **an item whose material synced without a `last_cost` contributes nothing** — the totals are spend on priced lines, not on everything ordered. A stored amount on the PO would remove the guesswork.
+- The `po` field counts `po-created` request *items*, not distinct purchase orders. The column is labelled "Ordered Items" for that reason.
+- Unlike the other two reports this one answers an object (`{total, data}`) with the grand total computed upstream, and its route registers `""` rather than `"/"` — so it must be called **without** a trailing slash.
+- Every department comes back, including those that raised nothing; the UI drops the empty ones.
+
+The other two reports have **no endpoint at all** and remain mock-driven (`src/data/reports.ts`):
+
 - **Purchaser Performance** — needs PRs attributable to the procurement officer who handled them.
 - **Canvassing Compliance** — needs the 3-quote minimum and its exemptions represented server-side.

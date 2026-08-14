@@ -3,6 +3,7 @@
 import { ChartNoAxesColumnIcon } from "lucide-react";
 import * as React from "react";
 
+import { DepartmentSpendingReport } from "@/components/reports/department-spending-report";
 import { PrStatusBreakdownReport } from "@/components/reports/pr-status-breakdown-report";
 import { ReportResult } from "@/components/reports/report-result";
 import { VendorPerformanceReport } from "@/components/reports/vendor-performance-report";
@@ -25,7 +26,11 @@ import { cn } from "@/lib/utils";
 const GENERATE_DELAY_MS = 900;
 
 /** The reports with a backend behind them; their own queries own their states. */
-const LIVE_REPORT_IDS = new Set(["vendor-performance", "pr-cycle-time"]);
+const LIVE_REPORT_IDS = new Set([
+  "vendor-performance",
+  "pr-cycle-time",
+  "spend-by-department",
+]);
 
 /**
  * Report picker plus the generated result. One report is active at a time;
@@ -159,6 +164,8 @@ export function ReportWorkspace({
         />
       ) : activeId === "pr-cycle-time" ? (
         <PrStatusBreakdownReport startDate={startDate} endDate={endDate} />
+      ) : activeId === "spend-by-department" ? (
+        <DepartmentSpendingReport startDate={startDate} endDate={endDate} />
       ) : activeReport ? (
         <ReportResult report={activeReport} />
       ) : null}

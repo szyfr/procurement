@@ -87,9 +87,12 @@ export const reports: ReportDefinition[] = [
     },
   },
   {
+    // Wired to `GET /reports/department-spending`: only the card copy below is
+    // still read — `DepartmentSpendingReport` renders the result from live
+    // data, so this entry's `chart` and `table` are never displayed.
     id: "spend-by-department",
     title: "Spend by Department",
-    description: "PO amounts grouped by department",
+    description: "Ordered items grouped by the department that requested them",
     icon: GaugeIcon,
     resultTitle: "Spend by Department — Last 90 Days",
     summary: "Total: ₱2,184,600",
