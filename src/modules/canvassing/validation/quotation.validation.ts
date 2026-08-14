@@ -111,3 +111,12 @@ export function parseCreateQuotationForm(form: FormData): {
 
   return { payload, attachments };
 }
+
+/**
+ * `PUT /quotations/{id}` takes the identical body: it depends on the same
+ * `get_quotation_create`, so every field is required on an update and none of
+ * them may be omitted. The alias is deliberate — if the backend ever grows a
+ * real partial update (its unused `QuotationUpdate` schema), this must become
+ * its own parser rather than inherit create's "required" rules.
+ */
+export const parseUpdateQuotationForm = parseCreateQuotationForm;

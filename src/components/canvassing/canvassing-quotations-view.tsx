@@ -6,7 +6,9 @@ import Link from "next/link";
 import * as React from "react";
 
 import { AwardVendorDialog } from "@/components/canvassing/award-vendor-dialog";
-import { QuotationDetailDialog } from "@/components/canvassing/quotation-detail-dialog";
+import { EditQuotationDialog } from "@/components/canvassing/edit-quotation-dialog";
+import { QuotationDetailSheet } from "@/components/canvassing/quotation-detail-sheet";
+import { QuotationRowActions } from "@/components/canvassing/quotation-row-actions";
 import { ErrorAlert } from "@/components/shared/query-states";
 import { StatusBadge } from "@/components/shared/status-badge";
 import {
@@ -143,6 +145,14 @@ function QuoteComparison({
   const name = item.material?.description || item.material_id;
   const unit = item.material?.uom || null;
   const quantity = `${item.quantity}${unit ? ` ${unit}` : ""}`;
+
+  // One sheet and one dialog for the whole card rather than a pair per row, so
+  // a table of quotes doesn't mount a detail query each. Viewing and editing
+  // are mutually exclusive, so a single overlay holds both.
+  const [overlay, setOverlay] = React.useState<{
+    kind: "view" | "edit";
+    quotation: Quotation;
+  } | null>(null);
 
   if (awardedQuotationId) {
     const winner =
@@ -353,10 +363,14 @@ function QuoteComparison({
                           {formatShortDate(quotation.date) ?? "—"}
                         </TableCell>
                         <TableCell>
-                          <QuotationDetailDialog
-                            quotationId={quotation._id}
-                            itemId={item._id}
-                            itemName={name}
+                          <QuotationRowActions
+                            vendorId={quotation.vendor_id}
+                            onView={() =>
+                              setOverlay({ kind: "view", quotation })
+                            }
+                            onEdit={() =>
+                              setOverlay({ kind: "edit", quotation })
+                            }
                           />
                         </TableCell>
                       </TableRow>
@@ -385,6 +399,31 @@ function QuoteComparison({
           </CardFooter>
         </Card>
       )}
+
+      <QuotationDetailSheet
+        quotationId={overlay?.quotation._id ?? null}
+        referenceNo={overlay?.quotation.reference_no ?? ""}
+        itemId={item._id}
+        itemName={name}
+        open={overlay?.kind === "view"}
+        onOpenChange={(open) => {
+          if (!open) setOverlay(null);
+        }}
+        onEdit={() =>
+          setOverlay((current) =>
+            current ? { kind: "edit", quotation: current.quotation } : null,
+          )
+        }
+      />
+
+      <EditQuotationDialog
+        purchaseRequestId={purchaseRequestId}
+        quotationId={overlay?.quotation._id ?? null}
+        open={overlay?.kind === "edit"}
+        onOpenChange={(open) => {
+          if (!open) setOverlay(null);
+        }}
+      />
     </section>
   );
 }

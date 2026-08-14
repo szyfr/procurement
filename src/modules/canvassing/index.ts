@@ -10,6 +10,7 @@
 export {
   awardQuotation,
   createQuotation,
+  updateQuotation,
 } from "@/modules/canvassing/api/client";
 export {
   canvassingStatusOptions,
@@ -18,6 +19,8 @@ export {
 export type {
   CreateQuotationDto,
   CreateQuotationInput,
+  UpdateQuotationDto,
+  UpdateQuotationInput,
 } from "@/modules/canvassing/dto";
 export { useCanvassingUpdates } from "@/modules/canvassing/hooks/use-canvassing-updates";
 export type {

@@ -5,6 +5,7 @@ import { userId } from "@/modules/auth/models/session";
 import {
   buildQuotationForm,
   type CreateQuotationInput,
+  type UpdateQuotationInput,
 } from "@/modules/canvassing/dto";
 import type {
   ItemQuotations,
@@ -47,7 +48,8 @@ export function listItemQuotations(
 
 /**
  * One quotation in full, including its attachments. `GET /canvassing/quotations`
- * carries no documents, so the "view quotation" dialog reads this instead.
+ * carries no documents, so the quotation detail sheet reads this instead — and
+ * so does the edit form, which needs the same fields to seed itself.
  */
 export function getQuotation(id: string): Promise<QuotationDetail> {
   assertObjectId(id, QUOTATION_NOT_FOUND);
@@ -85,6 +87,44 @@ export async function createQuotation(
   // no uploaded-document list, so there is nothing else to read back.
   return serverFetch<Quotation>("/quotations", {
     method: "POST",
+    body: form,
+  });
+}
+
+/**
+ * Rewrites an existing quote.
+ *
+ * `PUT /quotations/{id}` depends on the same `get_quotation_create` the POST
+ * does, so this is a full replace in `multipart/form-data`, not a patch — a
+ * missing field is a 422 upstream, never a "leave it alone". The all-optional
+ * `QuotationUpdate` schema the router imports is never reached.
+ *
+ * Two consequences worth naming: the response is the bare updated document
+ * with no `documents` join, so it is a `Quotation` and not a `QuotationDetail`;
+ * and `user_id` is written on every update, so the quote's recorded user
+ * becomes whoever edited it last. Nothing upstream keeps the original author.
+ *
+ * Any `attachments` are added to the quote — the endpoint's `to_delete` is a
+ * repeated query param whose handling is nested inside its "did anything get
+ * uploaded" branch, so removal can't be offered reliably and isn't sent.
+ */
+export async function updateQuotation(
+  id: string,
+  input: UpdateQuotationInput,
+  attachments: File[] = [],
+): Promise<Quotation> {
+  assertObjectId(id, QUOTATION_NOT_FOUND);
+
+  // Same reasoning as the create: the session picks the user, never the browser.
+  const user = await getCurrentUser();
+
+  const form = buildQuotationForm(
+    { ...input, user_id: userId(user) },
+    attachments,
+  );
+
+  return serverFetch<Quotation>(`/quotations/${id}`, {
+    method: "PUT",
     body: form,
   });
 }

@@ -41,6 +41,9 @@ export interface CreateQuotationDto extends CreateQuotationInput {
  * string part, attachments appended last. Shared by the browser client and
  * the server DAL so the two can't drift on field names or ordering. Only the
  * server half has a `user_id` to contribute, hence the conditional part.
+ *
+ * `PUT /quotations/{id}` goes through this too: it depends on the same
+ * `get_quotation_create` parser upstream, so an update's body is a create's.
  */
 export function buildQuotationForm(
   payload: CreateQuotationInput | CreateQuotationDto,

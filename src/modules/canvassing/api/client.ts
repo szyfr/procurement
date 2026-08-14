@@ -4,6 +4,7 @@ import { canvassingEndpoints } from "@/modules/canvassing/api/endpoints";
 import {
   buildQuotationForm,
   type CreateQuotationInput,
+  type UpdateQuotationInput,
 } from "@/modules/canvassing/dto";
 import type { AwardQuotationResult } from "@/modules/canvassing/models/award";
 import type { CanvassingEntry } from "@/modules/canvassing/models/canvassing";
@@ -62,6 +63,32 @@ export function createQuotation({
 
   return bffRequest<Quotation>(canvassingEndpoints.quotations, {
     method: "POST",
+    body: form,
+  });
+}
+
+/**
+ * Rewrites a quote in full. The upstream reuses its create parser, so this is
+ * a whole-document replace rather than a patch — every field goes up, in the
+ * same `multipart/form-data` shape, with `user_id` again added server-side.
+ *
+ * `attachments` are only ever *added*: the upstream's file removal reads its
+ * list from a query param and only runs when a new upload accompanies it, so
+ * the UI doesn't offer removal at all. Existing documents are untouched.
+ */
+export function updateQuotation({
+  quotationId,
+  payload,
+  attachments = [],
+}: {
+  quotationId: string;
+  payload: UpdateQuotationInput;
+  attachments?: File[];
+}) {
+  const form = buildQuotationForm(payload, attachments);
+
+  return bffRequest<Quotation>(canvassingEndpoints.quotation(quotationId), {
+    method: "PUT",
     body: form,
   });
 }

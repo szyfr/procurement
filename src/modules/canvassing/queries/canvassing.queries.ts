@@ -35,8 +35,9 @@ export function canvassingQuotationsQuery(itemIds: string[]) {
 }
 
 /**
- * A single quotation, including its attachments. The caller enables this only
- * while the "view quotation" dialog is open, so it isn't fetched per row.
+ * A single quotation, including its attachments. The comparison enables this
+ * only while the detail sheet is open, so it isn't fetched per row; the edit
+ * form runs it unconditionally, seeding itself from the same cache entry.
  */
 export function quotationDetailQuery(quotationId: string) {
   return queryOptions({
