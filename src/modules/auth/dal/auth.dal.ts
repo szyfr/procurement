@@ -1,3 +1,5 @@
+import { cache } from "react";
+
 import { readSetCookieValue } from "@/lib/api/cookies";
 import { ApiError } from "@/lib/api/errors";
 import { serverFetch, serverFetchWithCookies } from "@/lib/api/fetcher";
@@ -104,8 +106,13 @@ export async function signIn(
  * The signed-in user, or a 401 when the session cookie is missing, expired or
  * forged. This is the authoritative answer to "is this request authenticated?"
  * — the cookie's presence is not.
+ *
+ * Memoized per request with React `cache`, so the several callers a single
+ * request can have — `requireUser()` at the top of a Route Handler, then a DAL
+ * that needs the caller's id for `user_id` — cost one upstream `/auth/me`
+ * between them rather than one each.
  */
-export async function getCurrentUser(): Promise<AuthenticatedUser> {
+export const getCurrentUser = cache(async (): Promise<AuthenticatedUser> => {
   const { password: _password, ...user } =
     await serverFetch<CurrentUserDto>("/auth/me");
 
@@ -113,15 +120,39 @@ export async function getCurrentUser(): Promise<AuthenticatedUser> {
   // stored user document, bcrypt hash included, and this is the boundary it
   // stops at — the rest of the response is handed on as it arrived.
   return user;
-}
+});
 
-/** `null` instead of throwing, for the page shells that redirect on their own. */
+/**
+ * `null` for "not signed in", for the page shells that redirect on their own.
+ *
+ * Only a 401 becomes `null`. Anything else — FastAPI unreachable, a missing
+ * `FASTAPI_BASE_URL`, a 500 — is rethrown, because swallowing those made an
+ * outage look like a mass logout: every shell would redirect to a login page
+ * that could not authenticate anyone either, with nothing surfaced to say why.
+ */
 export async function getOptionalUser(): Promise<AuthenticatedUser | null> {
   try {
     return await getCurrentUser();
-  } catch {
-    return null;
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 401) return null;
+    throw error;
   }
+}
+
+/**
+ * The gate every Route Handler outside `/api/auth/*` runs first.
+ *
+ * `proxy.ts` deliberately skips `/api/*` on the assumption that those routes
+ * answer 401 on their own — this is what makes that true. It matters more than
+ * defense in depth: FastAPI authenticates `/auth/*` and nothing else today, so
+ * without this an unauthenticated caller reaches every read and write in the
+ * system.
+ *
+ * Authorization is a separate question and still unenforced here; see the note
+ * in CLAUDE.md.
+ */
+export async function requireUser(): Promise<AuthenticatedUser> {
+  return getCurrentUser();
 }
 
 /**

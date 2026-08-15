@@ -80,7 +80,7 @@ export function DashboardView() {
     },
     // No per-user assignment concept exists on the backend, so there's no
     // way to scope this to the signed-in user's own action items.
-    { id: "your-action", label: "Requiring Your Action", value: "-" },
+    { id: "your-action", label: "Requiring Your Action", value: "—" },
     {
       id: "pending-quotes",
       label: "Pending Quotations",
@@ -101,7 +101,7 @@ export function DashboardView() {
       isPending: partialCount.isPending,
     },
     // No delivery/PO entity exists on the backend.
-    { id: "overdue", label: "Overdue Deliveries", value: "-" },
+    { id: "overdue", label: "Overdue Deliveries", value: "—" },
   ];
 
   return (

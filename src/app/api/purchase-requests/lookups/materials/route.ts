@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server";
 
 import { toErrorResponse } from "@/lib/api/errors";
 import { readPageParam } from "@/lib/api/pagination";
+import { requireUser } from "@/modules/auth/dal/auth.dal";
 import { LOOKUP_PAGE_SIZE } from "@/modules/purchase-requests/constants";
 import { listMaterials } from "@/modules/purchase-requests/dal/lookup.dal";
 
@@ -13,6 +14,8 @@ import { listMaterials } from "@/modules/purchase-requests/dal/lookup.dal";
  */
 export async function GET(request: NextRequest) {
   try {
+    await requireUser();
+
     const { searchParams } = request.nextUrl;
 
     const result = await listMaterials({

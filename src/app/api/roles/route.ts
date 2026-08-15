@@ -2,12 +2,15 @@ import type { NextRequest } from "next/server";
 
 import { toErrorResponse } from "@/lib/api/errors";
 import { readPageParam } from "@/lib/api/pagination";
+import { requireUser } from "@/modules/auth/dal/auth.dal";
 import { DEFAULT_PAGE_SIZE } from "@/modules/roles/constants";
 import { createRole, listRoles } from "@/modules/roles/dal/role.dal";
 import { parseCreateRolePayload } from "@/modules/roles/validation/role.validation";
 
 export async function GET(request: NextRequest) {
   try {
+    await requireUser();
+
     const { searchParams } = request.nextUrl;
 
     const result = await listRoles({
@@ -24,6 +27,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    await requireUser();
+
     const payload = parseCreateRolePayload(
       await request.json().catch(() => null),
     );

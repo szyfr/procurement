@@ -1,6 +1,6 @@
 /**
- * Types for the screens that are still mock-driven — dashboard, reports and
- * notifications — plus the one presentation vocabulary every screen shares.
+ * The presentation vocabulary every screen shares, plus the one shape the
+ * dashboard still has no backend source for.
  *
  * Purchase requests, canvassing, roles, users and the rest of the
  * backend-wired features do not appear here: their shapes are the FastAPI
@@ -29,15 +29,4 @@ export interface ActivityEntry {
   id: string;
   description: string;
   timestamp: string;
-}
-
-export type NotificationGroup = "today" | "earlier";
-
-export interface Notification {
-  id: string;
-  message: string;
-  timestamp: string;
-  group: NotificationGroup;
-  read: boolean;
-  href: string;
 }

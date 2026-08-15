@@ -4,14 +4,14 @@ import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FieldError } from "@/components/ui/field";
+import { ACCEPTED_ATTACHMENTS, MAX_ATTACHMENT_BYTES } from "@/lib/api/uploads";
 
 /**
- * The backend accepts any file at any size and stores it straight to S3, so
- * the only limits that exist are the ones enforced here.
+ * Re-exported so the picker and the Route Handler that receives its files
+ * cannot drift apart. The limits themselves are enforced server-side in
+ * `lib/api/uploads`; what happens here is only the early warning.
  */
-export const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
-export const ACCEPTED_ATTACHMENTS =
-  ".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx,.xls,.xlsx,.csv";
+export { ACCEPTED_ATTACHMENTS, MAX_ATTACHMENT_BYTES };
 
 /**
  * The picker and its running file list, with no chrome around it. The create

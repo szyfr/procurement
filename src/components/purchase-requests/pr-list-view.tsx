@@ -11,12 +11,14 @@ import { StatusLegend } from "@/components/purchase-requests/pr-status-legend";
 import { PurchaseRequestTable } from "@/components/purchase-requests/pr-table";
 import type { ListView } from "@/components/purchase-requests/view-toggle";
 import { DataToolbar } from "@/components/shared/data-toolbar";
+import type { FilterSelectOption } from "@/components/shared/filter-select";
 import { EmptyState, ErrorAlert } from "@/components/shared/query-states";
 import { TableSkeleton } from "@/components/shared/table-skeleton";
 import { buildPageHref } from "@/lib/page-href";
 import {
   departmentOptionsQuery,
   purchaseRequestListQuery,
+  purchaseRequestStatusLabels,
   usePurchaseRequestUpdates,
 } from "@/modules/purchase-requests";
 
@@ -24,23 +26,23 @@ import {
  * Purchase request list, fetched from the BFF in the browser via TanStack
  * Query.
  *
- * Search, priority and department are wired to the `search`, `priority` and
- * `departments` URL params — the URL is the source of truth, so the list
- * stays linkable/bookmarkable and survives reload. Status and Date stay
- * presentational until the backend supports filtering on them.
+ * Search, status, priority and department are wired to the `search`, `status`,
+ * `priority` and `departments` URL params — the URL is the source of truth, so
+ * the list stays linkable/bookmarkable and survives reload.
+ *
+ * There is no Date filter. One used to render beside these, along with a
+ * Status dropdown that selected and did nothing; `DataToolbar` leaves a filter
+ * presentational when it is handed no `value`/`onValueChange`, so both looked
+ * identical to the working ones. Status turned out to need no backend work at
+ * all — `pr_status` was already plumbed through the client, Route Handler and
+ * DAL for the dashboard's KPI tiles — so it is wired here rather than dropped.
+ * Date has no equivalent: the list endpoint takes no date parameter.
  */
 
-const statusFilter = {
-  label: "Status",
-  options: [
-    "Draft",
-    "Canvassing",
-    "PO Created",
-    "Partially Completed",
-    "Completed",
-    "Rejected",
-  ],
-};
+/** The backend's own slugs; the labels are `purchaseRequestStatusLabels`. */
+const statusOptions: FilterSelectOption[] = Object.entries(
+  purchaseRequestStatusLabels,
+).map(([value, label]) => ({ label: String(label), value }));
 
 /** The backend's own values; the labels are the display copy for them. */
 const priorityOptions = [
@@ -49,23 +51,20 @@ const priorityOptions = [
   { label: "Low", value: "low" },
 ];
 
-const dateFilter = {
-  label: "Date",
-  options: ["Last 7 days", "Last 30 days", "Last 90 days"],
-};
-
 const SEARCH_DEBOUNCE_MS = 300;
 
 export function PurchaseRequestListView({
   view,
   page,
   search,
+  status,
   priority,
   departments,
 }: {
   view: ListView;
   page: number;
   search: string;
+  status: string;
   priority: string;
   departments: string;
 }) {
@@ -116,8 +115,15 @@ export function PurchaseRequestListView({
     return () => clearTimeout(timeout);
   }, [searchInput]);
 
-  const filters = { search: search || undefined, priority, departments };
-  const hasActiveFilters = Boolean(search || priority || departments);
+  const filters = {
+    search: search || undefined,
+    // The query takes a list — `pr_status` repeats upstream — but the toolbar
+    // is single-select, so at most one ever goes out.
+    status: status ? [status] : undefined,
+    priority,
+    departments,
+  };
+  const hasActiveFilters = Boolean(search || status || priority || departments);
 
   const { data, isPending, isError, error } = useQuery(
     purchaseRequestListQuery(page, filters),
@@ -138,7 +144,12 @@ export function PurchaseRequestListView({
   );
 
   const toolbarFilters = [
-    statusFilter,
+    {
+      label: "Status",
+      options: statusOptions,
+      value: status || null,
+      onValueChange: (value: string | null) => updateParams({ status: value }),
+    },
     {
       label: "Priority",
       options: priorityOptions,
@@ -153,7 +164,6 @@ export function PurchaseRequestListView({
       onValueChange: (value: string | null) =>
         updateParams({ departments: value }),
     },
-    dateFilter,
   ];
 
   /** Keeps the current view (cards/table) and filters intact while changing pages. */

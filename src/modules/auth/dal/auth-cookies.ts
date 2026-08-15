@@ -23,7 +23,10 @@ import { CSRF_COOKIE, SESSION_COOKIE } from "@/modules/auth/constants";
 const cookieOptions = {
   httpOnly: true,
   sameSite: "lax",
-  secure: process.env.NODE_ENV === "production",
+  // Opt *out* for development rather than in for production: a container or
+  // PaaS that starts the server without `NODE_ENV` set would otherwise hand
+  // out the session JWT over a cookie with no `Secure` flag, silently.
+  secure: process.env.NODE_ENV !== "development",
   path: "/",
 } as const;
 

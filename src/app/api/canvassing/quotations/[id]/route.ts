@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 
 import { toErrorResponse } from "@/lib/api/errors";
+import { requireUser } from "@/modules/auth/dal/auth.dal";
 import {
   getQuotation,
   updateQuotation,
@@ -16,6 +17,8 @@ export async function GET(
   context: RouteContext<"/api/canvassing/quotations/[id]">,
 ) {
   try {
+    await requireUser();
+
     const { id } = await context.params;
 
     return Response.json({ data: await getQuotation(id) });
@@ -34,6 +37,8 @@ export async function PUT(
   context: RouteContext<"/api/canvassing/quotations/[id]">,
 ) {
   try {
+    await requireUser();
+
     const { id } = await context.params;
     const { payload, attachments } = parseUpdateQuotationForm(
       await request.formData(),

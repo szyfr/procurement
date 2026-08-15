@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 
 import { toErrorResponse } from "@/lib/api/errors";
+import { requireUser } from "@/modules/auth/dal/auth.dal";
 import { getRole, updateRole } from "@/modules/roles/dal/role.dal";
 import { parseUpdateRolePayload } from "@/modules/roles/validation/role.validation";
 
@@ -11,6 +12,8 @@ export async function GET(
   context: RouteContext<"/api/roles/[id]">,
 ) {
   try {
+    await requireUser();
+
     const { id } = await context.params;
 
     return Response.json({ data: await getRole(id) });
@@ -24,6 +27,8 @@ export async function PUT(
   context: RouteContext<"/api/roles/[id]">,
 ) {
   try {
+    await requireUser();
+
     const { id } = await context.params;
     const payload = parseUpdateRolePayload(
       await request.json().catch(() => null),

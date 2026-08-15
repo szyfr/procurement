@@ -15,7 +15,15 @@ import { PURCHASE_REQUESTS_CHANNEL } from "@/modules/purchase-requests/constants
  * ever sees the signed JWT via the Route Handler.
  */
 
-const JWT_TTL_SECONDS = 60 * 60;
+/**
+ * Short on purpose. Ably validates this JWT on its own, not our session
+ * cookie, so between minting and expiry a signed-out or deactivated user keeps
+ * receiving realtime traffic — an hour of it, as this used to be. The SDK
+ * renews through `authUrl` automatically, and that renewal hits
+ * `/api/realtime/token`, which requires a live session. Fifteen minutes is the
+ * window in which a revoked session can still listen.
+ */
+const JWT_TTL_SECONDS = 15 * 60;
 
 function readApiKey(): { keyName: string; keySecret: string } {
   const apiKey = process.env.ABLY_API_KEY;
