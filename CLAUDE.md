@@ -15,12 +15,12 @@ npm run format   # biome format --write
 
 There is no test runner in this project. `npm run lint && npm run build` is the definition of done for a change — both must be clean (TypeScript errors, Biome issues, hydration errors, build errors).
 
-Env vars live in `.env.local`, which is gitignored — there is no committed example file, so a fresh clone has to be told:
+Env vars live in `.env.local`, which is gitignored; `.env.example` is committed and lists both:
 
 - `FASTAPI_BASE_URL` — where the BFF reaches FastAPI.
 - `ABLY_API_KEY` — `keyId:keySecret`, the same key the backend publishes with. `/api/realtime/token` signs client JWTs with the secret half; the key itself never leaves the server.
 
-Both are server-only and must never be read from a Client Component.
+Both are server-only and must never be read from a Client Component. `src/instrumentation.ts` asserts both at boot, so a misconfigured deploy crashes on start instead of coming up green and behaving as though every user is signed out.
 
 ## What this is
 
@@ -91,7 +91,11 @@ Cookie-based, and the BFF boundary is what makes it work: FastAPI's cookies are 
 - The JWT reaches the browser as a cookie and nothing else. Nothing is kept in `localStorage`, `sessionStorage` or any store, and no client code reads or parses a cookie.
 - CSRF is a double submit completed **server-side**: the BFF holds the token in an HttpOnly cookie and echoes it in `X-XSRF-TOKEN`. `SameSite=Lax` is the actual cross-site defense at our own boundary.
 - Route protection is two layers, per the Next.js auth guide. `src/proxy.ts` (Next 16's renamed middleware) does the cheap check — no session cookie, no protected page. The `(dashboard)` layout and the login page do the authoritative one via `getOptionalUser()`, because only FastAPI can say whether a token is still valid. Never bounce off cookie presence in both directions or the two layers will loop.
+- **Every Route Handler outside `/api/auth/*` calls `await requireUser()` first.** `proxy.ts` deliberately skips `/api/*`, so this is the only thing standing between a BFF route and an unauthenticated caller — and it is not merely defense in depth: FastAPI applies `get_current_active_user` to `auth_controller.py` and *nothing else*, with no global middleware, so upstream will happily serve an anonymous request. Adding a route means adding the gate. The three DALs that need the caller's id (`purchase-request.dal.ts`, `quotation.dal.ts`) call `getCurrentUser()` themselves and are safe either way.
+- **Authorization is still not enforced anywhere**, here or upstream. `AuthenticatedUser.permissions` is carried and never read for a decision, so any signed-in user can reach `POST /api/roles` and `PATCH /api/users/[id]/roles`. Permission slugs are data-driven (`GET /permissions`, titles like `purchase_request.store`) and nothing in the UI hardcodes one — pick them from the seeded catalogue rather than guessing when this is implemented.
+- The BFF gate only closes the hole if **FastAPI is not independently reachable** by users. It must be bound to a private network or container-internal address, never published.
 - "Am I signed in?" is always a question for the backend (`GET /api/auth/session` → `/auth/me`), never a decoded token.
+- A 401 from any query or mutation triggers a hard navigation to `/login` from `components/query-provider.tsx`, which discards the client cache. `fetchSession` handles its own 401 and never reaches it.
 - `/auth/me` returns the stored user document, hashed password included, and `/auth/login` returns the raw JWT. These are the **only** two responses the BFF does not pass through: `getCurrentUser` drops `password` before returning, and `signIn` splits the token off so it can go into an HttpOnly cookie and nowhere else. Keep both projections; they are a security boundary, not a mapping layer.
 
 ## Errors
@@ -108,7 +112,11 @@ Query definitions live in the module's `queries/`, not the component, so keys an
 
 ## Mock data still in play
 
-`src/data/*` is static mock data. Purchase Requests, Departments, Vendors, Payment Terms and the signed-in user are wired to the real backend; **Dashboard, Reports, Settings/Users, notifications and global search are still mock-driven**. The user's role and department have no backend source — `/auth/me` carries a permission list and no organizational placement — so the My Account panel leaves both blank. When a backend endpoint doesn't exist yet, keep the page functional with its existing empty state — do not invent data, and document the gap. Columns with no backend source are rendered as a literal em-dash at the call site rather than carried as a permanently-null field — a request has no stored amount and materials sync without a cost, so the Amount column is empty everywhere and the comment beside it says why.
+Almost none. `src/data/` holds two files and neither is fake data: `navigation.ts` (nav labels, breadcrumb copy, app identity) and `reports.ts` (the report catalogue — id, title, description, icon, and whether an endpoint exists behind it). Purchase Requests, Departments, Vendors, Payment Terms, Dashboard, Users, Roles, global search and four of the five reports are wired to the real backend.
+
+What genuinely has no backend, and renders an empty or unavailable state rather than invented data: **notifications** (no model or endpoint at all), the dashboard's **Recent Activity**, **Upcoming Deadlines**, **Requiring Your Action** and **Overdue Deliveries** tiles, and the **Purchaser Performance** report. See `DASHBOARD_BACKEND_GAPS.md` for what each one needs.
+
+The user's role and department have no backend source — `/auth/me` carries a permission list and no organizational placement — so the My Account panel leaves both blank. When a backend endpoint doesn't exist yet, keep the page functional with its existing empty state — do not invent data, and document the gap. Columns with no backend source are rendered as a literal em-dash at the call site rather than carried as a permanently-null field — a request has no stored amount and materials sync without a cost, so the Amount column is empty everywhere and the comment beside it says why.
 
 ## UI conventions
 

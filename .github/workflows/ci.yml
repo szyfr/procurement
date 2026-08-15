@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      # Next 16 removed `next lint`, and `next build` no longer lints, so this
+      # is the only thing that runs Biome.
+      - run: npm run lint
+
+      - run: npx tsc --noEmit
+
+      # `next build` type-checks too, but it is also the only thing that
+      # catches prerender and route-config errors.
+      - run: npm run build
+        env:
+          # Only needs to satisfy the boot-time check in src/instrumentation.ts;
+          # nothing is fetched at build time.
+          FASTAPI_BASE_URL: http://localhost:8000
+          ABLY_API_KEY: ci:placeholder
+
+      - run: npm audit --omit=dev --audit-level=high

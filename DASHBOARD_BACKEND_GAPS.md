@@ -17,6 +17,8 @@ The Dashboard UI is now wired to every endpoint that exists on the backend today
 
 - **Recent Activity** (widget). No activity/audit log endpoint exists anywhere in the backend. Needs an audit trail (who did what, when), with at least a `GET /activity?limit=N` recent-events endpoint.
 
+- **Notifications** (the bell in the site header, on every page). Nothing exists upstream — no model, no collection, no delivery mechanism. The menu renders an empty state. This one has a realtime half too: the bell should light up without a poll, and FastAPI already publishes PR status transitions to Ably, so a per-user channel (`user:{id}:*` is already granted to every token and unused) would carry it once there is something to send. Needs a notification record with a read flag, `GET /notifications`, and a way to mark one or all read.
+
 ## Reports
 
 **Vendor Performance** is wired to `GET /reports/vendor?start_date=&end_date=`. Caveats in what that endpoint can answer today:
@@ -48,6 +50,6 @@ The Dashboard UI is now wired to every endpoint that exists on the backend today
 - The range matches the request's own `created_at`. No parameters beyond the dates — no department, no search.
 - Like `department-spending`, the route registers `""` rather than `"/"`, so it must be called **without** a trailing slash. Every department comes back, all-zero rows included; the UI drops them.
 
-One report has **no endpoint at all** and remains mock-driven (`src/data/reports.ts`):
+One report has **no endpoint at all**:
 
-- **Purchaser Performance** — needs PRs attributable to the procurement officer who handled them.
+- **Purchaser Performance** — needs purchase requests attributable to the procurement officer who handled them. The card stays on the page and selecting it says the report is unavailable; it is marked `availability: "unavailable"` in `src/data/reports.ts`. It previously rendered invented officers ("S. Galvis (you)", "P. Ocampo", "L. Bautista") with invented cycle times and compliance scores, presented identically to the four real reports.
