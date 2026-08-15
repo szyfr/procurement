@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 
 import { toErrorResponse } from "@/lib/api/errors";
+import { requireUser } from "@/modules/auth/dal/auth.dal";
 import { updatePurchaseRequestStatus } from "@/modules/purchase-requests/dal/purchase-request.dal";
 import { parseSettableStatus } from "@/modules/purchase-requests/validation/purchase-request.validation";
 
@@ -18,6 +19,8 @@ export async function PATCH(
   context: RouteContext<"/api/purchase-requests/[id]/status/[status]">,
 ) {
   try {
+    await requireUser();
+
     const { id, status } = await context.params;
 
     await updatePurchaseRequestStatus(id, parseSettableStatus(status));

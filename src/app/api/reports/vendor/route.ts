@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 
 import { ApiError, toErrorResponse } from "@/lib/api/errors";
+import { requireUser } from "@/modules/auth/dal/auth.dal";
 import { getVendorPerformance } from "@/modules/reports/dal/vendor-report.dal";
 
 /**
@@ -11,6 +12,8 @@ import { getVendorPerformance } from "@/modules/reports/dal/vendor-report.dal";
 
 export async function GET(request: NextRequest) {
   try {
+    await requireUser();
+
     const { searchParams } = request.nextUrl;
 
     const startDate = searchParams.get("start_date");

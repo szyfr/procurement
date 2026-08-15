@@ -1,11 +1,14 @@
 import type { NextRequest } from "next/server";
 
 import { toErrorResponse } from "@/lib/api/errors";
+import { requireUser } from "@/modules/auth/dal/auth.dal";
 import { createPurchaseRequestProof } from "@/modules/purchase-requests/dal/purchase-request-proof.dal";
 import { parseCreatePurchaseRequestProofForm } from "@/modules/purchase-requests/validation/purchase-request-proof.validation";
 
 export async function POST(request: NextRequest) {
   try {
+    await requireUser();
+
     const { payload, attachments } = parseCreatePurchaseRequestProofForm(
       await request.formData(),
     );

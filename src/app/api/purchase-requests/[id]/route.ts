@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 
 import { toErrorResponse } from "@/lib/api/errors";
+import { requireUser } from "@/modules/auth/dal/auth.dal";
 import {
   deletePurchaseRequest,
   getPurchaseRequest,
@@ -20,6 +21,8 @@ export async function GET(
   context: RouteContext<"/api/purchase-requests/[id]">,
 ) {
   try {
+    await requireUser();
+
     const { id } = await context.params;
 
     return Response.json({ data: await getPurchaseRequest(id) });
@@ -33,6 +36,8 @@ export async function PUT(
   context: RouteContext<"/api/purchase-requests/[id]">,
 ) {
   try {
+    await requireUser();
+
     const { id } = await context.params;
     const body = await request.json().catch(() => null);
 
@@ -49,6 +54,8 @@ export async function DELETE(
   context: RouteContext<"/api/purchase-requests/[id]">,
 ) {
   try {
+    await requireUser();
+
     const { id } = await context.params;
 
     await deletePurchaseRequest(id);
