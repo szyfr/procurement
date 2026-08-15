@@ -18,7 +18,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
-import { Textarea } from "@/components/ui/textarea";
 import { formatShortDate } from "@/lib/date";
 import {
   type PurchaseRequestDetail,
@@ -297,25 +296,7 @@ export function PurchaseRequestDetailView({ id }: { id: string }) {
             </CardContent>
           </Card>
 
-          {isDraft ? null : (
-            <Card>
-              <CardHeader className="border-b">
-                <CardTitle>Comments</CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-3">
-                <p className="text-xs text-muted-foreground">
-                  Comments aren&apos;t stored yet — this panel is inert until
-                  the backend supports them.
-                </p>
-                <Textarea
-                  aria-label="Add a comment"
-                  placeholder="Add a comment…"
-                  rows={2}
-                  disabled
-                />
-              </CardContent>
-            </Card>
-          )}
+          {/* Comments card hidden until the backend stores comments. */}
         </div>
 
         <div className="flex min-w-0 flex-col gap-5">
