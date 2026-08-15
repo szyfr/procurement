@@ -2,6 +2,7 @@ import { ApiError } from "@/lib/api/errors";
 import { isObjectId } from "@/lib/api/object-id";
 import { readAttachments } from "@/lib/api/uploads";
 import type { CreatePurchaseRequestProofDto } from "@/modules/purchase-requests/dto";
+import { assertDateOnly } from "@/modules/purchase-requests/validation/purchase-request.validation";
 
 /**
  * Request-body parsing for the proof-upload Route Handler.
@@ -11,8 +12,6 @@ import type { CreatePurchaseRequestProofDto } from "@/modules/purchase-requests/
  * item id would otherwise surface as an opaque 500 rather than a 422 naming
  * the field. Everything the upstream would choke on is checked here first.
  */
-
-const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 function invalid(message: string) {
   return new ApiError(422, "validation_failed", message);
@@ -29,17 +28,7 @@ export function parseCreatePurchaseRequestProofForm(form: FormData): {
 } {
   const deliveryDate = readText(form, "delivery_date");
   if (!deliveryDate) throw invalid("Delivery date is required.");
-  const parsedDelivery = new Date(deliveryDate);
-  // A date-only string parses as UTC, and out-of-range components roll forward
-  // instead of failing — `2025-02-30` becomes March 2 — so the round trip is
-  // what rejects a calendar-invalid date, not `Date.parse` alone.
-  if (
-    !DATE_PATTERN.test(deliveryDate) ||
-    Number.isNaN(parsedDelivery.getTime()) ||
-    parsedDelivery.toISOString().slice(0, 10) !== deliveryDate
-  ) {
-    throw invalid("Delivery date must be a valid date.");
-  }
+  assertDateOnly(deliveryDate, "Delivery date");
 
   const vendorReferenceNo = readText(form, "vendor_reference_no");
   if (!vendorReferenceNo) {

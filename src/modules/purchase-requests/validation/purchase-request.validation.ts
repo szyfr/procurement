@@ -1,7 +1,9 @@
 import { ApiError } from "@/lib/api/errors";
+import { isObjectId } from "@/lib/api/object-id";
 import type { Priority } from "@/lib/types";
 import type {
   CreatePurchaseRequestInput,
+  MarkPurchaseRequestDeliveredDto,
   UpdatePurchaseRequestDto,
 } from "@/modules/purchase-requests/dto";
 import type { SettablePurchaseRequestStatus } from "@/modules/purchase-requests/models/purchase-request";
@@ -44,6 +46,30 @@ export function parseSettableStatus(
 
 function invalid(message: string) {
   return new ApiError(422, "validation_failed", message);
+}
+
+const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * A `YYYY-MM-DD` string that is also a real calendar day. Shared with the proof
+ * validator, which needs the identical check.
+ *
+ * The round trip is what rejects `2025-02-30`: a date-only string parses as
+ * UTC, and out-of-range components roll forward — that one becomes March 2 —
+ * so `Date.parse` alone would let it through.
+ */
+export function assertDateOnly(value: string, label: string): string {
+  const parsed = new Date(value);
+
+  if (
+    !DATE_PATTERN.test(value) ||
+    Number.isNaN(parsed.getTime()) ||
+    parsed.toISOString().slice(0, 10) !== value
+  ) {
+    throw invalid(`${label} must be a valid date.`);
+  }
+
+  return value;
 }
 
 const ITEM_STATUSES = ["draft", "pending"] as const;
@@ -157,5 +183,35 @@ export function parseUpdatePayload(body: unknown): UpdatePurchaseRequestDto {
     ...(payload.items === undefined
       ? {}
       : { items: parseItems(payload.items) }),
+  };
+}
+
+/**
+ * The bulk delivery body. `delivery_date` is optional upstream, but its default
+ * is `datetime.now` — the function object rather than a call — so a missing
+ * date is stored as the method itself. It is required here instead.
+ */
+export function parseMarkDeliveredPayload(
+  body: unknown,
+): MarkPurchaseRequestDeliveredDto {
+  if (!body || typeof body !== "object")
+    throw invalid("Request body is missing.");
+
+  const payload = body as Partial<MarkPurchaseRequestDeliveredDto>;
+
+  if (!Array.isArray(payload.item_ids) || payload.item_ids.length === 0) {
+    throw invalid("Select at least one item.");
+  }
+  payload.item_ids.forEach((id, index) => {
+    if (typeof id !== "string" || !isObjectId(id)) {
+      throw invalid(`Item ${index + 1} is not valid.`);
+    }
+  });
+
+  if (!payload.delivery_date) throw invalid("Delivery date is required.");
+
+  return {
+    item_ids: payload.item_ids,
+    delivery_date: assertDateOnly(payload.delivery_date, "Delivery date"),
   };
 }

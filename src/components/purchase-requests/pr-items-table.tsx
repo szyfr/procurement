@@ -26,13 +26,29 @@ import {
 } from "@/modules/purchase-requests";
 
 /**
- * The only status a proof of order can still be added for. Exported because
- * the section above owns the selection and must apply the same rule — a
- * refetch that moves an item past `po-created` has to drop it from both the
- * checkbox column and the selection.
+ * The checkbox column feeds two bulk actions with different eligibility, so
+ * all three rules are exported: the section above owns the selection and has
+ * to apply the same ones — a refetch that moves an item on has to drop it from
+ * the checkbox column and from whatever action was about to submit it.
  */
+
+/** The only status a proof of order can still be added for. */
 export function isProofSelectable(item: PurchaseRequestItem) {
   return item.status === "po-created";
+}
+
+/**
+ * Delivery closes an item out, so it also covers `partially-completed` — the
+ * status the Business Central receipt sync leaves an item in when only part of
+ * the quantity arrived. Marking it delivered completes the rest.
+ */
+export function isDeliverySelectable(item: PurchaseRequestItem) {
+  return item.status === "po-created" || item.status === "partially-completed";
+}
+
+/** A row gets a checkbox when either bulk action can act on it. */
+export function isItemSelectable(item: PurchaseRequestItem) {
+  return isProofSelectable(item) || isDeliverySelectable(item);
 }
 
 function proofsForItem(
@@ -65,7 +81,7 @@ export function PurchaseRequestItemsTable({
   onToggleAll: (checked: boolean) => void;
   onHighlightProofs: (itemId: string) => void;
 }) {
-  const selectableItems = request.items.filter(isProofSelectable);
+  const selectableItems = request.items.filter(isItemSelectable);
   const allSelected =
     selectableItems.length > 0 &&
     selectableItems.every((item) => selectedIds.has(item._id));
@@ -83,7 +99,7 @@ export function PurchaseRequestItemsTable({
                 checked={allSelected}
                 indeterminate={someSelected && !allSelected}
                 onCheckedChange={(checked) => onToggleAll(checked === true)}
-                aria-label="Select all items awaiting proof"
+                aria-label="Select all items still open"
               />
             ) : null}
           </TableHead>
@@ -99,9 +115,13 @@ export function PurchaseRequestItemsTable({
       </TableHeader>
       <TableBody>
         {request.items.map((item) => {
-          const selectable = isProofSelectable(item);
+          const selectable = isItemSelectable(item);
           const proofs = proofsForItem(item, request);
-          const deliveryDate = earliestDeliveryDate(proofs);
+          // A proof's date is the date the vendor promised; `delivered_at` is
+          // the date someone recorded the goods as actually arriving, so it
+          // wins wherever it exists.
+          const deliveryDate =
+            item.delivered_at ?? earliestDeliveryDate(proofs);
 
           return (
             <TableRow

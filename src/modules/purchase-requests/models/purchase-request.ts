@@ -64,6 +64,12 @@ export interface PurchaseRequestItem {
   quotation_id?: string | null;
   /** Out of scope for now — always null, no partial-delivery flow exists yet. */
   partial_delivered: unknown | null;
+  /**
+   * Stamped by `PATCH /purchase-requests/{id}/delivered`, and by the Business
+   * Central receipt sync. Absent until an item is actually delivered — the
+   * create schema has no such field.
+   */
+  delivered_at?: string | null;
   created_at: string;
   updated_at: string;
   /**

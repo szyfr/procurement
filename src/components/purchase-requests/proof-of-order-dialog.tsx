@@ -211,10 +211,12 @@ function SingleVendorForm({
         <div className="flex flex-col gap-1.5 px-3 py-2.5 text-sm">
           {items.map((item) => (
             <div key={item._id} className="flex gap-2">
-              <span className="flex-1 truncate">
+              <span className="min-w-0 flex-1 truncate">
                 {item.material?.description || item.material_id}
               </span>
-              <span className="text-muted-foreground">Qty {item.quantity}</span>
+              <span className="shrink-0 text-muted-foreground">
+                Qty {item.quantity}
+              </span>
             </div>
           ))}
         </div>
@@ -282,10 +284,10 @@ function VendorGroupForm({
   return (
     <div className="rounded-lg border">
       <div className="flex items-center gap-2 border-b bg-muted px-3 py-2">
-        <span className="text-sm font-medium">
+        <span className="min-w-0 truncate text-sm font-medium">
           {vendorLabel(vendorKey, items)}
         </span>
-        <Badge variant="outline">
+        <Badge variant="outline" className="shrink-0">
           {items.length} item{items.length === 1 ? "" : "s"}
         </Badge>
       </div>
@@ -341,12 +343,12 @@ function VendorGroupForm({
           <div className="flex flex-col gap-2 border-t pt-3">
             {items.map((item) => (
               <div key={item._id} className="flex items-center gap-2">
-                <span className="flex-1 truncate text-xs">
+                <span className="min-w-0 flex-1 truncate text-xs">
                   {item.material?.description || item.material_id}
                 </span>
                 <Input
                   type="date"
-                  className="w-40"
+                  className="w-40 shrink-0"
                   value={state.itemOverrides[item._id] ?? state.deliveryDate}
                   onChange={(event) =>
                     onChange({
@@ -482,8 +484,12 @@ export function ProofOfOrderDialog({
 
   return (
     <Dialog open={open} onOpenChange={(next) => !saving && onOpenChange(next)}>
+      {/* `DialogContent` is a grid, so its children default to
+          `min-width: auto` and a long material or vendor name widens the whole
+          dialog past its `max-w` instead of truncating. `min-w-0` on every
+          child is what lets the `truncate`s below actually engage. */}
       <DialogContent
-        className="max-h-[85vh] overflow-y-auto sm:max-w-xl"
+        className="max-h-[85vh] overflow-y-auto sm:max-w-xl [&>*]:min-w-0"
         showCloseButton={!saving}
       >
         <DialogHeader>

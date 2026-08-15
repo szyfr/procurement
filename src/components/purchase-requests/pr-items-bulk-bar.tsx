@@ -16,15 +16,30 @@ function vendorSummary(items: PurchaseRequestItem[]) {
   return `${vendorIds.length} vendors`;
 }
 
-/** Appears above the items table only while a row is selected; disappears once the selection clears. */
-export function ProofOfOrderBulkBar({
+/**
+ * Appears above the items table only while a row is selected; disappears once
+ * the selection clears.
+ *
+ * Both bulk actions run off the one selection, and their eligibility differs —
+ * a proof of order is only meaningful while an item is still `po-created`,
+ * while delivery also closes out a `partially-completed` one. Each button is
+ * disabled rather than hidden when its own rule fails, so the action doesn't
+ * vanish as the selection grows.
+ */
+export function PurchaseRequestItemsBulkBar({
   selectedItems,
+  canAddProof,
+  canMarkDelivered,
   onClear,
-  onOpen,
+  onAddProof,
+  onMarkDelivered,
 }: {
   selectedItems: PurchaseRequestItem[];
+  canAddProof: boolean;
+  canMarkDelivered: boolean;
   onClear: () => void;
-  onOpen: () => void;
+  onAddProof: () => void;
+  onMarkDelivered: () => void;
 }) {
   if (selectedItems.length === 0) return null;
 
@@ -41,8 +56,16 @@ export function ProofOfOrderBulkBar({
       <Button variant="ghost" size="sm" onClick={onClear}>
         Clear Selection
       </Button>
-      <Button size="sm" onClick={onOpen}>
+      <Button
+        variant="outline"
+        size="sm"
+        disabled={!canAddProof}
+        onClick={onAddProof}
+      >
         Add Proof of Order
+      </Button>
+      <Button size="sm" disabled={!canMarkDelivered} onClick={onMarkDelivered}>
+        Mark as Delivered
       </Button>
     </div>
   );
