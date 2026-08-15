@@ -2,10 +2,15 @@
 
 import {
   isServer,
+  MutationCache,
+  QueryCache,
   QueryClient,
   QueryClientProvider,
 } from "@tanstack/react-query";
 import type * as React from "react";
+
+import { BffError } from "@/lib/api/bff-client";
+import { LOGIN_PATH } from "@/modules/auth/constants";
 
 /**
  * TanStack Query wiring for the whole app.
@@ -15,8 +20,33 @@ import type * as React from "react";
  * is built per render there and reused only in the browser.
  */
 
+/**
+ * A session that expired mid-use used to leave the user on a fully rendered
+ * dashboard where every query failed with its own toast: nothing cleared the
+ * cache, nothing cleared the dead cookie, and `proxy.ts` kept waving them
+ * through on cookie presence until `Max-Age` elapsed.
+ *
+ * A hard navigation rather than `router.push`, because this runs outside the
+ * component tree and the point is to discard all client state and let the
+ * server decide what happens next. `fetchSession` handles its own 401 (it is
+ * the "am I signed in?" probe and a 401 is a valid answer), so it never
+ * reaches this.
+ */
+let redirecting = false;
+
+function handleQueryError(error: unknown) {
+  if (isServer) return;
+  if (!(error instanceof BffError) || error.status !== 401) return;
+  if (redirecting || window.location.pathname === LOGIN_PATH) return;
+
+  redirecting = true;
+  window.location.href = LOGIN_PATH;
+}
+
 function makeQueryClient() {
   return new QueryClient({
+    queryCache: new QueryCache({ onError: handleQueryError }),
+    mutationCache: new MutationCache({ onError: handleQueryError }),
     defaultOptions: {
       queries: {
         // Purchasing data is operational, so nothing is cached for long — but
@@ -25,8 +55,12 @@ function makeQueryClient() {
         staleTime: 30_000,
         // The BFF already normalizes upstream failures into user-safe
         // messages; one retry covers a blip without leaving the error state
-        // hidden behind seconds of backoff.
-        retry: 1,
+        // hidden behind seconds of backoff. An expired session is not a blip,
+        // so it is not retried — it goes straight to the redirect above.
+        retry: (failureCount, error) => {
+          if (error instanceof BffError && error.status === 401) return false;
+          return failureCount < 1;
+        },
         refetchOnWindowFocus: false,
       },
     },
