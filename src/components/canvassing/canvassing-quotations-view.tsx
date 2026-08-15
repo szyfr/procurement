@@ -142,10 +142,10 @@ function QuoteComparison({
   onSelect: (quotationId: string) => void;
   awardedQuotationId: string | null;
 }) {
-  // The pipeline projects `material_id` away, so a missed material join leaves
-  // only the ERP number — and nothing at all if that is blank too.
+  // The detail pipeline joins the material; the ERP number, then the raw id,
+  // stand in if the lookup missed.
   const name =
-    item.material?.description?.trim() || item.material?.no || "Unknown item";
+    item.material?.description?.trim() || item.material?.no || item.material_id;
   const unit = item.material?.uom || null;
   const quantity = `${item.quantity}${unit ? ` ${unit}` : ""}`;
 
