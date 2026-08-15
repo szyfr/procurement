@@ -1,4 +1,4 @@
-import { ArrowRightIcon, PlusIcon } from "lucide-react";
+import { PlusIcon } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -38,15 +38,6 @@ export default async function PurchaseRequestsPage({
         description="Track every request from draft through delivery"
         actions={
           <>
-            <Button
-              variant="ghost"
-              size="sm"
-              render={<Link href="/purchase-requests/item-requests" />}
-              nativeButton={false}
-            >
-              Item Creation Requests
-              <ArrowRightIcon data-icon="inline-end" />
-            </Button>
             <ViewToggle view={activeView} />
             <Button
               variant="outline"

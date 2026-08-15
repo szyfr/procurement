@@ -20,9 +20,10 @@ import {
 } from "@/modules/reports";
 
 /**
- * The report toolbar. Both controls are backed by `GET /reports/vendor`, which
- * takes a required date range and a vendor-name search — and nothing else, so
- * there is no department filter here: the endpoint has no parameter for one.
+ * The report toolbar. The vendor-name search is backed by `GET
+ * /reports/vendor`, which no other report endpoint takes, so it only renders
+ * while Vendor Performance is the active report (`showVendorFilter`) — every
+ * other report has no parameter for it.
  *
  * The URL is the source of truth, so a filtered report stays linkable.
  */
@@ -32,9 +33,11 @@ const loadVendorPage = fetchVendorOptions;
 export function ReportFilters({
   range,
   search,
+  showVendorFilter,
 }: {
   range: ReportDateRange;
   search: string;
+  showVendorFilter: boolean;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -115,37 +118,39 @@ export function ReportFilters({
         </div>
       ) : null}
 
-      <div className="flex items-center gap-1">
-        <LookupPicker
-          // Upstream matches the search term against the vendor name, so the
-          // name — not `_id` — is what a selection is identified by here.
-          value={search ? { id: search, label: search } : null}
-          onSelect={(vendor) => updateParams({ search: vendor.name || null })}
-          queryKey={purchaseRequestKeys.vendorOptions()}
-          loadPage={loadVendorPage}
-          toOption={(vendor) => ({
-            id: vendor.name,
-            label: vendor.name || vendor.no,
-            hint: vendor.no,
-          })}
-          placeholder="Vendor"
-          searchPlaceholder="Search vendors…"
-          ariaLabel="Vendor"
-          className="h-8 w-56 rounded-md text-[13px]"
-        />
+      {showVendorFilter ? (
+        <div className="flex items-center gap-1">
+          <LookupPicker
+            // Upstream matches the search term against the vendor name, so the
+            // name — not `_id` — is what a selection is identified by here.
+            value={search ? { id: search, label: search } : null}
+            onSelect={(vendor) => updateParams({ search: vendor.name || null })}
+            queryKey={purchaseRequestKeys.vendorOptions()}
+            loadPage={loadVendorPage}
+            toOption={(vendor) => ({
+              id: vendor.name,
+              label: vendor.name || vendor.no,
+              hint: vendor.no,
+            })}
+            placeholder="Vendor"
+            searchPlaceholder="Search vendors…"
+            ariaLabel="Vendor"
+            className="h-8 w-56 rounded-md text-[13px]"
+          />
 
-        {search ? (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 px-2"
-            aria-label="Clear vendor filter"
-            onClick={() => updateParams({ search: null })}
-          >
-            <XIcon />
-          </Button>
-        ) : null}
-      </div>
+          {search ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 px-2"
+              aria-label="Clear vendor filter"
+              onClick={() => updateParams({ search: null })}
+            >
+              <XIcon />
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }

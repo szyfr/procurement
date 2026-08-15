@@ -12,7 +12,6 @@ export const purchaseRequestEndpoints = {
   /** Status transitions are their own endpoint — see the client for why. */
   status: (id: string, status: string) =>
     `${BASE}/${encodeURIComponent(id)}/status/${encodeURIComponent(status)}`,
-  itemRequests: `${BASE}/item-requests`,
   proofs: `${BASE}/proofs`,
   proofDetail: (id: string) => `${BASE}/proofs/${encodeURIComponent(id)}`,
   departments: `${BASE}/lookups/departments`,

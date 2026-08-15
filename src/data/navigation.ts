@@ -55,7 +55,6 @@ export const breadcrumbLabels: Record<string, string> = {
   dashboard: "Dashboard",
   "purchase-requests": "Purchase Requests",
   new: "New",
-  "item-requests": "Item Creation Requests",
   canvassing: "Canvassing",
   quotes: "Quotes",
   reports: "Reports",

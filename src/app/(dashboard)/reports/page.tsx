@@ -1,8 +1,7 @@
 import { DownloadIcon } from "lucide-react";
 import type { Metadata } from "next";
 
-import { ReportFilters } from "@/components/reports/report-filters";
-import { ReportWorkspace } from "@/components/reports/report-workspace";
+import { ReportsView } from "@/components/reports/reports-view";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { resolveDateRange } from "@/modules/reports";
@@ -45,13 +44,7 @@ export default async function ReportsPage({
         }
       />
 
-      <ReportFilters range={dateRange} search={search ?? ""} />
-
-      <ReportWorkspace
-        startDate={dateRange.startDate}
-        endDate={dateRange.endDate}
-        search={search ?? ""}
-      />
+      <ReportsView range={dateRange} search={search ?? ""} />
     </>
   );
 }

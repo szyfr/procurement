@@ -1,7 +1,6 @@
 "use client";
 
 import { ChartNoAxesColumnIcon, LockIcon } from "lucide-react";
-import * as React from "react";
 
 import { CanvassingComplianceReport } from "@/components/reports/canvassing-compliance-report";
 import { DepartmentSpendingReport } from "@/components/reports/department-spending-report";
@@ -17,7 +16,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
-import { defaultReportId, reports } from "@/data/reports";
+import { reports } from "@/data/reports";
 import { cn } from "@/lib/utils";
 
 /**
@@ -37,13 +36,15 @@ export function ReportWorkspace({
   startDate,
   endDate,
   search,
+  activeId,
+  onActiveIdChange,
 }: {
   startDate: string;
   endDate: string;
   search: string;
+  activeId: string;
+  onActiveIdChange: (id: string) => void;
 }) {
-  const [activeId, setActiveId] = React.useState(defaultReportId);
-
   const activeReport = reports.find((report) => report.id === activeId);
 
   if (reports.length === 0) {
@@ -98,7 +99,7 @@ export function ReportWorkspace({
                   variant={isActive ? "default" : "outline"}
                   size="sm"
                   className="w-full"
-                  onClick={() => setActiveId(report.id)}
+                  onClick={() => onActiveIdChange(report.id)}
                 >
                   {isActive ? "Regenerate" : "Generate"}
                 </Button>
