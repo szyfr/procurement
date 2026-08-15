@@ -31,9 +31,6 @@ import {
 } from "@/modules/reports";
 
 /**
- * The one report backed by a real endpoint. The other four on this page are
- * still mock definitions rendered through `ReportResult`.
- *
  * The date range narrows which vendors are evaluated — upstream matches it
  * against the vendor's own `created_at`, not against delivery dates — so the
  * delivery counts below always cover a vendor's full history.

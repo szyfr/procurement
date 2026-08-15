@@ -34,7 +34,11 @@ export default async function ReportsPage({
         title="Reports"
         description="Procurement performance across the selected period"
         actions={
-          <Button variant="outline" size="sm">
+          // Disabled rather than removed, same as the other not-yet-built
+          // actions in the app: no report endpoint returns a file, and the
+          // three that answer an array have no pagination to export around.
+          // It rendered enabled and did nothing at all before.
+          <Button variant="outline" size="sm" disabled>
             <DownloadIcon data-icon="inline-start" />
             Export
           </Button>

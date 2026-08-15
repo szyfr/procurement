@@ -21,11 +21,13 @@ export default async function PurchaseRequestsPage({
     view?: string;
     page?: string;
     search?: string;
+    status?: string;
     priority?: string;
     departments?: string;
   }>;
 }) {
-  const { view, page, search, priority, departments } = await searchParams;
+  const { view, page, search, status, priority, departments } =
+    await searchParams;
   const activeView: ListView = view === "table" ? "table" : "cards";
   const activePage = Math.max(Number(page) || 1, 1);
 
@@ -62,6 +64,7 @@ export default async function PurchaseRequestsPage({
         view={activeView}
         page={activePage}
         search={search ?? ""}
+        status={status ?? ""}
         priority={priority ?? ""}
         departments={departments ?? ""}
       />

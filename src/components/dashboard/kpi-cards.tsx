@@ -4,7 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 export interface KpiCardData {
   id: string;
   label: string;
-  /** Resolved display value, or a static `"-"` for metrics with no backend source. */
+  /** Resolved display value, or a static em-dash for metrics with no backend source. */
   value: number | string;
   isPending?: boolean;
 }
