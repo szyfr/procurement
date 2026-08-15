@@ -1,5 +1,6 @@
 import { ApiError } from "@/lib/api/errors";
 import { isObjectId } from "@/lib/api/object-id";
+import { readAttachments } from "@/lib/api/uploads";
 import type { CreateQuotationInput } from "@/modules/canvassing/dto";
 import type { QuotationItemPricing } from "@/modules/canvassing/models/quotation";
 
@@ -104,10 +105,7 @@ export function parseCreateQuotationForm(form: FormData): {
     item_pricing: parseItemPricing(readText(form, "item_pricing")),
   };
 
-  // Empty parts are what a file input contributes when nothing was picked.
-  const attachments = form
-    .getAll("attachments")
-    .filter((entry): entry is File => entry instanceof File && entry.size > 0);
+  const attachments = readAttachments(form);
 
   return { payload, attachments };
 }
