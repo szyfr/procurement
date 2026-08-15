@@ -15,7 +15,10 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatShortDate } from "@/lib/date";
 import { cn, formatCurrency } from "@/lib/utils";
-import { quotationDetailQuery } from "@/modules/canvassing";
+import {
+  quotationDetailQuery,
+  quotationVendorLabel,
+} from "@/modules/canvassing";
 
 function Field({ label, value }: { label: string; value: React.ReactNode }) {
   return (
@@ -98,14 +101,9 @@ export function QuotationDetailSheet({
                 <SectionLabel>Quote information</SectionLabel>
                 <div className="grid grid-cols-2 gap-3">
                   <Field label="Reference No." value={data.reference_no} />
-                  {/* No vendor join upstream — the id stands in for the name. */}
                   <Field
-                    label="Vendor ID"
-                    value={
-                      <span className="font-mono text-xs">
-                        {data.vendor_id}
-                      </span>
-                    }
+                    label="Vendor"
+                    value={quotationVendorLabel(data) ?? "—"}
                   />
                   <Field
                     label="Quote Date"
@@ -115,15 +113,9 @@ export function QuotationDetailSheet({
                     label="Delivery Date"
                     value={formatShortDate(data.delivery_date) ?? "—"}
                   />
-                  {/* Payment terms have their own module, but nothing here
-                      resolves this id to it. */}
                   <Field
-                    label="Payment Term ID"
-                    value={
-                      <span className="font-mono text-xs">
-                        {data.payment_term_id}
-                      </span>
-                    }
+                    label="Payment Term"
+                    value={data.payment_term?.title || "—"}
                   />
                 </div>
               </section>

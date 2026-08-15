@@ -33,6 +33,7 @@ import { cn, formatCurrency } from "@/lib/utils";
 import {
   canvassingQuotationsQuery,
   type Quotation,
+  quotationVendorLabel,
   useCanvassingUpdates,
 } from "@/modules/canvassing";
 import {
@@ -141,8 +142,10 @@ function QuoteComparison({
   onSelect: (quotationId: string) => void;
   awardedQuotationId: string | null;
 }) {
-  // The detail pipeline joins the material; the raw id stands in if it missed.
-  const name = item.material?.description || item.material_id;
+  // The pipeline projects `material_id` away, so a missed material join leaves
+  // only the ERP number — and nothing at all if that is blank too.
+  const name =
+    item.material?.description?.trim() || item.material?.no || "Unknown item";
   const unit = item.material?.uom || null;
   const quantity = `${item.quantity}${unit ? ` ${unit}` : ""}`;
 
@@ -159,6 +162,7 @@ function QuoteComparison({
       quotations.find((quotation) => quotation._id === awardedQuotationId) ??
       null;
     const winningPrice = winner ? unitPriceFor(winner, item._id) : null;
+    const winningVendor = quotationVendorLabel(winner);
 
     return (
       <section className="flex flex-col gap-4">
@@ -170,7 +174,7 @@ function QuoteComparison({
             </p>
           </div>
           <StatusBadge tone="success">
-            Vendor Selected{winner ? ` — ${winner.vendor_id}` : ""}
+            Vendor Selected{winningVendor ? ` — ${winningVendor}` : ""}
           </StatusBadge>
         </div>
 
@@ -182,7 +186,7 @@ function QuoteComparison({
                 {winningPrice === null
                   ? "—"
                   : formatCurrency(winningPrice, true)}
-                {winner ? ` · ${winner.vendor_id}` : ""}
+                {winningVendor ? ` · ${winningVendor}` : ""}
               </p>
             </div>
             <div>
@@ -292,7 +296,7 @@ function QuoteComparison({
                     <TableHead scope="col" className="w-8">
                       <span className="sr-only">Select</span>
                     </TableHead>
-                    <TableHead scope="col">Vendor ID</TableHead>
+                    <TableHead scope="col">Vendor</TableHead>
                     <TableHead scope="col">Reference</TableHead>
                     <TableHead scope="col" className={numericCellClass}>
                       Unit Price
@@ -312,6 +316,7 @@ function QuoteComparison({
                     const unitPrice = unitPriceFor(quotation, item._id);
                     const isLowest =
                       unitPrice !== null && unitPrice === lowestPrice;
+                    const vendorName = quotationVendorLabel(quotation);
 
                     return (
                       <TableRow
@@ -321,17 +326,15 @@ function QuoteComparison({
                         <TableCell>
                           <RadioGroupItem
                             value={quotation._id}
-                            aria-label={`Select vendor ${quotation.vendor_id}`}
+                            aria-label={`Select vendor ${vendorName ?? "unknown"}`}
                           />
                         </TableCell>
-                        {/* No vendor join upstream — the id stands in for the name. */}
                         <TableCell
                           className={cn(
-                            "font-mono text-xs",
                             isLowest && "font-semibold text-status-success-fg",
                           )}
                         >
-                          {quotation.vendor_id}
+                          {vendorName ?? "—"}
                         </TableCell>
                         <TableCell className={cellIdClass}>
                           {quotation.reference_no}
@@ -364,7 +367,7 @@ function QuoteComparison({
                         </TableCell>
                         <TableCell>
                           <QuotationRowActions
-                            vendorId={quotation.vendor_id}
+                            vendorName={vendorName}
                             onView={() =>
                               setOverlay({ kind: "view", quotation })
                             }
@@ -388,7 +391,7 @@ function QuoteComparison({
               quotationId={selected}
               itemId={item._id}
               itemName={name}
-              vendorId={selectedQuotation?.vendor_id ?? null}
+              vendorName={quotationVendorLabel(selectedQuotation)}
               unitPrice={
                 selectedQuotation
                   ? unitPriceFor(selectedQuotation, item._id)

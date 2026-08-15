@@ -98,14 +98,23 @@ const EMPTY_DRAFT: Draft = {
 };
 
 function draftFrom(quotation: QuotationDetail): Draft {
+  const { vendor, payment_term: paymentTerm } = quotation;
+
   return {
-    // No by-id read exists for either vendors or payment terms, so the stored
-    // id is the only label there is until the user reopens the picker.
-    vendor: { id: quotation.vendor_id, label: quotation.vendor_id },
-    paymentTerm: {
-      id: quotation.payment_term_id,
-      label: quotation.payment_term_id,
-    },
+    // Both joins are preserved-null upstream, so a quote whose vendor or term
+    // was deleted seeds an empty picker and has to be re-picked before saving.
+    vendor: vendor
+      ? { id: vendor._id, label: vendor.name?.trim() || vendor.no }
+      : null,
+    paymentTerm: paymentTerm
+      ? {
+          id: paymentTerm._id,
+          label:
+            paymentTerm.title?.trim() ||
+            paymentTerm.description ||
+            paymentTerm._id,
+        }
+      : null,
     referenceNo: quotation.reference_no,
     // The response carries full timestamps; a date input takes YYYY-MM-DD.
     date: toDateInputValue(quotation.date),

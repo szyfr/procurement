@@ -31,7 +31,7 @@ export function AwardVendorDialog({
   quotationId,
   itemId,
   itemName,
-  vendorId,
+  vendorName,
   unitPrice,
   quantity,
   disabled,
@@ -40,7 +40,8 @@ export function AwardVendorDialog({
   quotationId: string | null;
   itemId: string;
   itemName: string;
-  vendorId: string | null;
+  /** Null until a row is picked, or if the quote's vendor join missed. */
+  vendorName: string | null;
   unitPrice: number | null;
   /** Already display copy, e.g. "10 pcs". */
   quantity: string;
@@ -102,7 +103,8 @@ export function AwardVendorDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>Award this quote?</AlertDialogTitle>
           <AlertDialogDescription>
-            {itemName} ({quantity}) will be awarded to vendor {vendorId ?? "—"}
+            {itemName} ({quantity}) will be awarded to{" "}
+            {vendorName ?? "the selected vendor"}
             {unitPrice === null
               ? ""
               : ` at ${formatCurrency(unitPrice, true)} per unit`}

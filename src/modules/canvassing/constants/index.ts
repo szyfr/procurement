@@ -1,5 +1,6 @@
 import type { StatusTone } from "@/lib/types";
 import type { CanvassingStatus } from "@/modules/canvassing/models/canvassing";
+import type { Quotation } from "@/modules/canvassing/models/quotation";
 
 export { DEFAULT_PAGE_SIZE } from "@/lib/api/pagination";
 
@@ -15,6 +16,17 @@ export const canvassingStatusTone: Record<CanvassingStatus, StatusTone> = {
   "Ready for Comparison": "neutral",
   "Vendor Selected": "success",
 };
+
+/**
+ * How a quote names its vendor. The join is preserved-null, so it can be
+ * missing entirely; synced vendors may also arrive with a blank `name`, which
+ * is why `no` stands in before the em-dash.
+ */
+export function quotationVendorLabel(quotation: Quotation | null | undefined) {
+  const vendor = quotation?.vendor;
+
+  return vendor?.name?.trim() || vendor?.no || null;
+}
 
 /** The statuses a row can carry, for the Status filter. */
 export const canvassingStatusOptions = Object.keys(

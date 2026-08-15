@@ -18,12 +18,12 @@ import { cn } from "@/lib/utils";
 /** Per-row menu for one quote in the comparison. The detail sheet and edit
  *  dialog it opens are owned by the card, not by this. */
 export function QuotationRowActions({
-  vendorId,
+  vendorName,
   onView,
   onEdit,
 }: {
-  /** No vendor join upstream, so the id is what names the quote in the label. */
-  vendorId: string;
+  /** Null when the vendor join missed, which the label reads as "unknown". */
+  vendorName: string | null;
   onView: () => void;
   onEdit: () => void;
 }) {
@@ -34,7 +34,7 @@ export function QuotationRowActions({
           <Button
             variant="ghost"
             size="icon-sm"
-            aria-label={`Actions for vendor ${vendorId} quote`}
+            aria-label={`Actions for ${vendorName ?? "unknown vendor"} quote`}
           />
         }
       >

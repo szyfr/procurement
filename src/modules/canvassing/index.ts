@@ -15,6 +15,7 @@ export {
 export {
   canvassingStatusOptions,
   canvassingStatusTone,
+  quotationVendorLabel,
 } from "@/modules/canvassing/constants";
 export type {
   CreateQuotationDto,

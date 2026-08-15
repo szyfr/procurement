@@ -1,4 +1,6 @@
+import type { PaymentTerm } from "@/modules/payment-terms";
 import type { Material } from "@/modules/purchase-requests";
+import type { Vendor } from "@/modules/vendors";
 
 /**
  * The quotation responses, verbatim.
@@ -19,9 +21,10 @@ export interface QuotationItemPricing {
  * A vendor's quote. It may price several items at once, which is why the
  * comparison response groups the same quotation under every item it covers.
  *
- * `vendor_id` and `payment_term_id` are carried unresolved: the quote has no
- * vendor join and FastAPI has no by-id read for vendors, and nothing here turns
- * a payment term id into a name either — so the ids are what the UI shows.
+ * The pipeline joins the vendor and payment term and projects the two ids away,
+ * so a quote carries the resolved documents and never `vendor_id` /
+ * `payment_term_id`. Both `$unwind`s preserve rows whose lookup missed, which
+ * drops the key entirely — hence the optional joins.
  */
 export interface Quotation {
   _id: string;
@@ -29,8 +32,10 @@ export interface Quotation {
   date: string;
   delivery_date: string;
   item_pricing: QuotationItemPricing[];
-  vendor_id: string;
-  payment_term_id: string;
+  vendor?: Vendor | null;
+  payment_term?: PaymentTerm | null;
+  /** Who recorded the quote. There is no user join, so this stays an id. */
+  user_id: string;
   created_at: string;
   updated_at: string;
 }
@@ -63,7 +68,6 @@ export interface ItemQuotations {
   status: string;
   is_needs_canvass: boolean | null;
   purchase_request_id: string;
-  material_id: string;
   vendor_id: string | null;
   created_at: string;
   updated_at: string;
@@ -72,7 +76,11 @@ export interface ItemQuotations {
    * for an item nobody has quoted yet.
    */
   quotations: Quotation[];
-  /** The `$unwind` preserves rows whose material lookup missed, dropping the key. */
+  /**
+   * The `$unwind` preserves rows whose material lookup missed, dropping the
+   * key. The pipeline projects `material_id` away, so when the join misses
+   * there is nothing left to identify the item by.
+   */
   material?: Material | null;
   /**
    * The winning quote, set by `PATCH /canvassing/award/{quotation_id}` alongside
