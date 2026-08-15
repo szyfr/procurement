@@ -2,7 +2,7 @@
  * `GET /reports/department-spending` — spend on purchase requests created in
  * the range, one entry per department.
  *
- * Unlike the other two reports this one answers an object rather than an array,
+ * Like canvassing compliance, this one answers an object rather than an array,
  * with the grand total computed upstream.
  */
 

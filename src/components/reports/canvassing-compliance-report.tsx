@@ -69,7 +69,7 @@ export function CanvassingComplianceReport({
   const period = `${formatDate(startDate)} – ${formatDate(endDate)}`;
 
   // Every department comes back, including the ones that canvassed nothing.
-  const rows = [...data]
+  const rows = [...data.data]
     .filter((row) => row.pr_canvassed > 0)
     .sort((a, b) => b.pr_canvassed - a.pr_canvassed);
 
@@ -84,9 +84,11 @@ export function CanvassingComplianceReport({
     );
   }
 
-  const canvassed = rows.reduce((sum, row) => sum + row.pr_canvassed, 0);
-  const met = rows.reduce((sum, row) => sum + row.met_minimum, 0);
-  const below = rows.reduce((sum, row) => sum + row.below_minimum, 0);
+  // Totals come from upstream. They cover every department, but the ones the
+  // table leaves out canvassed nothing and contribute zero to both.
+  const met = data.total_minimum;
+  const below = data.total_below_minimum;
+  const canvassed = met + below;
 
   // Outcome, not category — the one report where bar colour carries meaning,
   // matched to the status tones the pills use everywhere else.

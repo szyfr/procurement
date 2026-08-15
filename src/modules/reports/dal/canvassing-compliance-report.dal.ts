@@ -1,5 +1,5 @@
 import { serverFetch } from "@/lib/api/fetcher";
-import type { CanvassingComplianceRow } from "@/modules/reports/models/canvassing-compliance-report";
+import type { CanvassingComplianceReport } from "@/modules/reports/models/canvassing-compliance-report";
 
 /**
  * Canvassing compliance from FastAPI. Server-side only, called from Route
@@ -17,10 +17,10 @@ export interface CanvassingComplianceQuery {
 
 export function getCanvassingCompliance(
   query: CanvassingComplianceQuery,
-): Promise<CanvassingComplianceRow[]> {
+): Promise<CanvassingComplianceReport> {
   // No trailing slash, same as department-spending: this controller registers
   // `""` rather than `"/"`, so the slashed path 404s.
-  return serverFetch<CanvassingComplianceRow[]>(
+  return serverFetch<CanvassingComplianceReport>(
     "/reports/canvassing-compliance",
     {
       query: {

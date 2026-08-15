@@ -9,6 +9,9 @@
  * There is no server-side notion of an **exemption** — a request excused from
  * the minimum is indistinguishable from one that simply fell short, so every
  * shortfall lands in `below_minimum`.
+ *
+ * Like department spending, this one answers an object rather than an array,
+ * with the totals summed upstream.
  */
 
 export interface CanvassingComplianceRow {
@@ -26,4 +29,13 @@ export interface CanvassingComplianceRow {
    * the "has quotations" filter applies to the request, not to each item.
    */
   below_minimum: number;
+}
+
+export interface CanvassingComplianceReport {
+  /** Σ `met_minimum` across every department. */
+  total_minimum: number;
+  /** Σ `below_minimum` across every department. */
+  total_below_minimum: number;
+  /** Every department, including those that canvassed nothing in the range. */
+  data: CanvassingComplianceRow[];
 }

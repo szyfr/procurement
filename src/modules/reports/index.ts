@@ -8,7 +8,10 @@ export {
   reportRangeOptions,
   resolveDateRange,
 } from "@/modules/reports/constants";
-export type { CanvassingComplianceRow } from "@/modules/reports/models/canvassing-compliance-report";
+export type {
+  CanvassingComplianceReport,
+  CanvassingComplianceRow,
+} from "@/modules/reports/models/canvassing-compliance-report";
 export type {
   DepartmentSpending,
   DepartmentSpendingReport,
