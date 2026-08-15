@@ -1,9 +1,7 @@
-import { DownloadIcon } from "lucide-react";
 import type { Metadata } from "next";
 
 import { ReportsView } from "@/components/reports/reports-view";
 import { PageHeader } from "@/components/shared/page-header";
-import { Button } from "@/components/ui/button";
 import { resolveDateRange } from "@/modules/reports";
 
 export const metadata: Metadata = {
@@ -32,16 +30,6 @@ export default async function ReportsPage({
       <PageHeader
         title="Reports"
         description="Procurement performance across the selected period"
-        actions={
-          // Disabled rather than removed, same as the other not-yet-built
-          // actions in the app: no report endpoint returns a file, and the
-          // three that answer an array have no pagination to export around.
-          // It rendered enabled and did nothing at all before.
-          <Button variant="outline" size="sm" disabled>
-            <DownloadIcon data-icon="inline-start" />
-            Export
-          </Button>
-        }
       />
 
       <ReportsView range={dateRange} search={search ?? ""} />
