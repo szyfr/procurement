@@ -12,6 +12,8 @@ export const purchaseRequestEndpoints = {
   /** Status transitions are their own endpoint — see the client for why. */
   status: (id: string, status: string) =>
     `${BASE}/${encodeURIComponent(id)}/status/${encodeURIComponent(status)}`,
+  /** Bulk delivery: closes out the items named in the body, not the request. */
+  delivered: (id: string) => `${BASE}/${encodeURIComponent(id)}/delivered`,
   proofs: `${BASE}/proofs`,
   proofDetail: (id: string) => `${BASE}/proofs/${encodeURIComponent(id)}`,
   departments: `${BASE}/lookups/departments`,

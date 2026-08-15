@@ -3,11 +3,14 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import * as React from "react";
 
+import { MarkDeliveredDialog } from "@/components/purchase-requests/mark-delivered-dialog";
+import { PurchaseRequestItemsBulkBar } from "@/components/purchase-requests/pr-items-bulk-bar";
 import {
+  isDeliverySelectable,
+  isItemSelectable,
   isProofSelectable,
   PurchaseRequestItemsTable,
 } from "@/components/purchase-requests/pr-items-table";
-import { ProofOfOrderBulkBar } from "@/components/purchase-requests/proof-of-order-bulk-bar";
 import {
   ProofOfOrderDialog,
   type ProofOfOrderSaveGroup,
@@ -16,20 +19,28 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/components/ui/toast";
 import {
   createPurchaseRequestProof,
+  markPurchaseRequestDelivered,
   type PurchaseRequestDetail,
   purchaseRequestKeys,
 } from "@/modules/purchase-requests";
 
 /**
- * Items table plus the bulk proof-of-order workflow: select rows, open one
- * dialog, save. Each vendor group in the dialog becomes its own
+ * Items table plus the two bulk workflows that run off its checkbox column:
+ * proof of order and delivery. Both read the same selection and each re-filters
+ * it through its own eligibility rule, so one set of checkboxes serves both.
+ *
+ * Proof of order: each vendor group in the dialog becomes its own
  * `POST /purchase-request-proofs` call — the backend takes one delivery date
  * and one vendor reference per proof, so a mixed-vendor selection saves as
  * several requests, not one.
  *
- * There's no local overlay of the result: the response carries no filename to
- * show (see `pr-items-table.tsx`), so a successful save just invalidates the
- * detail query and the table picks up the real, persisted `proofs` join.
+ * Delivery: a single `PATCH /purchase-requests/{id}/delivered` covering the
+ * whole selection.
+ *
+ * Neither overlays its result locally. The proof response carries no filename
+ * to show (see `pr-items-table.tsx`) and the delivery response carries nothing
+ * at all, so a successful save just invalidates the detail query and the table
+ * picks up what actually persisted.
  */
 export function PurchaseRequestItemsSection({
   request,
@@ -42,6 +53,10 @@ export function PurchaseRequestItemsSection({
   const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [saveError, setSaveError] = React.useState<string | null>(null);
+  const [deliveredOpen, setDeliveredOpen] = React.useState(false);
+  const [deliveredError, setDeliveredError] = React.useState<string | null>(
+    null,
+  );
 
   const { mutateAsync: saveGroups, isPending: saving } = useMutation({
     mutationFn: async (groups: ProofOfOrderSaveGroup[]) => {
@@ -79,27 +94,44 @@ export function PurchaseRequestItemsSection({
     },
   });
 
+  const { mutateAsync: markDelivered, isPending: markingDelivered } =
+    useMutation({
+      mutationFn: (input: { itemIds: string[]; deliveryDate: string }) =>
+        markPurchaseRequestDelivered(request._id, {
+          item_ids: input.itemIds,
+          delivery_date: input.deliveryDate,
+        }),
+    });
+
   const selectableIds = request.items
-    .filter(isProofSelectable)
+    .filter(isItemSelectable)
     .map((item) => item._id);
   // Eligibility is re-checked here, not just held in `selectedIds`: a refetch
-  // can move an item past `po-created` (someone else recorded its proof) while
-  // its id is still in the set, and a stale id would otherwise be submitted.
+  // can move an item on (someone else recorded its proof, or delivered it)
+  // while its id is still in the set, and a stale id would otherwise be
+  // submitted. Each action re-filters through its own rule, so a selection the
+  // one can't act on doesn't block the other.
   const selectedItems = request.items.filter(
     (item) => selectedIds.has(item._id) && isProofSelectable(item),
+  );
+  const selectedDeliveryItems = request.items.filter(
+    (item) => selectedIds.has(item._id) && isDeliverySelectable(item),
   );
   const deliveredCount = request.items.filter(
     (item) => item.status === "completed",
   ).length;
 
-  // `open` below is derived from `selectedItems.length`, so the selection
+  // Each `open` below is derived from its action's item count, so the selection
   // clearing (via the bulk bar's "Clear" or a saved/refetched item dropping
-  // out) can close the dialog without `onOpenChange` firing. Left unsynced,
-  // `dialogOpen` would stay true and the next selection would reopen it
-  // unprompted.
+  // out) can close a dialog without `onOpenChange` firing. Left unsynced, the
+  // flag would stay true and the next selection would reopen it unprompted.
   React.useEffect(() => {
     if (selectedItems.length === 0) setDialogOpen(false);
   }, [selectedItems.length]);
+
+  React.useEffect(() => {
+    if (selectedDeliveryItems.length === 0) setDeliveredOpen(false);
+  }, [selectedDeliveryItems.length]);
 
   function toggleItem(id: string, checked: boolean) {
     setSelectedIds((prev) => {
@@ -112,6 +144,46 @@ export function PurchaseRequestItemsSection({
 
   function toggleAll(checked: boolean) {
     setSelectedIds(checked ? new Set(selectableIds) : new Set());
+  }
+
+  /**
+   * One call for the whole selection. Note the request's own status will not
+   * move even when this completes every item: the backend never dispatches its
+   * status verification job from this endpoint, so a fully delivered request
+   * keeps reading "PO Created" until something else recalculates it.
+   */
+  async function handleMarkDelivered(deliveryDate: string) {
+    const itemIds = selectedDeliveryItems.map((item) => item._id);
+    if (itemIds.length === 0) return;
+
+    setDeliveredError(null);
+
+    try {
+      await markDelivered({ itemIds, deliveryDate });
+    } catch (error) {
+      setDeliveredError(
+        error instanceof Error ? error.message : "Something went wrong.",
+      );
+      return;
+    }
+
+    // The delivered ids leave the selection; anything else the user had picked
+    // (a `po-created` item they still want a proof on) stays put.
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      for (const id of itemIds) next.delete(id);
+      return next;
+    });
+    queryClient.invalidateQueries({
+      queryKey: purchaseRequestKeys.detail(request._id),
+    });
+    queryClient.invalidateQueries({ queryKey: purchaseRequestKeys.lists() });
+
+    setDeliveredOpen(false);
+    toast.add({
+      title: `${itemIds.length} item${itemIds.length === 1 ? "" : "s"} marked delivered`,
+      type: "success",
+    });
   }
 
   async function handleSave(groups: ProofOfOrderSaveGroup[]) {
@@ -175,10 +247,15 @@ export function PurchaseRequestItemsSection({
           </p>
         ) : (
           <>
-            <ProofOfOrderBulkBar
-              selectedItems={selectedItems}
+            <PurchaseRequestItemsBulkBar
+              selectedItems={request.items.filter((item) =>
+                selectedIds.has(item._id),
+              )}
+              canAddProof={selectedItems.length > 0}
+              canMarkDelivered={selectedDeliveryItems.length > 0}
               onClear={() => setSelectedIds(new Set())}
-              onOpen={() => setDialogOpen(true)}
+              onAddProof={() => setDialogOpen(true)}
+              onMarkDelivered={() => setDeliveredOpen(true)}
             />
             <PurchaseRequestItemsTable
               request={request}
@@ -201,6 +278,18 @@ export function PurchaseRequestItemsSection({
         saving={saving}
         saveError={saveError}
         onSave={handleSave}
+      />
+
+      <MarkDeliveredDialog
+        open={deliveredOpen && selectedDeliveryItems.length > 0}
+        onOpenChange={(next) => {
+          setDeliveredOpen(next);
+          if (!next) setDeliveredError(null);
+        }}
+        items={selectedDeliveryItems}
+        saving={markingDelivered}
+        saveError={deliveredError}
+        onSave={handleMarkDelivered}
       />
     </Card>
   );

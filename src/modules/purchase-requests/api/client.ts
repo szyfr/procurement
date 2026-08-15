@@ -6,6 +6,7 @@ import {
   buildPurchaseRequestProofForm,
   type CreatePurchaseRequestInput,
   type CreatePurchaseRequestProofDto,
+  type MarkPurchaseRequestDeliveredDto,
   type UpdatePurchaseRequestDto,
 } from "@/modules/purchase-requests/dto";
 import type { Material } from "@/modules/purchase-requests/models/material";
@@ -84,6 +85,22 @@ export function setPurchaseRequestStatus(
 ) {
   return bffRequest<void>(purchaseRequestEndpoints.status(id, status), {
     method: "PATCH",
+  });
+}
+
+/**
+ * Records delivery against the items named in the payload: each is stamped
+ * with `delivered_at` and moved to `completed`. One call covers the whole
+ * selection — the date is per batch, not per item. Returns nothing; callers
+ * refetch, and the request's own status does not move (see the DAL).
+ */
+export function markPurchaseRequestDelivered(
+  id: string,
+  payload: MarkPurchaseRequestDeliveredDto,
+) {
+  return bffRequest<void>(purchaseRequestEndpoints.delivered(id), {
+    method: "PATCH",
+    body: payload,
   });
 }
 

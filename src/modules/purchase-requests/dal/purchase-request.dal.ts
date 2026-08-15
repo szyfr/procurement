@@ -8,6 +8,7 @@ import { DEFAULT_PAGE_SIZE } from "@/modules/purchase-requests/constants";
 import type {
   CreatePurchaseRequestDto,
   CreatePurchaseRequestInput,
+  MarkPurchaseRequestDeliveredDto,
   UpdatePurchaseRequestDto,
 } from "@/modules/purchase-requests/dto";
 import type {
@@ -119,6 +120,36 @@ export async function updatePurchaseRequestStatus(
 
   await serverFetch<null>(`/purchase-requests/${id}/status/${status}`, {
     method: "PATCH",
+  });
+}
+
+/**
+ * Bulk delivery. Stamps `delivered_at` on every item named in the payload and
+ * moves it to `completed`; the item ids carry the work, and the request id in
+ * the path is not read by the controller at all.
+ *
+ * Two upstream caveats worth knowing before debugging a failure here:
+ *
+ * - The handler builds its model with `PurchaseRequestItemModel(get_db())` and
+ *   declares no `Depends(get_db)`, unlike every other route in that file, so
+ *   the un-awaited coroutine lands where the collection should be and the
+ *   first write raises — surfacing as a 500. Until that is fixed upstream this
+ *   call cannot succeed; nothing on this side can work around it.
+ * - It never dispatches `StatusVerificationJob`, so the parent request keeps
+ *   its current status even once every item is completed.
+ *
+ * Like the status transition, the 204 arrives with a `{}` body that
+ * `serverFetch` drops.
+ */
+export async function markPurchaseRequestDelivered(
+  id: string,
+  payload: MarkPurchaseRequestDeliveredDto,
+): Promise<void> {
+  assertObjectId(id, NOT_FOUND);
+
+  await serverFetch<null>(`/purchase-requests/${id}/delivered`, {
+    method: "PATCH",
+    body: payload,
   });
 }
 
