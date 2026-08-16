@@ -7,6 +7,7 @@ import {
   type CreatePurchaseRequestInput,
   type CreatePurchaseRequestProofDto,
   type MarkPurchaseRequestDeliveredDto,
+  type RecordPartialDeliveryDto,
   type UpdatePurchaseRequestDto,
 } from "@/modules/purchase-requests/dto";
 import type { Material } from "@/modules/purchase-requests/models/material";
@@ -102,6 +103,22 @@ export function markPurchaseRequestDelivered(
     method: "PATCH",
     body: payload,
   });
+}
+
+/**
+ * Records how much of a single item arrived. Per item and per call — unlike
+ * `markPurchaseRequestDelivered`, the amount is specific to one line, so there
+ * is no bulk form of this. Returns nothing; callers refetch.
+ */
+export function recordPartialDelivery(
+  id: string,
+  itemId: string,
+  payload: RecordPartialDeliveryDto,
+) {
+  return bffRequest<void>(
+    purchaseRequestEndpoints.partialDelivery(id, itemId),
+    { method: "PATCH", body: payload },
+  );
 }
 
 /**

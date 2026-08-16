@@ -16,6 +16,7 @@ export {
   fetchPurchaseRequests,
   fetchVendorOptions,
   markPurchaseRequestDelivered,
+  recordPartialDelivery,
   setPurchaseRequestStatus,
   updatePurchaseRequest,
 } from "@/modules/purchase-requests/api/client";
@@ -33,6 +34,7 @@ export type {
   CreatePurchaseRequestInput,
   CreatePurchaseRequestProofDto,
   MarkPurchaseRequestDeliveredDto,
+  RecordPartialDeliveryDto,
   UpdatePurchaseRequestDto,
 } from "@/modules/purchase-requests/dto";
 export { usePurchaseRequestUpdates } from "@/modules/purchase-requests/hooks/use-purchase-request-updates";

@@ -1,5 +1,6 @@
 import { ArrowRightIcon } from "lucide-react";
 import Link from "next/link";
+import { PurchaseRequestItemRowActions } from "@/components/purchase-requests/pr-item-row-actions";
 import { StatusBadge, StatusDot } from "@/components/shared/status-badge";
 import {
   dataTableClass,
@@ -51,6 +52,15 @@ export function isItemSelectable(item: PurchaseRequestItem) {
   return isProofSelectable(item) || isDeliverySelectable(item);
 }
 
+/**
+ * Partial delivery applies to an item that has been ordered but isn't closed
+ * — the same window as a full delivery, since recording part of a shipment is
+ * the alternative to recording all of it.
+ */
+export function canRecordPartialDelivery(item: PurchaseRequestItem) {
+  return isDeliverySelectable(item);
+}
+
 function proofsForItem(
   item: PurchaseRequestItem,
   request: PurchaseRequestDetail,
@@ -74,12 +84,14 @@ export function PurchaseRequestItemsTable({
   onToggleItem,
   onToggleAll,
   onHighlightProofs,
+  onRecordPartialDelivery,
 }: {
   request: PurchaseRequestDetail;
   selectedIds: Set<string>;
   onToggleItem: (id: string, checked: boolean) => void;
   onToggleAll: (checked: boolean) => void;
   onHighlightProofs: (itemId: string) => void;
+  onRecordPartialDelivery: (item: PurchaseRequestItem) => void;
 }) {
   const selectableItems = request.items.filter(isItemSelectable);
   const allSelected =
@@ -111,6 +123,9 @@ export function PurchaseRequestItemsTable({
           <TableHead scope="col">Status</TableHead>
           <TableHead scope="col">Proof of order</TableHead>
           <TableHead scope="col">Delivery</TableHead>
+          <TableHead scope="col" className="w-9">
+            <span className="sr-only">Actions</span>
+          </TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -143,9 +158,16 @@ export function PurchaseRequestItemsTable({
                 ) : null}
               </TableCell>
               {/* The detail pipeline joins the material; the raw id stands in
-                  if the lookup missed. */}
+                  if the lookup missed. Capped and truncated so the eighth
+                  column (actions) still fits without the table scrolling —
+                  `title` keeps the full name reachable. */}
               <TableCell>
-                {item.material?.description || item.material_id}
+                <span
+                  className="block max-w-[15rem] truncate"
+                  title={item.material?.description || item.material_id}
+                >
+                  {item.material?.description || item.material_id}
+                </span>
               </TableCell>
               <TableCell className={numericCellClass}>
                 {item.quantity}
@@ -153,7 +175,14 @@ export function PurchaseRequestItemsTable({
               <TableCell>
                 {/* The detail pipeline joins the vendor; the raw id stands in
                     if the lookup missed. */}
-                {item.vendor?.name || item.vendor_id || (
+                {item.vendor?.name || item.vendor_id ? (
+                  <span
+                    className="block max-w-[11rem] truncate"
+                    title={item.vendor?.name || item.vendor_id || undefined}
+                  >
+                    {item.vendor?.name || item.vendor_id}
+                  </span>
+                ) : (
                   <span className="text-muted-foreground italic">
                     {item.is_needs_canvass
                       ? "Empty — in canvassing"
@@ -198,6 +227,18 @@ export function PurchaseRequestItemsTable({
                 ) : (
                   <span className="text-muted-foreground">—</span>
                 )}
+              </TableCell>
+              <TableCell>
+                {/* Nothing to offer on a closed or not-yet-ordered row, so the
+                    trigger is absent rather than present-but-empty. */}
+                {canRecordPartialDelivery(item) ? (
+                  <PurchaseRequestItemRowActions
+                    itemLabel={item.material?.description || item.material_id}
+                    onRecordPartialDelivery={() =>
+                      onRecordPartialDelivery(item)
+                    }
+                  />
+                ) : null}
               </TableCell>
             </TableRow>
           );
