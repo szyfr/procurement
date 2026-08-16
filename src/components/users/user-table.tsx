@@ -41,10 +41,9 @@ import type { User } from "@/modules/users";
  * The users list. The whole row opens the read-only sheet; the actions menu
  * stops the click from reaching it so a menu item never opens both.
  *
- * Edit, deactivate and delete stay in the menu but disabled — role assignment
- * is the only user write FastAPI exposes, and it lives in the detail sheet.
- * Department and status have no backend source at all, so those columns
- * render a literal em-dash.
+ * Deactivate and delete stay in the menu but disabled: FastAPI's soft delete
+ * is on the model with no controller behind it, and a user document carries no
+ * active/inactive flag.
  */
 export function UserTable({
   users,
@@ -52,6 +51,7 @@ export function UserTable({
   buildPageHref,
   openUserId,
   onView,
+  onEdit,
 }: {
   users: User[];
   page: Pagination;
@@ -59,24 +59,19 @@ export function UserTable({
   /** Row left tinted while its sheet is open. */
   openUserId?: string | null;
   onView: (user: User) => void;
+  onEdit: (user: User) => void;
 }) {
   return (
     <Card>
       <CardContent className="px-0">
-        <Table className={cn("min-w-[860px]", dataTableClass)}>
+        <Table className={cn("min-w-[620px]", dataTableClass)}>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <TableHead scope="col" className="w-[24%]">
+              <TableHead scope="col" className="w-[32%]">
                 Name
               </TableHead>
-              <TableHead scope="col" className="w-[26%]">
+              <TableHead scope="col" className="w-[36%]">
                 Email
-              </TableHead>
-              <TableHead scope="col" className="w-[130px]">
-                Department
-              </TableHead>
-              <TableHead scope="col" className="w-[100px]">
-                Status
               </TableHead>
               <TableHead scope="col" className="w-[140px]">
                 Created
@@ -113,12 +108,6 @@ export function UserTable({
                   </TableCell>
                   <TableCell className="align-middle text-xs text-muted-foreground">
                     {user.email}
-                  </TableCell>
-                  <TableCell className="align-middle text-xs text-muted-foreground">
-                    —
-                  </TableCell>
-                  <TableCell className="align-middle text-xs text-muted-foreground">
-                    —
                   </TableCell>
                   <TableCell className="align-middle">
                     <p className="text-xs">
@@ -160,7 +149,7 @@ export function UserTable({
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             className={dropdownItemClass}
-                            disabled
+                            onClick={() => onEdit(user)}
                           >
                             <PencilIcon />
                             Edit user

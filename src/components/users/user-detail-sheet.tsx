@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { UserCogIcon } from "lucide-react";
+import { PencilIcon, UserCogIcon } from "lucide-react";
 import * as React from "react";
 
 import { ErrorAlert } from "@/components/shared/query-states";
@@ -43,17 +43,19 @@ function SectionLabel(props: React.ComponentProps<"p">) {
  *
  * The list row only carries the bare identity fields, so the sheet fetches
  * `GET /users/{id}` itself to get the joined role documents it needs to
- * render as badges. Department, status, last login and phone number have no
- * backend source at all and render as a literal em-dash.
+ * render as badges. Last login has no backend source at all and renders as a
+ * literal em-dash.
  */
 export function UserDetailSheet({
   user,
   open,
   onOpenChange,
+  onEdit,
 }: {
   user: User | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onEdit: (user: User) => void;
 }) {
   const { data, isPending, isError, error } = useQuery({
     ...userDetailQuery(user?._id ?? ""),
@@ -90,9 +92,6 @@ export function UserDetailSheet({
                 <Field label="First name" value={user.firstname} />
                 <Field label="Last name" value={user.lastname} />
                 <Field label="Email" value={user.email} />
-                <Field label="Department" value="—" />
-                <Field label="Status" value="—" />
-                <Field label="Phone number" value="—" />
               </div>
             </section>
 
@@ -146,6 +145,13 @@ export function UserDetailSheet({
                 <Field label="Updated by" value="—" />
               </div>
             </section>
+          </div>
+
+          <div className="border-t p-4">
+            <Button className="w-full" onClick={() => onEdit(user)}>
+              <PencilIcon data-icon="inline-start" />
+              Edit user
+            </Button>
           </div>
         </SheetContent>
       </Sheet>

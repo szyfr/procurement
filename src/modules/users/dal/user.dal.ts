@@ -3,6 +3,8 @@ import { serverFetch } from "@/lib/api/fetcher";
 import { assertObjectId } from "@/lib/api/object-id";
 import { clampPageSize, type Paginated } from "@/lib/api/pagination";
 import { DEFAULT_PAGE_SIZE } from "@/modules/users/constants";
+import type { CreateUserDto } from "@/modules/users/dto/create-user.dto";
+import type { UpdateUserDto } from "@/modules/users/dto/update-user.dto";
 import type { UpdateUserRolesDto } from "@/modules/users/dto/update-user-roles.dto";
 import type {
   UpdateUserRolesResult,
@@ -60,6 +62,41 @@ export async function getUser(id: string): Promise<UserDetail> {
   if (!user) throw new ApiError(404, "not_found", NOT_FOUND);
 
   return dropPassword(user);
+}
+
+/**
+ * Creates a user through `POST /auth/register` — FastAPI has no create route
+ * under `/users`, and register is not gated by `get_current_active_user`, so
+ * the `requireUser()` call on our own `POST /api/users` is the only thing
+ * making this an administrative action.
+ *
+ * It answers with the stored document straight out of the insert, bcrypt hash
+ * included, so the same boundary `listUsers` draws applies here. A duplicate
+ * email comes back as a 422 `{message}` and reaches the browser verbatim,
+ * which is the one upstream message class `toPublicMessage` passes through.
+ */
+export async function createUser(input: CreateUserDto): Promise<User> {
+  const created = await serverFetch<RawUser>("/auth/register", {
+    method: "POST",
+    body: input,
+  });
+
+  return dropPassword(created);
+}
+
+/**
+ * `PUT /users/{id}` answers with the updated document and no `password` — the
+ * read it re-fetches through projects the hash out on its own, unlike the
+ * other two user reads.
+ *
+ * Its controller catches every exception and re-raises it as a 500, so an
+ * unknown id arrives as `500 "Error: 404: User not found"` rather than a 404.
+ * The local id check is what keeps a malformed id honest.
+ */
+export function updateUser(id: string, input: UpdateUserDto): Promise<User> {
+  assertObjectId(id, NOT_FOUND);
+
+  return serverFetch<User>(`/users/${id}`, { method: "PUT", body: input });
 }
 
 export function updateUserRoles(
