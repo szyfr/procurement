@@ -4,6 +4,7 @@ import type { Priority } from "@/lib/types";
 import type {
   CreatePurchaseRequestInput,
   MarkPurchaseRequestDeliveredDto,
+  RecordPartialDeliveryDto,
   UpdatePurchaseRequestDto,
 } from "@/modules/purchase-requests/dto";
 import type { SettablePurchaseRequestStatus } from "@/modules/purchase-requests/models/purchase-request";
@@ -214,4 +215,31 @@ export function parseMarkDeliveredPayload(
     item_ids: payload.item_ids,
     delivery_date: assertDateOnly(payload.delivery_date, "Delivery date"),
   };
+}
+
+/**
+ * The delivered amount for one item. Upstream's `Field(..., gt=0)` rejects
+ * zero and negatives, but a FastAPI 422 for a body field surfaces as a
+ * `{detail: [...]}` list; catching it here names the field instead.
+ *
+ * Not checked here: whether the amount exceeds the item's ordered quantity.
+ * That needs the item, which this route does not read — the dialog holds that
+ * rule where the quantity is already on screen.
+ */
+export function parsePartialDeliveryPayload(
+  body: unknown,
+): RecordPartialDeliveryDto {
+  if (!body || typeof body !== "object")
+    throw invalid("Request body is missing.");
+
+  const { amount } = body as Partial<RecordPartialDeliveryDto>;
+
+  if (typeof amount !== "number" || !Number.isFinite(amount)) {
+    throw invalid("Amount must be a number.");
+  }
+  if (amount <= 0) {
+    throw invalid("Amount must be greater than zero.");
+  }
+
+  return { amount };
 }

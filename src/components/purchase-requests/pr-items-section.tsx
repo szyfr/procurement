@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import * as React from "react";
 
 import { MarkDeliveredDialog } from "@/components/purchase-requests/mark-delivered-dialog";
+import { PartialDeliveryDialog } from "@/components/purchase-requests/partial-delivery-dialog";
 import { PurchaseRequestItemsBulkBar } from "@/components/purchase-requests/pr-items-bulk-bar";
 import {
   isDeliverySelectable,
@@ -21,7 +22,9 @@ import {
   createPurchaseRequestProof,
   markPurchaseRequestDelivered,
   type PurchaseRequestDetail,
+  type PurchaseRequestItem,
   purchaseRequestKeys,
+  recordPartialDelivery,
 } from "@/modules/purchase-requests";
 
 /**
@@ -36,6 +39,9 @@ import {
  *
  * Delivery: a single `PATCH /purchase-requests/{id}/delivered` covering the
  * whole selection.
+ *
+ * Partial delivery is the exception and hangs off the row action menu instead:
+ * its amount is specific to one line, so there is nothing sensible to batch.
  *
  * Neither overlays its result locally. The proof response carries no filename
  * to show (see `pr-items-table.tsx`) and the delivery response carries nothing
@@ -57,6 +63,10 @@ export function PurchaseRequestItemsSection({
   const [deliveredError, setDeliveredError] = React.useState<string | null>(
     null,
   );
+  // The row the action menu was opened from. Held as an id rather than the
+  // item itself so a refetch can't leave the dialog rendering a stale row.
+  const [partialItemId, setPartialItemId] = React.useState<string | null>(null);
+  const [partialError, setPartialError] = React.useState<string | null>(null);
 
   const { mutateAsync: saveGroups, isPending: saving } = useMutation({
     mutationFn: async (groups: ProofOfOrderSaveGroup[]) => {
@@ -103,6 +113,20 @@ export function PurchaseRequestItemsSection({
         }),
     });
 
+  const { mutateAsync: savePartial, isPending: savingPartial } = useMutation({
+    mutationFn: (input: { itemId: string; amount: number }) =>
+      recordPartialDelivery(request._id, input.itemId, {
+        amount: input.amount,
+      }),
+  });
+
+  // Resolved from the live list, so a refetch that closes the item out drops
+  // the dialog rather than leaving it pointed at a row that no longer applies.
+  const partialItem =
+    request.items.find(
+      (item) => item._id === partialItemId && isDeliverySelectable(item),
+    ) ?? null;
+
   const selectableIds = request.items
     .filter(isItemSelectable)
     .map((item) => item._id);
@@ -144,6 +168,33 @@ export function PurchaseRequestItemsSection({
 
   function toggleAll(checked: boolean) {
     setSelectedIds(checked ? new Set(selectableIds) : new Set());
+  }
+
+  async function handleRecordPartialDelivery(amount: number) {
+    if (!partialItem) return;
+
+    setPartialError(null);
+
+    try {
+      await savePartial({ itemId: partialItem._id, amount });
+    } catch (error) {
+      setPartialError(
+        error instanceof Error ? error.message : "Something went wrong.",
+      );
+      return;
+    }
+
+    queryClient.invalidateQueries({
+      queryKey: purchaseRequestKeys.detail(request._id),
+    });
+    queryClient.invalidateQueries({ queryKey: purchaseRequestKeys.lists() });
+
+    const label = partialItem.material?.description || partialItem.material_id;
+    setPartialItemId(null);
+    toast.add({
+      title: `Recorded ${amount} delivered for ${label}`,
+      type: "success",
+    });
   }
 
   /**
@@ -263,6 +314,9 @@ export function PurchaseRequestItemsSection({
               onToggleItem={toggleItem}
               onToggleAll={toggleAll}
               onHighlightProofs={onHighlightProofs}
+              onRecordPartialDelivery={(item: PurchaseRequestItem) =>
+                setPartialItemId(item._id)
+              }
             />
           </>
         )}
@@ -290,6 +344,20 @@ export function PurchaseRequestItemsSection({
         saving={markingDelivered}
         saveError={deliveredError}
         onSave={handleMarkDelivered}
+      />
+
+      <PartialDeliveryDialog
+        open={partialItem !== null}
+        onOpenChange={(next) => {
+          if (!next) {
+            setPartialItemId(null);
+            setPartialError(null);
+          }
+        }}
+        item={partialItem}
+        saving={savingPartial}
+        saveError={partialError}
+        onSave={handleRecordPartialDelivery}
       />
     </Card>
   );

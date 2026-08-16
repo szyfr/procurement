@@ -14,6 +14,9 @@ export const purchaseRequestEndpoints = {
     `${BASE}/${encodeURIComponent(id)}/status/${encodeURIComponent(status)}`,
   /** Bulk delivery: closes out the items named in the body, not the request. */
   delivered: (id: string) => `${BASE}/${encodeURIComponent(id)}/delivered`,
+  /** Partial delivery: how much of a single item arrived. */
+  partialDelivery: (id: string, itemId: string) =>
+    `${BASE}/${encodeURIComponent(id)}/items/${encodeURIComponent(itemId)}/partial-delivery`,
   proofs: `${BASE}/proofs`,
   proofDetail: (id: string) => `${BASE}/proofs/${encodeURIComponent(id)}`,
   departments: `${BASE}/lookups/departments`,

@@ -9,6 +9,7 @@ import type {
   CreatePurchaseRequestDto,
   CreatePurchaseRequestInput,
   MarkPurchaseRequestDeliveredDto,
+  RecordPartialDeliveryDto,
   UpdatePurchaseRequestDto,
 } from "@/modules/purchase-requests/dto";
 import type {
@@ -128,15 +129,10 @@ export async function updatePurchaseRequestStatus(
  * moves it to `completed`; the item ids carry the work, and the request id in
  * the path is not read by the controller at all.
  *
- * Two upstream caveats worth knowing before debugging a failure here:
- *
- * - The handler builds its model with `PurchaseRequestItemModel(get_db())` and
- *   declares no `Depends(get_db)`, unlike every other route in that file, so
- *   the un-awaited coroutine lands where the collection should be and the
- *   first write raises — surfacing as a 500. Until that is fixed upstream this
- *   call cannot succeed; nothing on this side can work around it.
- * - It never dispatches `StatusVerificationJob`, so the parent request keeps
- *   its current status even once every item is completed.
+ * The handler never dispatches `StatusVerificationJob`, so the parent request
+ * keeps its current status even once every item on it is completed — a fully
+ * delivered request still reads "PO Created" until something else recalculates
+ * it.
  *
  * Like the status transition, the 204 arrives with a `{}` body that
  * `serverFetch` drops.
@@ -151,6 +147,35 @@ export async function markPurchaseRequestDelivered(
     method: "PATCH",
     body: payload,
   });
+}
+
+/**
+ * Records a partial delivery against one item: writes `partial_delivered` and
+ * moves the item to `partially-completed`.
+ *
+ * Two things to know about what this does and doesn't do upstream:
+ *
+ * - The write is a `$set`, so the amount **replaces** whatever was there
+ *   rather than accumulating. Recording 2 and then 3 leaves 3, not 5 — the
+ *   caller sends the running total received, not an increment.
+ * - Like `markPurchaseRequestDelivered`, it never dispatches
+ *   `StatusVerificationJob`, so the parent request's own status does not move.
+ *
+ * FastAPI answers 200 with an empty body here rather than the 204 the delivery
+ * routes use; the Route Handler normalizes that to a 204 either way.
+ */
+export async function recordPartialDelivery(
+  id: string,
+  itemId: string,
+  payload: RecordPartialDeliveryDto,
+): Promise<void> {
+  assertObjectId(id, NOT_FOUND);
+  assertObjectId(itemId, "Purchase request item not found");
+
+  await serverFetch<null>(
+    `/purchase-requests/${id}/items/${itemId}/partial-delivery`,
+    { method: "PATCH", body: payload },
+  );
 }
 
 export async function deletePurchaseRequest(id: string): Promise<void> {
