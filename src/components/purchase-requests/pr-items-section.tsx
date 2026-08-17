@@ -7,6 +7,7 @@ import { MarkDeliveredDialog } from "@/components/purchase-requests/mark-deliver
 import { PartialDeliveryDialog } from "@/components/purchase-requests/partial-delivery-dialog";
 import { PurchaseRequestItemsBulkBar } from "@/components/purchase-requests/pr-items-bulk-bar";
 import {
+  canRecordPartialDelivery,
   isDeliverySelectable,
   isItemSelectable,
   isProofSelectable,
@@ -122,9 +123,11 @@ export function PurchaseRequestItemsSection({
 
   // Resolved from the live list, so a refetch that closes the item out drops
   // the dialog rather than leaving it pointed at a row that no longer applies.
+  // Re-checked through the table's own rule, not just the delivery window, so
+  // the single-unit exclusion holds here too.
   const partialItem =
     request.items.find(
-      (item) => item._id === partialItemId && isDeliverySelectable(item),
+      (item) => item._id === partialItemId && canRecordPartialDelivery(item),
     ) ?? null;
 
   const selectableIds = request.items
@@ -190,9 +193,11 @@ export function PurchaseRequestItemsSection({
     queryClient.invalidateQueries({ queryKey: purchaseRequestKeys.lists() });
 
     const label = partialItem.material?.description || partialItem.material_id;
+    // The amount is the running total, not what just arrived, so the toast
+    // reads as a position rather than as a receipt for this shipment.
     setPartialItemId(null);
     toast.add({
-      title: `Recorded ${amount} delivered for ${label}`,
+      title: `${label}: ${amount} of ${partialItem.quantity} received`,
       type: "success",
     });
   }

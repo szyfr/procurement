@@ -52,13 +52,23 @@ export function isItemSelectable(item: PurchaseRequestItem) {
   return isProofSelectable(item) || isDeliverySelectable(item);
 }
 
+/** How much of the order has yet to arrive. */
+export function outstandingQuantity(item: PurchaseRequestItem) {
+  return item.quantity - (item.partial_delivered ?? 0);
+}
+
 /**
  * Partial delivery applies to an item that has been ordered but isn't closed
  * — the same window as a full delivery, since recording part of a shipment is
  * the alternative to recording all of it.
+ *
+ * A line with a single unit outstanding is excluded: the only entry left is
+ * the whole remainder, and recording that here would leave the item reading
+ * "Partially Completed" forever, since upstream never promotes it. Marking it
+ * delivered is the action that closes it out.
  */
 export function canRecordPartialDelivery(item: PurchaseRequestItem) {
-  return isDeliverySelectable(item);
+  return isDeliverySelectable(item) && outstandingQuantity(item) > 1;
 }
 
 function proofsForItem(
@@ -169,8 +179,23 @@ export function PurchaseRequestItemsTable({
                   {item.material?.description || item.material_id}
                 </span>
               </TableCell>
+              {/* Received-of-ordered once anything has arrived, so a partially
+                  completed row shows how much rather than only that it is
+                  partial. `partial_delivered` is absent until then. */}
               <TableCell className={numericCellClass}>
-                {item.quantity}
+                {typeof item.partial_delivered === "number" ? (
+                  <span
+                    title={`${item.partial_delivered} of ${item.quantity} received`}
+                  >
+                    {item.partial_delivered}
+                    <span className="text-muted-foreground">
+                      {" / "}
+                      {item.quantity}
+                    </span>
+                  </span>
+                ) : (
+                  item.quantity
+                )}
               </TableCell>
               <TableCell>
                 {/* The detail pipeline joins the vendor; the raw id stands in

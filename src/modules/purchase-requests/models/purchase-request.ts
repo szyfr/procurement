@@ -62,8 +62,19 @@ export interface PurchaseRequestItem {
   vendor_id: string | null;
   /** Set by `PATCH /canvassing/award/{quotation_id}` once a vendor is awarded. */
   quotation_id?: string | null;
-  /** Out of scope for now — always null, no partial-delivery flow exists yet. */
-  partial_delivered: unknown | null;
+  /**
+   * How much has arrived so far — a running total, not an increment. Both
+   * writers `$set` it: `PATCH .../items/{id}/partial-delivery` stores whatever
+   * amount it is sent (recording 2 then 3 leaves 3, not 5) and the Business
+   * Central receipt sync stores `qtyReceived`.
+   *
+   * Upstream never compares it to `quantity` — it validates `amount > 0` and
+   * nothing else, so it can meet or exceed the order, and reaching the ordered
+   * quantity does not move the item to `completed`. Only
+   * `PATCH /purchase-requests/{id}/delivered` does that. The ceiling is
+   * enforced in `PartialDeliveryDialog`, which is the only place it exists.
+   */
+  partial_delivered?: number | null;
   /**
    * Stamped by `PATCH /purchase-requests/{id}/delivered`, and by the Business
    * Central receipt sync. Absent until an item is actually delivered — the
