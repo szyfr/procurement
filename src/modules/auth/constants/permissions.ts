@@ -83,12 +83,24 @@ export const PERMISSIONS = {
     index: "material.index",
   },
 
+  vendor: {
+    index: "vendor.index",
+  },
+
   role: {
     index: "role.index",
     show: "role.show",
     store: "role.store",
     update: "role.update",
     delete: "role.delete",
+  },
+
+  permission: {
+    index: "permission.index",
+    show: "permission.show",
+    store: "permission.store",
+    update: "permission.update",
+    delete: "permission.delete",
   },
 
   user: {
@@ -112,9 +124,9 @@ export const PERMISSIONS = {
     departmentSpending: "report.department-spending",
     canvassingCompliance: "report.canvassing-compliance",
     /**
-     * Also what `GET /vendors` requires: the vendor controller reuses the
-     * report slug rather than declaring a `vendor.index` of its own, so the
-     * Vendors page and the Vendor Performance report share one grant.
+     * Gates `GET /reports/vendor` only. The vendor *directory* is a separate
+     * grant — `vendor.index`, above — so holding one says nothing about the
+     * other.
      */
     vendor: "report.vendor",
   },

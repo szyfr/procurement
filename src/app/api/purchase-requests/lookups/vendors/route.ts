@@ -13,7 +13,7 @@ import { listVendors } from "@/modules/purchase-requests/dal/lookup.dal";
  */
 export async function GET(request: NextRequest) {
   try {
-    await requirePermission(PERMISSIONS.report.vendor);
+    await requirePermission(PERMISSIONS.vendor.index);
 
     const { searchParams } = request.nextUrl;
 

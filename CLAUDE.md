@@ -108,7 +108,7 @@ Permission-based, driven entirely by the flat `permissions` array on `/auth/me` 
   - **Route Handlers** call `requirePermission(...)`, which 401s without a session and 403s without the grant, mirroring the exact slug its upstream endpoint requires.
 - **Hide, don't disable.** An action the user can never perform is absent; one they could perform on a different selection is disabled. A menu or footer left with nothing in it goes too, rather than opening empty.
 - The sidebar filters `mainNav` on each entry's `requires` (any-of), and a group whose entries all filter out disappears with them. Dashboard carries no `requires`: sign-in lands there, so it degrades panel by panel instead.
-- **Known gaps, all upstream, none to be papered over here.** `POST /auth/register` has no `require_permission`, so anyone signed in can create a user and the "New user" button is deliberately ungated. `permission_controller.py` has no guard on any route, so `/api/permissions` stays at `requireUser()`. And `PermissionService.get_all_permissions` returns `[]` early for a user with no `user_permissions` document *even when they hold roles* — so a role-only user is denied everything, in this UI and in the API alike.
+- **Known gaps, all upstream, none to be papered over here.** `POST /auth/register` has no `require_permission`, so anyone signed in can create a user and the "New user" button is deliberately ungated. And `PermissionService.get_all_permissions` returns `[]` early for a user with no `user_permissions` document *even when they hold roles* — so a role-only user is denied everything, in this UI and in the API alike.
 
 ## Errors
 

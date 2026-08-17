@@ -68,7 +68,7 @@ export const mainNav = [
         title: "Vendors",
         url: "/vendors",
         icon: TruckIcon,
-        requires: [PERMISSIONS.report.vendor],
+        requires: [PERMISSIONS.vendor.index],
       },
       {
         title: "Payment Terms",

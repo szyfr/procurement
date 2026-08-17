@@ -19,9 +19,7 @@ export default async function VendorsPage({
   const { page } = await searchParams;
   const activePage = Math.max(Number(page) || 1, 1);
 
-  // `GET /vendors` requires the vendor *report* grant upstream, not a
-  // `vendor.index` of its own — see PERMISSIONS.report.vendor.
-  if (!(await canAccess(PERMISSIONS.report.vendor))) {
+  if (!(await canAccess(PERMISSIONS.vendor.index))) {
     return <NoAccess title="Vendors" resource="the vendor directory" />;
   }
 
