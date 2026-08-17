@@ -114,9 +114,21 @@ export interface PurchaseRequest {
   requester_name?: string | null;
 }
 
-/** `GET /purchase-requests/{id}` — the list endpoint returns no items. */
-export interface PurchaseRequestDetail extends PurchaseRequest {
+/**
+ * What `POST /purchase-requests` and `PUT /purchase-requests/{id}` hand back:
+ * the stored request with the items as they were written, and none of the
+ * joins. No `department`, no per-item `material` or `vendor`, and no `proofs` —
+ * all of those come from the detail pipeline's aggregation, which a write never
+ * runs. A caller that needs them reads the request back by id; seeding the
+ * detail cache with a write response instead leaves the page rendering a
+ * request whose `proofs` is missing outright.
+ */
+export interface PurchaseRequestWriteResult extends PurchaseRequest {
   items: PurchaseRequestItem[];
+}
+
+/** `GET /purchase-requests/{id}` — the list endpoint returns no items. */
+export interface PurchaseRequestDetail extends PurchaseRequestWriteResult {
   /**
    * The detail pipeline joins the whole department document rather than
    * flattening a name onto the request the way the list does. It joins no

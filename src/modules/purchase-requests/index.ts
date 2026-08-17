@@ -45,6 +45,7 @@ export type {
   PurchaseRequestDetail,
   PurchaseRequestItem,
   PurchaseRequestStatus,
+  PurchaseRequestWriteResult,
   SettablePurchaseRequestStatus,
 } from "@/modules/purchase-requests/models/purchase-request";
 export type {

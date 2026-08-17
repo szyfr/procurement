@@ -16,6 +16,7 @@ import type {
   PurchaseRequest,
   PurchaseRequestDetail,
   PurchaseRequestStatus,
+  PurchaseRequestWriteResult,
 } from "@/modules/purchase-requests/models/purchase-request";
 
 /**
@@ -72,7 +73,7 @@ export async function getPurchaseRequest(
 
 export async function createPurchaseRequest(
   input: CreatePurchaseRequestInput,
-): Promise<PurchaseRequestDetail> {
+): Promise<PurchaseRequestWriteResult> {
   // Supplied server-side from the session cookie; the browser never picks its
   // own requester. Also means an unauthenticated POST fails here with the
   // same 401 `getCurrentUser` throws for any other read.
@@ -85,19 +86,25 @@ export async function createPurchaseRequest(
 
   // The create response carries no material join, so its items name only ids.
   // Callers that need full items re-read the request by id.
-  return serverFetch<PurchaseRequestDetail>("/purchase-requests", {
+  return serverFetch<PurchaseRequestWriteResult>("/purchase-requests", {
     method: "POST",
     body: payload,
   });
 }
 
+/**
+ * Replaces the request, and with it every item: upstream deletes the existing
+ * rows and recreates them from the payload, so an item's `_id` changes on each
+ * save. Like create, the response is the written document without the detail
+ * pipeline's joins.
+ */
 export function updatePurchaseRequest(
   id: string,
   input: UpdatePurchaseRequestDto,
-): Promise<PurchaseRequestDetail> {
+): Promise<PurchaseRequestWriteResult> {
   assertObjectId(id, NOT_FOUND);
 
-  return serverFetch<PurchaseRequestDetail>(`/purchase-requests/${id}`, {
+  return serverFetch<PurchaseRequestWriteResult>(`/purchase-requests/${id}`, {
     method: "PUT",
     body: input,
   });

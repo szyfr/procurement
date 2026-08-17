@@ -86,17 +86,15 @@ export function EditPurchaseRequestForm({ id }: { id: string }) {
 
       return updated;
     },
-    onSuccess: (updated, { submit }) => {
-      // The PUT response predates the transition, so a submit refetches rather
-      // than seeding the cache with a stale `draft`.
-      if (submit) {
-        queryClient.invalidateQueries({
-          queryKey: purchaseRequestKeys.detail(id),
-        });
-      } else {
-        queryClient.setQueryData(purchaseRequestKeys.detail(id), updated);
-      }
-
+    onSuccess: (updated) => {
+      // Never seeded from the response: a write returns the stored request
+      // without the detail pipeline's joins — no `proofs`, no `department`, no
+      // per-item `material` — and the detail page reads all of them. It also
+      // predates the transition a submit performs. Refetching is the only way
+      // to get the shape that page renders.
+      queryClient.invalidateQueries({
+        queryKey: purchaseRequestKeys.detail(id),
+      });
       queryClient.invalidateQueries({ queryKey: purchaseRequestKeys.lists() });
       router.push(`/purchase-requests/${updated._id}`);
     },
