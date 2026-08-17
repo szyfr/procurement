@@ -38,6 +38,12 @@ export interface ReportDefinition {
   availability: "live" | "unavailable";
   /** Why it cannot be generated. Required when `availability` is `unavailable`. */
   unavailableReason?: string;
+  /**
+   * Keeps the entry in the catalogue but off the page. Use it when the gap is
+   * real but showing an unavailable card is more noise than signal; drop the
+   * flag to bring the card back once there is an endpoint behind it.
+   */
+  hidden?: boolean;
 }
 
 export const reports: ReportDefinition[] = [
@@ -82,8 +88,12 @@ export const reports: ReportDefinition[] = [
     availability: "unavailable",
     unavailableReason:
       "Purchase requests carry no record of which procurement officer handled them, so there is nothing to attribute this to yet.",
+    hidden: true,
   },
 ];
+
+/** What the Reports page renders. Definitions marked `hidden` stay out. */
+export const visibleReports = reports.filter((report) => !report.hidden);
 
 /** The report shown when the page loads. Must be a `live` one. */
 export const defaultReportId = "spend-by-department";

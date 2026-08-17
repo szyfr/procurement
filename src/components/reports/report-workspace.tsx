@@ -16,7 +16,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
-import { reports } from "@/data/reports";
+import { visibleReports } from "@/data/reports";
 import { cn } from "@/lib/utils";
 
 /**
@@ -45,9 +45,9 @@ export function ReportWorkspace({
   activeId: string;
   onActiveIdChange: (id: string) => void;
 }) {
-  const activeReport = reports.find((report) => report.id === activeId);
+  const activeReport = visibleReports.find((report) => report.id === activeId);
 
-  if (reports.length === 0) {
+  if (visibleReports.length === 0) {
     return (
       <Card>
         <CardContent>
@@ -69,8 +69,15 @@ export function ReportWorkspace({
 
   return (
     <>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-        {reports.map((report) => {
+      {/* The widest breakpoint lays every card out in one row, so the column
+          count follows how many are actually visible. */}
+      <div
+        className={cn(
+          "grid gap-4 sm:grid-cols-2 lg:grid-cols-3",
+          visibleReports.length >= 5 ? "xl:grid-cols-5" : "xl:grid-cols-4",
+        )}
+      >
+        {visibleReports.map((report) => {
           const Icon = report.icon;
           const isActive = report.id === activeId;
           const isLive = report.availability === "live";

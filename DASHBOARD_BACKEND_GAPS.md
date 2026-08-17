@@ -52,4 +52,4 @@ The Dashboard UI is now wired to every endpoint that exists on the backend today
 
 One report has **no endpoint at all**:
 
-- **Purchaser Performance** — needs purchase requests attributable to the procurement officer who handled them. The card stays on the page and selecting it says the report is unavailable; it is marked `availability: "unavailable"` in `src/data/reports.ts`. It previously rendered invented officers ("S. Galvis (you)", "P. Ocampo", "L. Bautista") with invented cycle times and compliance scores, presented identically to the four real reports.
+- **Purchaser Performance** — needs purchase requests attributable to the procurement officer who handled them. The definition is still in `src/data/reports.ts`, marked `availability: "unavailable"` and now `hidden: true`, so the card is off the page entirely; the unavailable-state rendering it used is untouched and drops back into place when the flag is removed. It previously rendered invented officers ("S. Galvis (you)", "P. Ocampo", "L. Bautista") with invented cycle times and compliance scores, presented identically to the four real reports.
