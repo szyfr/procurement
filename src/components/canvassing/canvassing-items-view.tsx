@@ -5,6 +5,7 @@ import { ArrowRightIcon, PackageXIcon } from "lucide-react";
 import Link from "next/link";
 import * as React from "react";
 
+import { useCan } from "@/components/providers/permissions-provider";
 import { PageHeader } from "@/components/shared/page-header";
 import { ErrorAlert } from "@/components/shared/query-states";
 import { StatusBadge } from "@/components/shared/status-badge";
@@ -38,6 +39,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
+import { PERMISSIONS } from "@/modules/auth/constants/permissions";
 import {
   purchaseRequestDetailQuery,
   purchaseRequestItemStatusLabels,
@@ -55,6 +57,10 @@ import {
  * once items can actually be grouped.
  */
 export function CanvassingItemsView({ id }: { id: string }) {
+  // Selecting items here only builds the link to the quote form, so the whole
+  // footer follows the grant that form needs.
+  const canAddQuote = useCan(PERMISSIONS.quotation.store);
+
   usePurchaseRequestUpdates();
 
   const {
@@ -161,9 +167,11 @@ export function CanvassingItemsView({ id }: { id: string }) {
               <Table className={dataTableClass}>
                 <TableHeader>
                   <TableRow>
-                    <TableHead scope="col" className="w-8">
-                      <span className="sr-only">Select</span>
-                    </TableHead>
+                    {canAddQuote ? (
+                      <TableHead scope="col" className="w-8">
+                        <span className="sr-only">Select</span>
+                      </TableHead>
+                    ) : null}
                     <TableHead scope="col">Item</TableHead>
                     <TableHead scope="col" className={numericCellClass}>
                       Qty
@@ -184,20 +192,22 @@ export function CanvassingItemsView({ id }: { id: string }) {
                         key={item._id}
                         className={cn(isSelected && "bg-status-info-subtle")}
                       >
-                        <TableCell>
-                          <Checkbox
-                            checked={isSelected}
-                            disabled={!quotable}
-                            aria-label={
-                              quotable
-                                ? `Select ${name}`
-                                : `${name} is sourced directly and can't be quoted`
-                            }
-                            onCheckedChange={(checked) =>
-                              toggle(item._id, checked === true)
-                            }
-                          />
-                        </TableCell>
+                        {canAddQuote ? (
+                          <TableCell>
+                            <Checkbox
+                              checked={isSelected}
+                              disabled={!quotable}
+                              aria-label={
+                                quotable
+                                  ? `Select ${name}`
+                                  : `${name} is sourced directly and can't be quoted`
+                              }
+                              onCheckedChange={(checked) =>
+                                toggle(item._id, checked === true)
+                              }
+                            />
+                          </TableCell>
+                        ) : null}
                         <TableCell
                           className={cn(
                             "font-medium",
@@ -223,28 +233,30 @@ export function CanvassingItemsView({ id }: { id: string }) {
               </Table>
             </CardContent>
 
-            <CardFooter className="justify-between gap-2">
-              <span className="text-xs text-muted-foreground">
-                {selected.length} {selected.length === 1 ? "item" : "items"}{" "}
-                selected
-                {selected.length > 0
-                  ? " — one quote will cover all of them"
-                  : ""}
-              </span>
-              <Button
-                size="sm"
-                disabled={selected.length === 0}
-                render={
-                  <Link
-                    href={`/purchase-requests/${request._id}/canvassing/quotes/new?${quoteParams}`}
-                  />
-                }
-                nativeButton={false}
-              >
-                Create Quotation for Selected Items
-                <ArrowRightIcon data-icon="inline-end" />
-              </Button>
-            </CardFooter>
+            {canAddQuote ? (
+              <CardFooter className="justify-between gap-2">
+                <span className="text-xs text-muted-foreground">
+                  {selected.length} {selected.length === 1 ? "item" : "items"}{" "}
+                  selected
+                  {selected.length > 0
+                    ? " — one quote will cover all of them"
+                    : ""}
+                </span>
+                <Button
+                  size="sm"
+                  disabled={selected.length === 0}
+                  render={
+                    <Link
+                      href={`/purchase-requests/${request._id}/canvassing/quotes/new?${quoteParams}`}
+                    />
+                  }
+                  nativeButton={false}
+                >
+                  Create Quotation for Selected Items
+                  <ArrowRightIcon data-icon="inline-end" />
+                </Button>
+              </CardFooter>
+            ) : null}
           </>
         )}
       </Card>

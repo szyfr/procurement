@@ -65,7 +65,8 @@ export function RolesLoading() {
   );
 }
 
-export function RolesEmpty({ onCreate }: { onCreate: () => void }) {
+/** `onCreate` is null when the user can't create roles — the call to action goes with it. */
+export function RolesEmpty({ onCreate }: { onCreate: (() => void) | null }) {
   return (
     <Card>
       <CardContent className="px-0">
@@ -79,15 +80,19 @@ export function RolesEmpty({ onCreate }: { onCreate: () => void }) {
             </EmptyTitle>
             <EmptyDescription className="max-w-[400px]">
               Roles group the permissions a person needs to work in Procura.
-              Create the first one and assign it to users afterwards.
+              {onCreate
+                ? " Create the first one and assign it to users afterwards."
+                : " None have been created yet."}
             </EmptyDescription>
           </EmptyHeader>
-          <EmptyContent>
-            <Button onClick={onCreate}>
-              <PlusIcon data-icon="inline-start" />
-              New role
-            </Button>
-          </EmptyContent>
+          {onCreate ? (
+            <EmptyContent>
+              <Button onClick={onCreate}>
+                <PlusIcon data-icon="inline-start" />
+                New role
+              </Button>
+            </EmptyContent>
+          ) : null}
         </Empty>
       </CardContent>
     </Card>

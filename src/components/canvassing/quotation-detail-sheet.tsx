@@ -53,6 +53,7 @@ export function QuotationDetailSheet({
   itemName,
   open,
   onOpenChange,
+  canEdit,
   onEdit,
 }: {
   /** Null while nothing is being viewed; the sheet renders nothing at all. */
@@ -65,6 +66,8 @@ export function QuotationDetailSheet({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** Hands this quote off to the edit dialog, which the comparison owns. */
+  /** Editing a quote is a separate grant from reading one. */
+  canEdit: boolean;
   onEdit: () => void;
 }) {
   const { data, isPending, isError, error } = useQuery({
@@ -173,12 +176,14 @@ export function QuotationDetailSheet({
           )}
         </div>
 
-        <div className="flex items-center gap-2 border-t p-4">
-          <Button className="flex-1" onClick={onEdit}>
-            <PencilIcon data-icon="inline-start" />
-            Edit quote
-          </Button>
-        </div>
+        {canEdit ? (
+          <div className="flex items-center gap-2 border-t p-4">
+            <Button className="flex-1" onClick={onEdit}>
+              <PencilIcon data-icon="inline-start" />
+              Edit quote
+            </Button>
+          </div>
+        ) : null}
       </SheetContent>
     </Sheet>
   );

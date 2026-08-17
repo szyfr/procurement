@@ -4,6 +4,7 @@ import { ChevronRightIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { usePermissions } from "@/components/providers/permissions-provider";
 import {
   Collapsible,
   CollapsibleContent,
@@ -19,12 +20,16 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
+import type { PermissionSlug } from "@/modules/auth/constants/permissions";
+import { hasAnyPermission } from "@/modules/auth/models/access";
 
 export interface NavItem {
   title: string;
   url: string;
   icon?: React.ComponentType<{ className?: string }>;
   items?: { title: string; url: string }[];
+  /** Any one of these grants shows the entry; omitted means always shown. */
+  requires?: readonly PermissionSlug[];
 }
 
 export interface NavGroup {
@@ -41,14 +46,27 @@ const navItemClass =
 
 export function NavMain({ groups }: { groups: NavGroup[] }) {
   const pathname = usePathname();
+  const granted = usePermissions();
 
   /** A section is active for its own route and anything nested under it. */
   const isActive = (url: string) =>
     pathname === url || pathname.startsWith(`${url}/`);
 
+  // A group whose every entry was filtered out drops with them, rather than
+  // leaving a heading over nothing — ADMINISTRATION is entirely gated, so an
+  // ordinary requester would otherwise see a bare label.
+  const visibleGroups = groups
+    .map((group) => ({
+      ...group,
+      items: group.items.filter(
+        (item) => !item.requires || hasAnyPermission(granted, item.requires),
+      ),
+    }))
+    .filter((group) => group.items.length > 0);
+
   return (
     <>
-      {groups.map((group) => (
+      {visibleGroups.map((group) => (
         <SidebarGroup key={group.title} className="gap-0.5 py-0">
           <SidebarGroupLabel className="h-auto px-2 pt-3.5 pb-1.5 text-[10.5px] font-semibold tracking-[0.06em] text-muted-foreground uppercase">
             {group.title}

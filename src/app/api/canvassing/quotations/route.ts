@@ -1,7 +1,8 @@
 import type { NextRequest } from "next/server";
 
 import { toErrorResponse } from "@/lib/api/errors";
-import { requireUser } from "@/modules/auth/dal/auth.dal";
+import { PERMISSIONS } from "@/modules/auth/constants/permissions";
+import { requirePermission } from "@/modules/auth/dal/access";
 import {
   createQuotation,
   listItemQuotations,
@@ -22,7 +23,7 @@ import { parseCreateQuotationForm } from "@/modules/canvassing/validation/quotat
 
 export async function GET(request: NextRequest) {
   try {
-    await requireUser();
+    await requirePermission(PERMISSIONS.canvassing.quotations);
 
     const items = request.nextUrl.searchParams.getAll("items");
 
@@ -34,7 +35,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    await requireUser();
+    await requirePermission(PERMISSIONS.quotation.store);
 
     const { payload, attachments } = parseCreateQuotationForm(
       await request.formData(),

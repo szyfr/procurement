@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 
 import { NewQuotationView } from "@/components/canvassing/new-quotation-view";
+import { NoAccess } from "@/components/shared/no-access";
+import { PERMISSIONS } from "@/modules/auth/constants/permissions";
+import { canAccess } from "@/modules/auth/dal/access";
 
 export const metadata: Metadata = {
   title: "Add Vendor Quote",
@@ -22,6 +25,12 @@ export default async function AddVendorQuotePage({
   searchParams: Promise<{ items?: string | string[] }>;
 }) {
   const [{ id }, { items }] = await Promise.all([params, searchParams]);
+
+  if (!(await canAccess(PERMISSIONS.quotation.store))) {
+    return (
+      <NoAccess title="Add Vendor Quote" resource="the vendor quote form" />
+    );
+  }
 
   // A single `?items=` collapses to a string; anything absent to undefined.
   const itemIds = items === undefined ? [] : [items].flat();

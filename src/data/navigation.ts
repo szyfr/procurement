@@ -10,11 +10,24 @@ import {
   UsersIcon,
 } from "lucide-react";
 
+import { reportPermissions } from "@/data/reports";
+import { PERMISSIONS } from "@/modules/auth/constants/permissions";
+
 export const appIdentity = {
   name: "Procurement",
   organization: "MK Themed Attractions Phils.",
 };
 
+/**
+ * `requires` is what the sidebar filters on: holding *any* one of the listed
+ * grants shows the entry, because each of these pages is worth opening as soon
+ * as one thing on it works. It is the same permission the page itself gates on,
+ * so a visible link never leads to a no-access screen.
+ *
+ * Dashboard carries none. It is where sign-in lands, and it degrades panel by
+ * panel rather than as a whole, so hiding it would strand a user on a route
+ * with no nav entry to leave by.
+ */
 export const mainNav = [
   {
     title: "PROCUREMENT",
@@ -24,23 +37,57 @@ export const mainNav = [
         title: "Purchase Requests",
         url: "/purchase-requests",
         icon: ClipboardListIcon,
+        requires: [PERMISSIONS.purchaseRequest.index],
       },
-      { title: "Canvassing", url: "/canvassing", icon: UsersIcon },
-      { title: "Reports", url: "/reports", icon: ChartColumnIcon },
+      {
+        title: "Canvassing",
+        url: "/canvassing",
+        icon: UsersIcon,
+        requires: [PERMISSIONS.canvassing.index],
+      },
+      {
+        title: "Reports",
+        url: "/reports",
+        icon: ChartColumnIcon,
+        // Each report is its own endpoint with its own grant; the page shows
+        // whichever of them the user can run.
+        requires: reportPermissions,
+      },
     ],
   },
   {
     title: "ADMINISTRATION",
     items: [
-      { title: "Departments", url: "/departments", icon: Building2Icon },
-      { title: "Vendors", url: "/vendors", icon: TruckIcon },
+      {
+        title: "Departments",
+        url: "/departments",
+        icon: Building2Icon,
+        requires: [PERMISSIONS.department.index],
+      },
+      {
+        title: "Vendors",
+        url: "/vendors",
+        icon: TruckIcon,
+        requires: [PERMISSIONS.report.vendor],
+      },
       {
         title: "Payment Terms",
         url: "/payment-terms",
         icon: HandCoinsIcon,
+        requires: [PERMISSIONS.paymentTerm.index],
       },
-      { title: "Roles & Permissions", url: "/roles", icon: ShieldIcon },
-      { title: "Users", url: "/users", icon: UserCogIcon },
+      {
+        title: "Roles & Permissions",
+        url: "/roles",
+        icon: ShieldIcon,
+        requires: [PERMISSIONS.role.index],
+      },
+      {
+        title: "Users",
+        url: "/users",
+        icon: UserCogIcon,
+        requires: [PERMISSIONS.user.index],
+      },
     ],
   },
 ];

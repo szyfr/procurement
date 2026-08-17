@@ -2,7 +2,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import * as React from "react";
-
+import { useCan } from "@/components/providers/permissions-provider";
 import { MarkDeliveredDialog } from "@/components/purchase-requests/mark-delivered-dialog";
 import { PartialDeliveryDialog } from "@/components/purchase-requests/partial-delivery-dialog";
 import { PurchaseRequestItemsBulkBar } from "@/components/purchase-requests/pr-items-bulk-bar";
@@ -19,6 +19,7 @@ import {
 } from "@/components/purchase-requests/proof-of-order-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/components/ui/toast";
+import { PERMISSIONS } from "@/modules/auth/constants/permissions";
 import {
   createPurchaseRequestProof,
   markPurchaseRequestDelivered,
@@ -57,6 +58,17 @@ export function PurchaseRequestItemsSection({
   onHighlightProofs: (itemId: string) => void;
 }) {
   const queryClient = useQueryClient();
+
+  // Three separate endpoints, three separate grants — a warehouse user who can
+  // record deliveries need not be able to file proofs of order.
+  const canAddProof = useCan(PERMISSIONS.purchaseRequestProof.store);
+  const canMarkDelivered = useCan(PERMISSIONS.purchaseRequestItem.delivered);
+  const canRecordPartial = useCan(
+    PERMISSIONS.purchaseRequestItem.partialDelivery,
+  );
+  // Nothing to act on means nothing to select; the checkbox column goes too.
+  const canSelectItems = canAddProof || canMarkDelivered;
+
   const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [saveError, setSaveError] = React.useState<string | null>(null);
@@ -304,18 +316,24 @@ export function PurchaseRequestItemsSection({
           </p>
         ) : (
           <>
-            <PurchaseRequestItemsBulkBar
-              selectedItems={request.items.filter((item) =>
-                selectedIds.has(item._id),
-              )}
-              canAddProof={selectedItems.length > 0}
-              canMarkDelivered={selectedDeliveryItems.length > 0}
-              onClear={() => setSelectedIds(new Set())}
-              onAddProof={() => setDialogOpen(true)}
-              onMarkDelivered={() => setDeliveredOpen(true)}
-            />
+            {canSelectItems ? (
+              <PurchaseRequestItemsBulkBar
+                selectedItems={request.items.filter((item) =>
+                  selectedIds.has(item._id),
+                )}
+                showAddProof={canAddProof}
+                showMarkDelivered={canMarkDelivered}
+                canAddProof={selectedItems.length > 0}
+                canMarkDelivered={selectedDeliveryItems.length > 0}
+                onClear={() => setSelectedIds(new Set())}
+                onAddProof={() => setDialogOpen(true)}
+                onMarkDelivered={() => setDeliveredOpen(true)}
+              />
+            ) : null}
             <PurchaseRequestItemsTable
               request={request}
+              selectable={canSelectItems}
+              canRecordPartialDelivery={canRecordPartial}
               selectedIds={selectedIds}
               onToggleItem={toggleItem}
               onToggleAll={toggleAll}

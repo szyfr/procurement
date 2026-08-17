@@ -56,9 +56,16 @@ function makeQueryClient() {
         // The BFF already normalizes upstream failures into user-safe
         // messages; one retry covers a blip without leaving the error state
         // hidden behind seconds of backoff. An expired session is not a blip,
-        // so it is not retried — it goes straight to the redirect above.
+        // so it is not retried — it goes straight to the redirect above. Nor
+        // is a missing permission: the second attempt is denied exactly like
+        // the first, and unlike a 401 there is nowhere to send the user.
         retry: (failureCount, error) => {
-          if (error instanceof BffError && error.status === 401) return false;
+          if (
+            error instanceof BffError &&
+            (error.status === 401 || error.status === 403)
+          ) {
+            return false;
+          }
           return failureCount < 1;
         },
         refetchOnWindowFocus: false,

@@ -1,7 +1,8 @@
 import type { NextRequest } from "next/server";
 
 import { toErrorResponse } from "@/lib/api/errors";
-import { requireUser } from "@/modules/auth/dal/auth.dal";
+import { PERMISSIONS } from "@/modules/auth/constants/permissions";
+import { requirePermission } from "@/modules/auth/dal/access";
 import { recordPartialDelivery } from "@/modules/purchase-requests/dal/purchase-request.dal";
 import { parsePartialDeliveryPayload } from "@/modules/purchase-requests/validation/purchase-request.validation";
 
@@ -15,7 +16,7 @@ export async function PATCH(
   context: RouteContext<"/api/purchase-requests/[id]/items/[itemId]/partial-delivery">,
 ) {
   try {
-    await requireUser();
+    await requirePermission(PERMISSIONS.purchaseRequestItem.partialDelivery);
 
     const { id, itemId } = await context.params;
 

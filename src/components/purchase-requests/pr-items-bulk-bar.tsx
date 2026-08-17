@@ -28,6 +28,8 @@ function vendorSummary(items: PurchaseRequestItem[]) {
  */
 export function PurchaseRequestItemsBulkBar({
   selectedItems,
+  showAddProof,
+  showMarkDelivered,
   canAddProof,
   canMarkDelivered,
   onClear,
@@ -35,6 +37,14 @@ export function PurchaseRequestItemsBulkBar({
   onMarkDelivered,
 }: {
   selectedItems: PurchaseRequestItem[];
+  /**
+   * Whether the user holds the grant at all. Distinct from `canAddProof` and
+   * `canMarkDelivered` below, which are about *this selection*: an action the
+   * user could take on a different selection is disabled, one they can never
+   * take is absent.
+   */
+  showAddProof: boolean;
+  showMarkDelivered: boolean;
   canAddProof: boolean;
   canMarkDelivered: boolean;
   onClear: () => void;
@@ -56,17 +66,25 @@ export function PurchaseRequestItemsBulkBar({
       <Button variant="ghost" size="sm" onClick={onClear}>
         Clear Selection
       </Button>
-      <Button
-        variant="outline"
-        size="sm"
-        disabled={!canAddProof}
-        onClick={onAddProof}
-      >
-        Add Proof of Order
-      </Button>
-      <Button size="sm" disabled={!canMarkDelivered} onClick={onMarkDelivered}>
-        Mark as Delivered
-      </Button>
+      {showAddProof ? (
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={!canAddProof}
+          onClick={onAddProof}
+        >
+          Add Proof of Order
+        </Button>
+      ) : null}
+      {showMarkDelivered ? (
+        <Button
+          size="sm"
+          disabled={!canMarkDelivered}
+          onClick={onMarkDelivered}
+        >
+          Mark as Delivered
+        </Button>
+      ) : null}
     </div>
   );
 }

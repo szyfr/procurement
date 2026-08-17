@@ -9,6 +9,7 @@ import {
   UserXIcon,
 } from "lucide-react";
 
+import { useCan } from "@/components/providers/permissions-provider";
 import {
   dropdownContentClass,
   dropdownItemClass,
@@ -35,6 +36,7 @@ import {
 import type { Pagination } from "@/lib/api/pagination";
 import { formatDate } from "@/lib/date";
 import { cn } from "@/lib/utils";
+import { PERMISSIONS } from "@/modules/auth/constants/permissions";
 import type { User } from "@/modules/users";
 
 /**
@@ -61,6 +63,11 @@ export function UserTable({
   onView: (user: User) => void;
   onEdit: (user: User) => void;
 }) {
+  // The sheet reads `GET /users/{id}` for the joined roles, which is its own
+  // grant — without it the row is inert and only the menu's writes remain.
+  const canViewDetails = useCan(PERMISSIONS.user.show);
+  const canEdit = useCan(PERMISSIONS.user.update);
+
   return (
     <Card>
       <CardContent className="px-0">
@@ -91,9 +98,12 @@ export function UserTable({
               return (
                 <TableRow
                   key={user._id}
-                  className="cursor-pointer hover:bg-accent aria-selected:bg-accent"
+                  className={cn(
+                    "hover:bg-accent aria-selected:bg-accent",
+                    canViewDetails && "cursor-pointer",
+                  )}
                   aria-selected={openUserId === user._id}
-                  onClick={() => onView(user)}
+                  onClick={canViewDetails ? () => onView(user) : undefined}
                 >
                   <TableCell className="align-middle">
                     <div className="flex items-center gap-2.5">
@@ -140,20 +150,24 @@ export function UserTable({
                           align="end"
                           className={cn(dropdownContentClass, "min-w-[196px]")}
                         >
-                          <DropdownMenuItem
-                            className={dropdownItemClass}
-                            onClick={() => onView(user)}
-                          >
-                            <EyeIcon />
-                            View details
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className={dropdownItemClass}
-                            onClick={() => onEdit(user)}
-                          >
-                            <PencilIcon />
-                            Edit user
-                          </DropdownMenuItem>
+                          {canViewDetails ? (
+                            <DropdownMenuItem
+                              className={dropdownItemClass}
+                              onClick={() => onView(user)}
+                            >
+                              <EyeIcon />
+                              View details
+                            </DropdownMenuItem>
+                          ) : null}
+                          {canEdit ? (
+                            <DropdownMenuItem
+                              className={dropdownItemClass}
+                              onClick={() => onEdit(user)}
+                            >
+                              <PencilIcon />
+                              Edit user
+                            </DropdownMenuItem>
+                          ) : null}
                           <DropdownMenuItem
                             className={dropdownItemClass}
                             disabled

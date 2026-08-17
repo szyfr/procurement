@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { PencilIcon, Trash2Icon } from "lucide-react";
 
+import { useCan } from "@/components/providers/permissions-provider";
 import { SectionLabel } from "@/components/roles/role-primitives";
 import { ErrorAlert } from "@/components/shared/query-states";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ import {
 } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDate } from "@/lib/date";
+import { PERMISSIONS } from "@/modules/auth/constants/permissions";
 import type { Role } from "@/modules/roles";
 import { roleDetailQuery } from "@/modules/roles";
 
@@ -47,6 +49,9 @@ export function RoleDetailSheet({
   onEdit: (role: Role) => void;
   onDelete: (role: Role) => void;
 }) {
+  const canEdit = useCan(PERMISSIONS.role.update);
+  const canDelete = useCan(PERMISSIONS.role.delete);
+
   const { data, isPending, isError, error } = useQuery({
     ...roleDetailQuery(role?._id ?? ""),
     enabled: open && Boolean(role),
@@ -133,21 +138,27 @@ export function RoleDetailSheet({
           </section>
         </div>
 
-        <div className="flex items-center gap-2 border-t p-4">
-          <Button className="flex-1" onClick={() => onEdit(role)}>
-            <PencilIcon data-icon="inline-start" />
-            Edit role
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            aria-label={`Delete ${role.title}`}
-            className="border-status-danger-border bg-background text-destructive hover:bg-status-danger-subtle hover:text-destructive"
-            onClick={() => onDelete(role)}
-          >
-            <Trash2Icon />
-          </Button>
-        </div>
+        {canEdit || canDelete ? (
+          <div className="flex items-center gap-2 border-t p-4">
+            {canEdit ? (
+              <Button className="flex-1" onClick={() => onEdit(role)}>
+                <PencilIcon data-icon="inline-start" />
+                Edit role
+              </Button>
+            ) : null}
+            {canDelete ? (
+              <Button
+                variant="outline"
+                size="icon"
+                aria-label={`Delete ${role.title}`}
+                className="border-status-danger-border bg-background text-destructive hover:bg-status-danger-subtle hover:text-destructive"
+                onClick={() => onDelete(role)}
+              >
+                <Trash2Icon />
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
       </SheetContent>
     </Sheet>
   );

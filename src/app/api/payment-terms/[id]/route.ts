@@ -1,7 +1,8 @@
 import type { NextRequest } from "next/server";
 
 import { toErrorResponse } from "@/lib/api/errors";
-import { requireUser } from "@/modules/auth/dal/auth.dal";
+import { PERMISSIONS } from "@/modules/auth/constants/permissions";
+import { requirePermission } from "@/modules/auth/dal/access";
 import {
   deletePaymentTerm,
   getPaymentTerm,
@@ -14,7 +15,7 @@ export async function GET(
   context: RouteContext<"/api/payment-terms/[id]">,
 ) {
   try {
-    await requireUser();
+    await requirePermission(PERMISSIONS.paymentTerm.show);
 
     const { id } = await context.params;
 
@@ -29,7 +30,7 @@ export async function PUT(
   context: RouteContext<"/api/payment-terms/[id]">,
 ) {
   try {
-    await requireUser();
+    await requirePermission(PERMISSIONS.paymentTerm.write);
 
     const { id } = await context.params;
     const payload = parsePaymentTermPayload(
@@ -49,7 +50,7 @@ export async function DELETE(
   context: RouteContext<"/api/payment-terms/[id]">,
 ) {
   try {
-    await requireUser();
+    await requirePermission(PERMISSIONS.paymentTerm.write);
 
     const { id } = await context.params;
 

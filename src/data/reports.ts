@@ -7,6 +7,11 @@ import {
   UserCheckIcon,
 } from "lucide-react";
 
+import {
+  PERMISSIONS,
+  type PermissionSlug,
+} from "@/modules/auth/constants/permissions";
+
 /**
  * The report catalogue: which reports the page offers and what each card says.
  *
@@ -36,6 +41,13 @@ export interface ReportDefinition {
    * so instead of showing numbers.
    */
   availability: "live" | "unavailable";
+  /**
+   * The grant its endpoint requires. Each report is a separate endpoint with a
+   * separate permission upstream, so the page shows the user's own subset
+   * rather than all-or-nothing. An `unavailable` report has no endpoint and so
+   * no grant to check.
+   */
+  permission?: PermissionSlug;
   /** Why it cannot be generated. Required when `availability` is `unavailable`. */
   unavailableReason?: string;
   /**
@@ -56,6 +68,7 @@ export const reports: ReportDefinition[] = [
     description: "Purchase requests created in the period, grouped by status",
     icon: ChartPieIcon,
     availability: "live",
+    permission: PERMISSIONS.report.prCycle,
   },
   {
     id: "spend-by-department",
@@ -63,6 +76,7 @@ export const reports: ReportDefinition[] = [
     description: "Ordered items grouped by the department that requested them",
     icon: GaugeIcon,
     availability: "live",
+    permission: PERMISSIONS.report.departmentSpending,
   },
   {
     id: "vendor-performance",
@@ -71,6 +85,7 @@ export const reports: ReportDefinition[] = [
       "Auto-scored from delivery & quality data — replaces manual vendor evaluations",
     icon: StarIcon,
     availability: "live",
+    permission: PERMISSIONS.report.vendor,
   },
   {
     id: "canvassing-compliance",
@@ -78,6 +93,7 @@ export const reports: ReportDefinition[] = [
     description: "Canvassed items meeting the 3-quote minimum",
     icon: ClipboardCheckIcon,
     availability: "live",
+    permission: PERMISSIONS.report.canvassingCompliance,
   },
   {
     id: "purchaser-performance",
@@ -95,5 +111,23 @@ export const reports: ReportDefinition[] = [
 /** What the Reports page renders. Definitions marked `hidden` stay out. */
 export const visibleReports = reports.filter((report) => !report.hidden);
 
-/** The report shown when the page loads. Must be a `live` one. */
+/**
+ * Every grant that opens at least one report. The Reports page and its sidebar
+ * entry both gate on holding any of them, derived here so a new report can't be
+ * added to the catalogue and left out of the nav rule.
+ */
+export const reportPermissions: readonly PermissionSlug[] = [
+  ...new Set(
+    visibleReports
+      .map((report) => report.permission)
+      .filter((permission): permission is PermissionSlug =>
+        Boolean(permission),
+      ),
+  ),
+];
+
+/**
+ * The report shown when the page loads. Must be a `live` one — and only when
+ * the user can run it; `ReportsView` falls back to the first one they can.
+ */
 export const defaultReportId = "spend-by-department";

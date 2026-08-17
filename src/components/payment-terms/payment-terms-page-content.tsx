@@ -6,6 +6,7 @@ import {
   type EntityCrudConfig,
   EntityPageContent,
 } from "@/components/shared/entity-crud";
+import { PERMISSIONS } from "@/modules/auth/constants/permissions";
 import {
   type CreatePaymentTermDto,
   createPaymentTerm,
@@ -31,6 +32,13 @@ const config: EntityCrudConfig<PaymentTerm, CreatePaymentTermDto> = {
     "Add a payment term that can be selected when creating a quotation.",
   newButtonLabel: "New Payment Term",
   basePath: "/payment-terms",
+  // All three are `payment_term.store`: the controller reuses that slug on
+  // update and delete, and no `.update`/`.delete` permission exists upstream.
+  permissions: {
+    create: PERMISSIONS.paymentTerm.write,
+    update: PERMISSIONS.paymentTerm.write,
+    remove: PERMISSIONS.paymentTerm.write,
+  },
   queryKeys: paymentTermKeys,
   listQuery: paymentTermListQuery,
   create: createPaymentTerm,

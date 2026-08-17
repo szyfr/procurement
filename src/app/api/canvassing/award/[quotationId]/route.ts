@@ -1,7 +1,8 @@
 import type { NextRequest } from "next/server";
 
 import { toErrorResponse } from "@/lib/api/errors";
-import { requireUser } from "@/modules/auth/dal/auth.dal";
+import { PERMISSIONS } from "@/modules/auth/constants/permissions";
+import { requirePermission } from "@/modules/auth/dal/access";
 import { awardQuotation } from "@/modules/canvassing/dal/canvassing.dal";
 import { parseAwardItems } from "@/modules/canvassing/validation/award.validation";
 
@@ -20,7 +21,7 @@ export async function PATCH(
   context: RouteContext<"/api/canvassing/award/[quotationId]">,
 ) {
   try {
-    await requireUser();
+    await requirePermission(PERMISSIONS.canvassing.award);
 
     const { quotationId } = await context.params;
     const items = parseAwardItems(await request.json().catch(() => null));

@@ -5,6 +5,7 @@ import { PlusIcon, SearchIcon } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import * as React from "react";
 
+import { useCan } from "@/components/providers/permissions-provider";
 import { DeleteRoleDialog } from "@/components/roles/delete-role-dialog";
 import { RoleDetailSheet } from "@/components/roles/role-detail-sheet";
 import { RoleFormDialog } from "@/components/roles/role-form-dialog";
@@ -23,6 +24,7 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group";
 import { buildPageHref } from "@/lib/page-href";
+import { PERMISSIONS } from "@/modules/auth/constants/permissions";
 import { permissionListQuery } from "@/modules/permissions";
 import type { Role } from "@/modules/roles";
 import { roleListQuery } from "@/modules/roles";
@@ -52,6 +54,8 @@ export function RolesPageContent({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+
+  const canCreate = useCan(PERMISSIONS.role.store);
 
   const [overlay, setOverlay] = React.useState<Overlay>(null);
   const [searchInput, setSearchInput] = React.useState(search);
@@ -136,10 +140,12 @@ export function RolesPageContent({
             : undefined
         }
         actions={
-          <Button onClick={openCreate}>
-            <PlusIcon data-icon="inline-start" />
-            New role
-          </Button>
+          canCreate ? (
+            <Button onClick={openCreate}>
+              <PlusIcon data-icon="inline-start" />
+              New role
+            </Button>
+          ) : null
         }
       />
 
@@ -170,7 +176,7 @@ export function RolesPageContent({
             onClear={clearFilters}
           />
         ) : (
-          <RolesEmpty onCreate={openCreate} />
+          <RolesEmpty onCreate={canCreate ? openCreate : null} />
         )
       ) : (
         <RoleTable

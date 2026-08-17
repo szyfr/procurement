@@ -1,7 +1,8 @@
 import type { NextRequest } from "next/server";
 
 import { toErrorResponse } from "@/lib/api/errors";
-import { requireUser } from "@/modules/auth/dal/auth.dal";
+import { PERMISSIONS } from "@/modules/auth/constants/permissions";
+import { requirePermission } from "@/modules/auth/dal/access";
 import {
   getQuotation,
   updateQuotation,
@@ -17,7 +18,7 @@ export async function GET(
   context: RouteContext<"/api/canvassing/quotations/[id]">,
 ) {
   try {
-    await requireUser();
+    await requirePermission(PERMISSIONS.quotation.show);
 
     const { id } = await context.params;
 
@@ -37,7 +38,7 @@ export async function PUT(
   context: RouteContext<"/api/canvassing/quotations/[id]">,
 ) {
   try {
-    await requireUser();
+    await requirePermission(PERMISSIONS.quotation.update);
 
     const { id } = await context.params;
     const { payload, attachments } = parseUpdateQuotationForm(

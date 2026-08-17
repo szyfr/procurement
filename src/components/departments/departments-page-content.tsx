@@ -6,6 +6,7 @@ import {
   type EntityCrudConfig,
   EntityPageContent,
 } from "@/components/shared/entity-crud";
+import { PERMISSIONS } from "@/modules/auth/constants/permissions";
 import {
   type CreateDepartmentDto,
   createDepartment,
@@ -29,6 +30,11 @@ const config: EntityCrudConfig<Department, CreateDepartmentDto> = {
   createDescription: "Add a department purchase requests can be assigned to.",
   newButtonLabel: "New Department",
   basePath: "/departments",
+  permissions: {
+    create: PERMISSIONS.department.store,
+    update: PERMISSIONS.department.update,
+    remove: PERMISSIONS.department.delete,
+  },
   queryKeys: departmentKeys,
   listQuery: departmentListQuery,
   create: createDepartment,

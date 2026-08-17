@@ -1,7 +1,8 @@
 import type { NextRequest } from "next/server";
 
 import { toErrorResponse } from "@/lib/api/errors";
-import { requireUser } from "@/modules/auth/dal/auth.dal";
+import { PERMISSIONS } from "@/modules/auth/constants/permissions";
+import { requirePermission } from "@/modules/auth/dal/access";
 import { getRole, updateRole } from "@/modules/roles/dal/role.dal";
 import { parseUpdateRolePayload } from "@/modules/roles/validation/role.validation";
 
@@ -12,7 +13,7 @@ export async function GET(
   context: RouteContext<"/api/roles/[id]">,
 ) {
   try {
-    await requireUser();
+    await requirePermission(PERMISSIONS.role.show);
 
     const { id } = await context.params;
 
@@ -27,7 +28,7 @@ export async function PUT(
   context: RouteContext<"/api/roles/[id]">,
 ) {
   try {
-    await requireUser();
+    await requirePermission(PERMISSIONS.role.update);
 
     const { id } = await context.params;
     const payload = parseUpdateRolePayload(
