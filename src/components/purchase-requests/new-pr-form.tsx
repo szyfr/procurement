@@ -24,7 +24,6 @@ const submissionChecklist = [
   "Items that need canvassing are routed there automatically; direct items let you pick a vendor now.",
   "Every item needs a quantity before submitting.",
   "Estimated costs are for approval routing only and aren't saved — the backend has no field for them yet.",
-  "Attachments aren't wired up yet and won't be saved with the request.",
   "Save as Draft leaves the request in draft; Submit for Approval sends it in as pending straight away.",
 ];
 

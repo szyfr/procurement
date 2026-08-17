@@ -189,31 +189,6 @@ export function PurchaseRequestFormLayout({
           }}
           error={fieldErrors.items}
         />
-
-        <Card>
-          <CardHeader className="border-b">
-            <CardTitle>Attachments</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-2">
-            <label
-              htmlFor="attachments"
-              className="flex cursor-not-allowed flex-col items-center justify-center rounded-md border border-dashed py-6 text-center text-sm text-muted-foreground"
-            >
-              Drop files here or click to upload
-              <input
-                id="attachments"
-                name="attachments"
-                type="file"
-                multiple
-                disabled
-                className="sr-only"
-              />
-            </label>
-            <p className="text-xs text-muted-foreground">
-              File uploads aren&apos;t supported by the backend yet.
-            </p>
-          </CardContent>
-        </Card>
       </div>
 
       <div className="flex min-w-0 flex-col gap-5">
