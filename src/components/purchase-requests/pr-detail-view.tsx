@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import * as React from "react";
 import { CancelPurchaseRequestDialog } from "@/components/purchase-requests/cancel-pr-dialog";
+import { CompletePurchaseRequestDialog } from "@/components/purchase-requests/complete-pr-dialog";
 import { PurchaseRequestActionPanel } from "@/components/purchase-requests/pr-action-panel";
 import { PurchaseRequestDetailsPanel } from "@/components/purchase-requests/pr-details-panel";
 import { PurchaseRequestItemsSection } from "@/components/purchase-requests/pr-items-section";
@@ -159,6 +160,17 @@ export function PurchaseRequestDetailView({ id }: { id: string }) {
   const canvassingItem = request.items.find(
     (item) => item.status === "canvassing",
   );
+  /**
+   * Every item delivered, but the request still says otherwise — the delivery
+   * endpoints never move the parent status, so this is the only thing that
+   * closes a request out. Offered only while the request is still open: a
+   * canceled or rejected one keeps its outcome even if its items read
+   * completed.
+   */
+  const canComplete =
+    !isClosed &&
+    request.items.length > 0 &&
+    request.items.every((item) => item.status === "completed");
 
   function submitForApproval() {
     if (!request) return;
@@ -233,6 +245,17 @@ export function PurchaseRequestDetailView({ id }: { id: string }) {
             >
               Revise &amp; Resubmit
             </Button>
+          ) : canComplete ? (
+            <>
+              <CompletePurchaseRequestDialog
+                id={request._id}
+                no={request.no}
+                itemCount={request.items.length}
+              />
+              {request.status === "po-created" ? null : (
+                <CancelPurchaseRequestDialog id={request._id} no={request.no} />
+              )}
+            </>
           ) : isClosed || request.status === "po-created" ? null : (
             <CancelPurchaseRequestDialog id={request._id} no={request.no} />
           )

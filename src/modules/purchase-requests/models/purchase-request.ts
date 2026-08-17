@@ -123,5 +123,13 @@ export interface PurchaseRequestDetail extends PurchaseRequest {
  * The transitions the UI drives. The backend's enum is wider, but every other
  * status is reached through canvassing or PO processing rather than by someone
  * pressing a button on a request.
+ *
+ * `completed` is here because nothing upstream ever sets it: neither the
+ * delivery nor the partial-delivery handler dispatches `StatusVerificationJob`,
+ * so a request whose items are all delivered keeps reading "PO Created" until
+ * someone closes it out by hand.
  */
-export type SettablePurchaseRequestStatus = "pending" | "canceled";
+export type SettablePurchaseRequestStatus =
+  | "pending"
+  | "canceled"
+  | "completed";

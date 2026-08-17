@@ -201,7 +201,8 @@ export function PurchaseRequestItemsSection({
    * One call for the whole selection. Note the request's own status will not
    * move even when this completes every item: the backend never dispatches its
    * status verification job from this endpoint, so a fully delivered request
-   * keeps reading "PO Created" until something else recalculates it.
+   * keeps reading "PO Created" until someone closes it out with the detail
+   * page's "Mark as Completed" button.
    */
   async function handleMarkDelivered(deliveryDate: string) {
     const itemIds = selectedDeliveryItems.map((item) => item._id);

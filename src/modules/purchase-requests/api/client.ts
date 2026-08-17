@@ -75,8 +75,9 @@ export function updatePurchaseRequest(
 }
 
 /**
- * Submitting for approval (`pending`) and cancelling (`canceled`) are the same
- * transition endpoint with a different segment. Deliberately not folded into
+ * Submitting for approval (`pending`), cancelling (`canceled`) and closing a
+ * fully delivered request out (`completed`) are the same transition endpoint
+ * with a different segment. Deliberately not folded into
  * `updatePurchaseRequest`: this also cascades the new status onto the request's
  * items, which a plain PUT does not do. Returns nothing — callers refetch.
  */

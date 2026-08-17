@@ -20,6 +20,7 @@ import type { SettablePurchaseRequestStatus } from "@/modules/purchase-requests/
 const SETTABLE_STATUSES: SettablePurchaseRequestStatus[] = [
   "pending",
   "canceled",
+  "completed",
 ];
 
 const PRIORITIES: Priority[] = ["low", "normal", "high"];
