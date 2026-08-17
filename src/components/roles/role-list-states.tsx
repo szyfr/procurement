@@ -25,14 +25,8 @@ import { cn } from "@/lib/utils";
  * page selects one with `?state=` so each can be reviewed on its own.
  */
 
-/** Widths matching the real row: tile, name, description, users, meta. */
-const skeletonRow = [
-  "w-[150px]",
-  "flex-1",
-  "w-[90px]",
-  "w-16",
-  "w-20",
-] as const;
+/** Widths matching the real row: tile, name, description, last updated. */
+const skeletonRow = ["w-[150px]", "flex-1", "w-20"] as const;
 
 export function RolesLoading() {
   return (

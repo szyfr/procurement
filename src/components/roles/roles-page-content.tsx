@@ -96,8 +96,9 @@ export function RolesPageContent({
     refetch: refetchRoles,
   } = useQuery(roleListQuery(page, search));
 
-  // Cheap, page-size-1 calls: only the `pagination.total_items` count is
-  // needed, not the rows themselves.
+  // Cheap, page-size-1 call: only the `pagination.total_items` count is
+  // needed, not the rows themselves. Feeds the header line — the list and the
+  // sheet no longer show a grant total.
   const { data: permissionsTotal } = useQuery(permissionListQuery(1, 1));
   const totalPermissions = permissionsTotal?.pagination.total_items ?? 0;
 
@@ -176,7 +177,6 @@ export function RolesPageContent({
           roles={data.data}
           page={data.pagination}
           buildPageHref={pageHref}
-          totalPermissions={totalPermissions}
           openRoleId={overlay?.kind === "view" ? overlay.role._id : null}
           onView={(role) => setOverlay({ kind: "view", role })}
           onEdit={openEdit}
@@ -192,7 +192,6 @@ export function RolesPageContent({
         }}
         onEdit={openEdit}
         onDelete={(role) => setOverlay({ kind: "delete", role })}
-        totalPermissions={totalPermissions}
       />
 
       <RoleFormDialog

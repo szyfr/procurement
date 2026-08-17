@@ -6,7 +6,6 @@ import { PencilIcon, Trash2Icon } from "lucide-react";
 import { SectionLabel } from "@/components/roles/role-primitives";
 import { ErrorAlert } from "@/components/shared/query-states";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import {
   Sheet,
   SheetContent,
@@ -41,14 +40,12 @@ export function RoleDetailSheet({
   onOpenChange,
   onEdit,
   onDelete,
-  totalPermissions,
 }: {
   role: Role | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onEdit: (role: Role) => void;
   onDelete: (role: Role) => void;
-  totalPermissions: number;
 }) {
   const { data, isPending, isError, error } = useQuery({
     ...roleDetailQuery(role?._id ?? ""),
@@ -81,37 +78,7 @@ export function RoleDetailSheet({
             </p>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Role type" value="—" />
-              <Field label="Assigned users" value="—" />
             </div>
-          </section>
-
-          <section className="flex flex-col gap-2.5">
-            <SectionLabel>Permission summary</SectionLabel>
-            <div className="grid grid-cols-3 gap-2">
-              <div className="rounded-lg border px-2.5 py-2">
-                <p className="text-xs text-muted-foreground">Granted</p>
-                <p className="text-base font-semibold tabular-nums">
-                  {granted}
-                </p>
-              </div>
-              <div className="rounded-lg border px-2.5 py-2">
-                <p className="text-xs text-muted-foreground">Of total</p>
-                <p className="text-base font-semibold tabular-nums">
-                  {totalPermissions}
-                </p>
-              </div>
-              <div className="rounded-lg border px-2.5 py-2">
-                <p className="text-xs text-muted-foreground">Modules</p>
-                <p className="text-base font-semibold tabular-nums">—</p>
-              </div>
-            </div>
-            <Progress
-              value={
-                totalPermissions > 0 ? (granted / totalPermissions) * 100 : 0
-              }
-              aria-label={`${granted} of ${totalPermissions} permissions granted`}
-              className="gap-0 [&_[data-slot=progress-track]]:h-2"
-            />
           </section>
 
           <section className="flex flex-col gap-2">
