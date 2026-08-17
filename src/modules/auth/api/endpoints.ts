@@ -11,4 +11,6 @@ export const authEndpoints = {
   logout: `${BASE}/logout`,
   /** Who the caller is according to the backend, or 401. */
   session: `${BASE}/session`,
+  /** The caller's own password. Upstream this is `PATCH /auth/me/change-password`. */
+  changePassword: `${BASE}/change-password`,
 } as const;

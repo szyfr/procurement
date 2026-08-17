@@ -8,6 +8,7 @@
  */
 
 export {
+  changePassword,
   fetchSession,
   login,
   logout,
@@ -17,8 +18,11 @@ export { authEndpoints } from "@/modules/auth/api/endpoints";
 export {
   DEFAULT_SIGNED_IN_PATH,
   LOGIN_PATH,
+  MIN_PASSWORD_LENGTH,
   REDIRECT_PARAM,
 } from "@/modules/auth/constants";
+export type { ChangePasswordDto } from "@/modules/auth/dto/auth.dto";
+export { useChangePassword } from "@/modules/auth/hooks/use-change-password";
 export { useLogin } from "@/modules/auth/hooks/use-login";
 export { useLogout, useSession } from "@/modules/auth/hooks/use-session";
 export type {

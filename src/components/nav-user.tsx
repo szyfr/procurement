@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  ChevronsUpDownIcon,
-  LogOutIcon,
-  Settings2Icon,
-  UserIcon,
-} from "lucide-react";
+import { ChevronsUpDownIcon, LogOutIcon, UserIcon } from "lucide-react";
 import Link from "next/link";
 import { dropdownItemClass } from "@/components/shared/menu-classes";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -83,6 +78,9 @@ export function NavUser({ user }: { user: AuthenticatedUser }) {
               </DropdownMenuLabel>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
+            {/* One destination, one entry: "Settings" pointed at the same
+                account panel as "My Account", and there is no second settings
+                page for it to ever mean anything else. */}
             <DropdownMenuGroup>
               <DropdownMenuItem
                 className={dropdownItemClass}
@@ -90,13 +88,6 @@ export function NavUser({ user }: { user: AuthenticatedUser }) {
               >
                 <UserIcon />
                 My Account
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                className={dropdownItemClass}
-                render={<Link href="/settings/account" />}
-              >
-                <Settings2Icon />
-                Settings
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />

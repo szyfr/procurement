@@ -15,6 +15,13 @@ export const CSRF_COOKIE = "XSRF-TOKEN";
 /** Header `validate_xsrf` compares the CSRF cookie against. */
 export const CSRF_HEADER = "X-XSRF-TOKEN";
 
+/**
+ * What `ChangePasswordRequest` upstream declares: `min_length=6` on all three
+ * of `old_password`, `password` and `confirm_password`. Checking it here turns
+ * a 422 the user would have to decode into inline copy on the field.
+ */
+export const MIN_PASSWORD_LENGTH = 6;
+
 export const LOGIN_PATH = "/login";
 
 /** Where a signed-in user lands when no other destination was requested. */

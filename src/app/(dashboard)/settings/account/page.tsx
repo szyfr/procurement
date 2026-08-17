@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 
+import { ChangePasswordCard } from "@/components/settings/change-password-card";
+import { PageHeader } from "@/components/shared/page-header";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   Card,
@@ -20,16 +22,17 @@ export const metadata: Metadata = {
 };
 
 /**
- * Read-only, deliberately.
+ * The whole of Settings, which is why it carries its own `PageHeader` rather
+ * than sitting under a shared one. There was a `/settings` layout with a tab
+ * list in it; with a single destination to point at, the tabs and the second
+ * heading were chrome around nothing.
  *
- * FastAPI exposes no profile write at all — the only user mutation in the
- * backend is role assignment (`PATCH /users/{id}/roles`), and there is no
- * password-change endpoint. This panel previously offered a photo picker, an
- * editable name and email, a full change-password fieldset and a Save button,
- * none of which were wired to anything: a user could set a new password, click
- * Save, and get no feedback while nothing happened. Same call as the inert
- * Comments card on the purchase request detail page — show what the backend
- * can actually answer for, and leave the rest out until it exists.
+ * The profile fields are read-only, deliberately. The only write a user can
+ * make to their own account upstream is `PATCH /auth/me/change-password`, which
+ * the card below is wired to. There is no self-service endpoint for name, email
+ * or photo — editing a user is an administrative action (`PUT /users/{id}`, on
+ * the Users page), so those fields display rather than invite an edit that
+ * would go nowhere.
  */
 export default async function AccountSettingsPage() {
   // The dashboard layout has already turned away anyone unauthenticated, so
@@ -38,68 +41,68 @@ export default async function AccountSettingsPage() {
   const name = userName(user);
 
   return (
-    <Card>
-      <CardHeader className="border-b">
-        <CardTitle>My Account</CardTitle>
-        <CardDescription>
-          Your own profile. Every role sees this panel — it&apos;s personal, not
-          administrative.
-        </CardDescription>
-      </CardHeader>
+    <>
+      <PageHeader
+        title="My Account"
+        description="Your own profile — it's personal, not administrative"
+      />
 
-      <CardContent className="flex items-center gap-4">
-        <Avatar className="size-14">
-          <AvatarFallback>{initials(name)}</AvatarFallback>
-        </Avatar>
-        <div className="flex flex-col gap-0.5">
-          <p className="text-sm font-medium">{name}</p>
-          <p className="text-[13px] text-muted-foreground">{user.email}</p>
-        </div>
-      </CardContent>
+      <Card>
+        <CardHeader className="border-b">
+          <CardTitle>Profile</CardTitle>
+          <CardDescription>
+            How you appear to everyone else in the module.
+          </CardDescription>
+        </CardHeader>
 
-      <Separator />
+        <CardContent className="flex items-center gap-4">
+          <Avatar className="size-14">
+            <AvatarFallback>{initials(name)}</AvatarFallback>
+          </Avatar>
+          <div className="flex flex-col gap-0.5">
+            <p className="text-sm font-medium">{name}</p>
+            <p className="text-[13px] text-muted-foreground">{user.email}</p>
+          </div>
+        </CardContent>
 
-      <CardContent className="flex flex-col gap-4">
-        <FieldGroup className="sm:grid sm:grid-cols-2 sm:gap-4">
-          <Field>
-            <FieldLabel htmlFor="full-name">Full Name</FieldLabel>
-            <Input
-              id="full-name"
-              name="fullName"
-              defaultValue={name}
-              readOnly
-            />
-          </Field>
+        <Separator />
 
-          {/* Role and department have no source on `/auth/me` — it carries a
-              permission list and no organizational placement — so both stay
-              blank rather than showing a value the backend never sent. */}
-          <Field>
-            <FieldLabel htmlFor="role">Role</FieldLabel>
-            <Input id="role" name="role" placeholder="—" readOnly />
-          </Field>
+        <CardContent className="flex flex-col gap-4">
+          <FieldGroup className="sm:grid sm:grid-cols-2 sm:gap-4">
+            <Field>
+              <FieldLabel htmlFor="full-name">Full Name</FieldLabel>
+              <Input
+                id="full-name"
+                name="fullName"
+                defaultValue={name}
+                readOnly
+              />
+            </Field>
 
-          <Field>
-            <FieldLabel htmlFor="company-email">Company Email</FieldLabel>
-            <Input
-              id="company-email"
-              name="email"
-              type="email"
-              defaultValue={user.email}
-              readOnly
-            />
-          </Field>
+            {/* Name and email are the whole of it. Role and department were
+                here as permanently blank inputs — `/auth/me` carries a
+                permission list and no organizational placement, so there was
+                never a value to put in them. */}
+            <Field>
+              <FieldLabel htmlFor="company-email">Company Email</FieldLabel>
+              <Input
+                id="company-email"
+                name="email"
+                type="email"
+                defaultValue={user.email}
+                readOnly
+              />
+            </Field>
+          </FieldGroup>
 
-          <Field>
-            <FieldLabel htmlFor="department">Department</FieldLabel>
-            <Input id="department" name="department" placeholder="—" readOnly />
-          </Field>
-        </FieldGroup>
+          <p className="text-[13px] text-muted-foreground">
+            Profile details are managed by your administrator. Your password is
+            yours to change below.
+          </p>
+        </CardContent>
+      </Card>
 
-        <p className="text-[13px] text-muted-foreground">
-          Profile details and passwords are managed by your administrator.
-        </p>
-      </CardContent>
-    </Card>
+      <ChangePasswordCard />
+    </>
   );
 }

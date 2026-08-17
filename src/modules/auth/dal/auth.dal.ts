@@ -5,6 +5,7 @@ import { ApiError } from "@/lib/api/errors";
 import { serverFetch, serverFetchWithCookies } from "@/lib/api/fetcher";
 import { CSRF_COOKIE, CSRF_HEADER } from "@/modules/auth/constants";
 import type {
+  ChangePasswordDto,
   CurrentUserDto,
   LoginRequestDto,
   LoginResponseDto,
@@ -153,6 +154,49 @@ export async function getOptionalUser(): Promise<AuthenticatedUser | null> {
  */
 export async function requireUser(): Promise<AuthenticatedUser> {
   return getCurrentUser();
+}
+
+/**
+ * Changes the caller's own password.
+ *
+ * The account comes from the session, so this can never target anyone else —
+ * it is the only password write FastAPI offers, and an administrator resetting
+ * someone else's password is still not possible.
+ *
+ * The session survives it: the JWT is signed over the email and is not
+ * invalidated by a password change, so the user stays signed in here and on
+ * every other device.
+ *
+ * The one upstream shape worth intercepting is a wrong old password. The
+ * controller raises a 401 and then catches its own `HTTPException`, re-emitting
+ * it as `400 {"error": "401: Incorrect old password"}` — which would otherwise
+ * normalize to the generic "couldn't be processed" copy and leave the user with
+ * no idea which field was wrong. It is remapped to a validation failure with
+ * our own wording, not upstream's.
+ */
+export async function changePassword(
+  payload: ChangePasswordDto,
+): Promise<void> {
+  try {
+    await serverFetch<unknown>("/auth/me/change-password", {
+      method: "PATCH",
+      body: payload,
+    });
+  } catch (error) {
+    if (
+      error instanceof ApiError &&
+      error.status === 400 &&
+      /incorrect old password/i.test(error.message)
+    ) {
+      throw new ApiError(
+        422,
+        "validation_failed",
+        "Your current password is incorrect.",
+      );
+    }
+
+    throw error;
+  }
 }
 
 /**

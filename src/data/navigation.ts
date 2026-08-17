@@ -45,8 +45,6 @@ export const mainNav = [
   },
 ];
 
-export const settingsNav = [{ title: "My Account", url: "/settings/account" }];
-
 /**
  * Breadcrumb labels for static segments. Segments without an entry — dynamic
  * ids such as `PR-2026-0117` — render as-is.
@@ -67,5 +65,9 @@ export const breadcrumbLabels: Record<string, string> = {
   users: "Users",
 };
 
-/** Segments that exist only to nest routes and should not appear as a crumb. */
-export const hiddenBreadcrumbSegments = new Set(["quotes"]);
+/**
+ * Segments that exist only to nest routes and should not appear as a crumb.
+ * `settings` is one of them now that it holds a single page: the crumb would
+ * link to a route that redirects straight back to where the user already is.
+ */
+export const hiddenBreadcrumbSegments = new Set(["quotes", "settings"]);

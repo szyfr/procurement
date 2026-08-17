@@ -14,6 +14,20 @@ export interface LoginRequestDto {
   password: string;
 }
 
+/**
+ * `PATCH /auth/me/change-password`. The account is taken from the session, so
+ * the body carries no user id — this endpoint can only change the caller's own
+ * password.
+ *
+ * `confirm_password` is redundant with `password` by the time it reaches the
+ * BFF, but upstream declares it required and rejects a mismatch, so it is sent.
+ */
+export interface ChangePasswordDto {
+  old_password: string;
+  password: string;
+  confirm_password: string;
+}
+
 export interface LoginResponseDto {
   status: number;
   user: SignedInUser;

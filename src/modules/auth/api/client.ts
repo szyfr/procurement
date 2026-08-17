@@ -1,5 +1,6 @@
 import { BffError, bffRequest } from "@/lib/api/bff-client";
 import { authEndpoints } from "@/modules/auth/api/endpoints";
+import type { ChangePasswordDto } from "@/modules/auth/dto/auth.dto";
 import type {
   AuthenticatedUser,
   Credentials,
@@ -26,6 +27,17 @@ export function login(credentials: Credentials) {
 
 export function logout() {
   return bffRequest<null>(authEndpoints.logout, { method: "POST" });
+}
+
+/**
+ * Changes the caller's own password. Answers 204 — there is nothing to hand
+ * back, and the session cookie is untouched, so the user stays signed in.
+ */
+export function changePassword(payload: ChangePasswordDto) {
+  return bffRequest<void>(authEndpoints.changePassword, {
+    method: "PATCH",
+    body: payload,
+  });
 }
 
 /**

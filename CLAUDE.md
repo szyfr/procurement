@@ -116,7 +116,7 @@ Almost none. `src/data/` holds two files and neither is fake data: `navigation.t
 
 What genuinely has no backend, and renders an empty or unavailable state rather than invented data: **notifications** (no model or endpoint at all), the dashboard's **Recent Activity**, **Upcoming Deadlines**, **Requiring Your Action** and **Overdue Deliveries** tiles, and the **Purchaser Performance** report. See `DASHBOARD_BACKEND_GAPS.md` for what each one needs.
 
-The user's role and department have no backend source — `/auth/me` carries a permission list and no organizational placement — so the My Account panel leaves both blank. When a backend endpoint doesn't exist yet, keep the page functional with its existing empty state — do not invent data, and document the gap. Columns with no backend source are rendered as a literal em-dash at the call site rather than carried as a permanently-null field — a request has no stored amount and materials sync without a cost, so the Amount column is empty everywhere and the comment beside it says why.
+The user's role and department have no backend source — `/auth/me` carries a permission list and no organizational placement — so the My Account panel shows name and email and drops the two fields entirely rather than keeping them as inputs that can never be filled. When a backend endpoint doesn't exist yet, keep the page functional with its existing empty state — do not invent data, and document the gap. Columns with no backend source are rendered as a literal em-dash at the call site rather than carried as a permanently-null field — a request has no stored amount and materials sync without a cost, so the Amount column is empty everywhere and the comment beside it says why.
 
 ## UI conventions
 

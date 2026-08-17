@@ -1,4 +1,5 @@
 export type {
+  ChangePasswordDto,
   CurrentUserDto,
   LoginRequestDto,
   LoginResponseDto,
