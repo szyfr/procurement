@@ -21,6 +21,7 @@ export {
   updatePurchaseRequest,
 } from "@/modules/purchase-requests/api/client";
 export {
+  closedToQuotingItemStatuses,
   LOOKUP_PAGE_SIZE,
   PURCHASE_REQUEST_UPDATED_EVENT,
   PURCHASE_REQUESTS_CHANNEL,

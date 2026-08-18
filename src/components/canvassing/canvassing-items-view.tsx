@@ -40,7 +40,9 @@ import {
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { PERMISSIONS } from "@/modules/auth/constants/permissions";
+import type { PurchaseRequestItem } from "@/modules/purchase-requests";
 import {
+  closedToQuotingItemStatuses,
   purchaseRequestDetailQuery,
   purchaseRequestItemStatusLabels,
   purchaseRequestItemTone,
@@ -108,13 +110,22 @@ export function CanvassingItemsView({ id }: { id: string }) {
   const itemCount = request.items.length;
 
   /**
-   * Only items routed to canvassing can be quoted. A quote saved against a
-   * directly-sourced item would store fine and then never appear anywhere —
-   * the comparison below reads the same `sourcing` filter.
+   * Only items routed to canvassing can be quoted, and only while canvassing
+   * is still open for them. A quote saved against a directly-sourced item
+   * would store fine and then never appear anywhere — the comparison below
+   * reads the same `sourcing` filter — and one saved against an item already
+   * on a PO arrives too late to change anything.
    */
-  const quotableCount = request.items.filter(
-    (item) => item.is_needs_canvass,
-  ).length;
+  const isQuotable = (item: PurchaseRequestItem) =>
+    Boolean(item.is_needs_canvass) &&
+    !closedToQuotingItemStatuses.includes(item.status);
+
+  const quotableCount = request.items.filter(isQuotable).length;
+
+  // Hide, don't disable: with every item already on a PO (or otherwise closed)
+  // there is nothing to select and no quote to create, so the checkbox column
+  // and the footer go rather than sitting there permanently inert.
+  const canSelect = canAddQuote && quotableCount > 0;
 
   const quoteParams = new URLSearchParams();
   for (const itemId of selected) quoteParams.append("items", itemId);
@@ -141,9 +152,11 @@ export function CanvassingItemsView({ id }: { id: string }) {
         <CardHeader className="flex flex-row items-center justify-between gap-2 border-b">
           <CardTitle>Items in this Purchase Request</CardTitle>
           <span className="text-xs text-muted-foreground">
-            {quotableCount === itemCount
-              ? "Select items to quote together"
-              : `${quotableCount} of ${itemCount} routed to canvassing — only those can be quoted`}
+            {quotableCount === 0
+              ? "No items are open for quotation"
+              : quotableCount === itemCount
+                ? "Select items to quote together"
+                : `${quotableCount} of ${itemCount} open for quotation — only those can be quoted`}
           </span>
         </CardHeader>
 
@@ -167,7 +180,7 @@ export function CanvassingItemsView({ id }: { id: string }) {
               <Table className={dataTableClass}>
                 <TableHeader>
                   <TableRow>
-                    {canAddQuote ? (
+                    {canSelect ? (
                       <TableHead scope="col" className="w-8">
                         <span className="sr-only">Select</span>
                       </TableHead>
@@ -182,7 +195,7 @@ export function CanvassingItemsView({ id }: { id: string }) {
                 <TableBody>
                   {request.items.map((item) => {
                     const isSelected = selected.includes(item._id);
-                    const quotable = Boolean(item.is_needs_canvass);
+                    const quotable = isQuotable(item);
                     // The detail pipeline joins the material; the raw id
                     // stands in if the lookup missed.
                     const name = item.material?.description || item.material_id;
@@ -192,7 +205,7 @@ export function CanvassingItemsView({ id }: { id: string }) {
                         key={item._id}
                         className={cn(isSelected && "bg-status-info-subtle")}
                       >
-                        {canAddQuote ? (
+                        {canSelect ? (
                           <TableCell>
                             <Checkbox
                               checked={isSelected}
@@ -200,7 +213,9 @@ export function CanvassingItemsView({ id }: { id: string }) {
                               aria-label={
                                 quotable
                                   ? `Select ${name}`
-                                  : `${name} is sourced directly and can't be quoted`
+                                  : item.is_needs_canvass
+                                    ? `${name} is no longer open for quotation`
+                                    : `${name} is sourced directly and can't be quoted`
                               }
                               onCheckedChange={(checked) =>
                                 toggle(item._id, checked === true)
@@ -233,7 +248,7 @@ export function CanvassingItemsView({ id }: { id: string }) {
               </Table>
             </CardContent>
 
-            {canAddQuote ? (
+            {canAddQuote && quotableCount > 0 ? (
               <CardFooter className="justify-between gap-2">
                 <span className="text-xs text-muted-foreground">
                   {selected.length} {selected.length === 1 ? "item" : "items"}{" "}

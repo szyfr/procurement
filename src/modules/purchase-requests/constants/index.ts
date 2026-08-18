@@ -85,3 +85,11 @@ export const purchaseRequestItemTone: Record<
   rejected: "danger",
   canceled: "neutral",
 };
+
+/**
+ * Item statuses that take no further quotes. Once an item has reached a PO —
+ * or been closed out — canvassing is over for it, so the canvassing screen
+ * leaves it unselectable and drops its footer once every item is here.
+ */
+export const closedToQuotingItemStatuses: readonly PurchaseRequestItemStatus[] =
+  ["po-created", "partially-completed", "completed", "rejected", "canceled"];
