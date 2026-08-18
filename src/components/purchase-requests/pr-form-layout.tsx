@@ -204,15 +204,6 @@ export function PurchaseRequestFormLayout({
             </ul>
           </CardContent>
         </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Approval Routing</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-xs text-muted-foreground">{routingNote}</p>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
