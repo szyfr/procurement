@@ -10,4 +10,5 @@ export const reportEndpoints = {
   prCycle: `${BASE}/pr-cycle`,
   departmentSpending: `${BASE}/department-spending`,
   canvassingCompliance: `${BASE}/canvassing-compliance`,
+  purchaserAssessment: `${BASE}/purchaser-assessment`,
 } as const;

@@ -10,5 +10,8 @@ export {
 /** Bars in the vendor performance chart; the table still lists every vendor. */
 export const CHART_VENDOR_LIMIT = 8;
 
+/** Bars in the purchaser performance chart; the table still lists everyone. */
+export const CHART_PURCHASER_LIMIT = 8;
+
 /** The backend's rating scale — ratings come back as 1–5. */
 export const RATING_MAX = 5;

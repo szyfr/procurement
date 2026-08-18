@@ -129,6 +129,7 @@ export const PERMISSIONS = {
      * other.
      */
     vendor: "report.vendor",
+    purchaserAssessment: "report.purchaser-assessment",
   },
 } as const;
 

@@ -19,8 +19,8 @@ import {
  * `components/reports/`, so this file used to carry a `chart` and `table` of
  * fabricated numbers per entry that nothing displayed — plus one entry,
  * Purchaser Performance, whose invented figures *were* displayed and were
- * indistinguishable from the four real reports. Both are gone; `availability`
- * is what the workspace reads instead.
+ * indistinguishable from the real reports. Both are gone; `availability` is
+ * what the workspace reads instead, and every entry is now `live`.
  */
 
 export interface ReportChartDatum {
@@ -96,15 +96,14 @@ export const reports: ReportDefinition[] = [
     permission: PERMISSIONS.report.canvassingCompliance,
   },
   {
+    // Cycle time is not in the endpoint's three fields, so the description
+    // says what it can actually answer.
     id: "purchaser-performance",
     title: "Purchaser Performance",
-    description:
-      "PRs processed, cycle time, and compliance per procurement officer",
+    description: "Request items processed and delivered on time, per purchaser",
     icon: UserCheckIcon,
-    availability: "unavailable",
-    unavailableReason:
-      "Purchase requests carry no record of which procurement officer handled them, so there is nothing to attribute this to yet.",
-    hidden: true,
+    availability: "live",
+    permission: PERMISSIONS.report.purchaserAssessment,
   },
 ];
 
