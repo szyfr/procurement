@@ -19,12 +19,9 @@ export {
   recordPartialDelivery,
   setPurchaseRequestStatus,
   updatePurchaseRequest,
-} from "@/modules/purchase-requests/api/client";
+} from "@/modules/purchase-requests/api";
 export {
   closedToQuotingItemStatuses,
-  LOOKUP_PAGE_SIZE,
-  PURCHASE_REQUEST_UPDATED_EVENT,
-  PURCHASE_REQUESTS_CHANNEL,
   purchaseRequestItemStatusLabels,
   purchaseRequestItemTone,
   purchaseRequestStatusLabels,
@@ -54,12 +51,12 @@ export type {
   PurchaseRequestProofDetail,
   PurchaseRequestProofDocument,
 } from "@/modules/purchase-requests/models/purchase-request-proof";
-export type { PurchaseRequestListFilters } from "@/modules/purchase-requests/queries/purchase-request.queries";
+export type { PurchaseRequestListFilters } from "@/modules/purchase-requests/queries";
 export {
   departmentOptionsQuery,
   purchaseRequestDetailQuery,
   purchaseRequestKeys,
   purchaseRequestListQuery,
   purchaseRequestProofQuery,
-} from "@/modules/purchase-requests/queries/purchase-request.queries";
+} from "@/modules/purchase-requests/queries";
 export type { DraftLineItem } from "@/modules/purchase-requests/types";

@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 
 import { toErrorResponse } from "@/lib/api/errors";
+import { parseTitleDescriptionPayload } from "@/lib/api/validation";
 import { PERMISSIONS } from "@/modules/auth/constants/permissions";
 import { requirePermission } from "@/modules/auth/dal/access";
 import {
@@ -8,7 +9,6 @@ import {
   getDepartment,
   updateDepartment,
 } from "@/modules/departments/dal/department.dal";
-import { parseDepartmentPayload } from "@/modules/departments/validation/department.validation";
 
 export async function GET(
   _request: NextRequest,
@@ -33,7 +33,7 @@ export async function PUT(
     await requirePermission(PERMISSIONS.department.update);
 
     const { id } = await context.params;
-    const payload = parseDepartmentPayload(
+    const payload = parseTitleDescriptionPayload(
       await request.json().catch(() => null),
     );
 

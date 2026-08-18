@@ -1,36 +1,19 @@
 import type { NextRequest } from "next/server";
 
-import { ApiError, toErrorResponse } from "@/lib/api/errors";
+import { toErrorResponse } from "@/lib/api/errors";
 import { PERMISSIONS } from "@/modules/auth/constants/permissions";
 import { requirePermission } from "@/modules/auth/dal/access";
-import { getCanvassingCompliance } from "@/modules/reports/dal/canvassing-compliance-report.dal";
+import { getCanvassingCompliance } from "@/modules/reports/dal/report.dal";
+import { parseReportRange } from "@/modules/reports/validation/report-range.validation";
 
-/**
- * Canvassing compliance report. Read-only, and both dates are required —
- * FastAPI rejects the call without them, so the missing-parameter case is
- * answered here rather than round-tripped.
- */
-
+/** Canvassing compliance report. Read-only; `parseReportRange` enforces the required bounds. */
 export async function GET(request: NextRequest) {
   try {
     await requirePermission(PERMISSIONS.report.canvassingCompliance);
 
-    const { searchParams } = request.nextUrl;
+    const range = parseReportRange(request.nextUrl.searchParams);
 
-    const startDate = searchParams.get("start_date");
-    const endDate = searchParams.get("end_date");
-
-    if (!startDate || !endDate) {
-      throw new ApiError(
-        422,
-        "validation_failed",
-        "A start and end date are required.",
-      );
-    }
-
-    const result = await getCanvassingCompliance({ startDate, endDate });
-
-    return Response.json({ data: result });
+    return Response.json({ data: await getCanvassingCompliance(range) });
   } catch (error) {
     return toErrorResponse(error);
   }

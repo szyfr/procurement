@@ -1,5 +1,4 @@
-export { fetchPermissions } from "@/modules/permissions/api/client";
-export { permissionEndpoints } from "@/modules/permissions/api/endpoints";
+export { fetchPermissions } from "@/modules/permissions/api";
 export type { Permission } from "@/modules/permissions/models/permission";
 export type { PermissionModuleGroup } from "@/modules/permissions/models/permission-module";
 export {
@@ -9,4 +8,4 @@ export {
 export {
   permissionKeys,
   permissionListQuery,
-} from "@/modules/permissions/queries/permission.queries";
+} from "@/modules/permissions/queries";

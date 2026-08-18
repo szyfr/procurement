@@ -8,9 +8,9 @@
  * the backend sent". See `getCurrentUser`.
  *
  * There is no token here either, by design. The JWT lives in an HttpOnly
- * cookie the browser cannot read, so "am I signed in?" is answered by asking
- * the backend (`GET /api/auth/session`), never by inspecting anything held
- * client-side.
+ * cookie the browser cannot read, so "am I signed in?" is answered on the
+ * server — `getOptionalUser()` asks `/auth/me` before a page renders — never
+ * by inspecting anything held client-side.
  */
 export interface AuthenticatedUser {
   /**

@@ -5,8 +5,8 @@ import { SearchIcon } from "lucide-react";
 import * as React from "react";
 
 import { PermissionModuleList } from "@/components/roles/permission-module-list";
-import { SectionLabel } from "@/components/roles/role-primitives";
 import { ErrorAlert } from "@/components/shared/query-states";
+import { SectionLabel } from "@/components/shared/section-label";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -26,6 +26,7 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/toast";
 import { MAX_PAGE_SIZE } from "@/lib/api/pagination";
+import { errorMessage } from "@/lib/utils";
 import {
   groupPermissionsByModule,
   type PermissionModuleGroup,
@@ -112,10 +113,7 @@ export function RoleFormDialog({
     onError: (mutationError) => {
       toast.add({
         title: isEdit ? "Couldn't update role" : "Couldn't create role",
-        description:
-          mutationError instanceof Error
-            ? mutationError.message
-            : "Something went wrong.",
+        description: errorMessage(mutationError),
         type: "error",
       });
     },

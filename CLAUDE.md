@@ -45,7 +45,7 @@ Two layers are both called "client" — do not conflate them:
 
 | Layer | Runs | Talks to | Never touches |
 |---|---|---|---|
-| `modules/*/api/client.ts` | browser | own-origin `/api/*` only | FastAPI's address, `serverFetch` |
+| `modules/*/api.ts` | browser | own-origin `/api/*` only | FastAPI's address, `serverFetch` |
 | `modules/*/dal/*.dal.ts` | server, inside Route Handlers | FastAPI only | React |
 
 Consequences that are easy to get wrong:
@@ -61,26 +61,27 @@ Consequences that are easy to get wrong:
 Feature modules under `src/modules/<feature>/` follow **Module + DAL + DTO**:
 
 ```
-api/client.ts        browser calls against the BFF
-api/endpoints.ts     every BFF path the feature may call (relative, own origin)
+api.ts               browser calls against the BFF, and the paths they call
 dal/*.dal.ts         server-side FastAPI reads/writes
 models/              the FastAPI response shape, verbatim — what components render
 dto/                 request contracts only (create/update bodies)
 validation/          request-body parsing for Route Handlers, throws ApiError(422)
-queries/             TanStack Query keys + queryOptions factories
-constants/           status labels, tones, page sizes
+queries.ts           TanStack Query keys + queryOptions factories
+constants.ts         status labels, tones
 index.ts             public surface (no DAL)
 ```
 
-There is no `mappers/`. A response has one shape and it is the backend's: `models/` declares it and every layer above reads it directly. `dto/` holds request bodies only — a resource whose writes take the same fields it returns needs no response DTO at all, and vendors (read-only) have no `dto/` directory.
+A concern gets a **directory when it holds more than one file and a plain file otherwise**, so `dal/`, `dto/`, `models/` and `validation/` are directories in the larger modules and `departments` gets by with `dto/index.ts` alone. `api.ts` and `queries.ts` are always single files: there is one browser client and one key namespace per module, and the BFF paths live as string constants at the top of `api.ts` rather than in a separate endpoints file — a call and the URL it hits stay in view together.
 
-`purchase-requests`, `departments`, `vendors`, `payment-terms`, `canvassing`, `realtime` and `auth` exist. New modules should mirror this. `auth` adds `hooks/` (the sign-in and sign-out mutations) and keeps its cookie writer beside the DAL, so both stay out of the barrel.
+There is no `mappers/` and no per-module wrapper around shared helpers: a module that needs `DEFAULT_PAGE_SIZE` or `parseTitleDescriptionPayload` imports it from `lib/` directly rather than re-exporting it first. A response has one shape and it is the backend's: `models/` declares it and every layer above reads it directly. `dto/` holds request bodies only — a resource whose writes take the same fields it returns needs no response DTO at all, and vendors (read-only) have no `dto/` directory.
 
-`realtime` has no DAL — it never reaches FastAPI. Its JWT signer sits in `services/` instead and is kept out of the barrel for the same reason a DAL would be: it reads `ABLY_API_KEY`.
+`purchase-requests`, `departments`, `vendors`, `payment-terms`, `permissions`, `canvassing`, `reports`, `roles`, `users`, `realtime` and `auth` exist. New modules should mirror this. `auth` adds `hooks/` (the sign-in and sign-out mutations) and keeps its cookie writer beside the DAL, so both stay out of the barrel. A hook only earns a file when it adds something to `useMutation`/`useQuery` — cache invalidation, routing, a two-step call; a bare `useMutation({ mutationFn })` belongs at the call site.
+
+`realtime` has no DAL — it never reaches FastAPI. Its JWT signer sits in `services/` instead and is kept out of the barrel for the same reason a DAL would be: it reads `ABLY_API_KEY`. It also owns the Ably channel and event names (`constants.ts`), because three unrelated places subscribe to the same stream — the purchase request views, the canvassing comparison, and the token service that scopes a capability to it — and none of them should have to reach into another feature for them.
 
 Route Handlers stay thin: parse params → call DAL → wrap in `Response.json({ data })` → `catch` → `toErrorResponse(error)`.
 
-Display concerns — date formatting, status labels, priority copy, "fall back to the id when a join missed" — belong at the render site or in the module's `constants/`, not in a layer between the response and the component. `lib/date.ts` (`formatDate`, `formatShortDate`, `toDateInputValue`) is what tables and detail panels call on a raw timestamp.
+Display concerns — date formatting, status labels, priority copy, "fall back to the id when a join missed" — belong at the render site or in the module's `constants.ts`, not in a layer between the response and the component. `lib/date.ts` (`formatDate`, `formatShortDate`, `toDateInputValue`) is what tables and detail panels call on a raw timestamp.
 
 ## Authentication
 
@@ -93,8 +94,8 @@ Cookie-based, and the BFF boundary is what makes it work: FastAPI's cookies are 
 - Route protection is two layers, per the Next.js auth guide. `src/proxy.ts` (Next 16's renamed middleware) does the cheap check — no session cookie, no protected page. The `(dashboard)` layout and the login page do the authoritative one via `getOptionalUser()`, because only FastAPI can say whether a token is still valid. Never bounce off cookie presence in both directions or the two layers will loop.
 - **Every Route Handler outside `/api/auth/*` opens with a gate — `await requirePermission(...)`, or `await requireUser()` where no slug applies.** `proxy.ts` deliberately skips `/api/*`, so this is what stands between a BFF route and an unauthorized caller. Adding a route means adding the gate. The three DALs that need the caller's id (`purchase-request.dal.ts`, `quotation.dal.ts`) call `getCurrentUser()` themselves and are safe either way.
 - The BFF gate only closes the hole if **FastAPI is not independently reachable** by users. It must be bound to a private network or container-internal address, never published.
-- "Am I signed in?" is always a question for the backend (`GET /api/auth/session` → `/auth/me`), never a decoded token.
-- A 401 from any query or mutation triggers a hard navigation to `/login` from `components/query-provider.tsx`, which discards the client cache. `fetchSession` handles its own 401 and never reaches it.
+- "Am I signed in?" is always a question for the backend, and it is asked **on the server**: the `(dashboard)` layout and the login page call `getOptionalUser()` → `/auth/me`, and the layout hands the result down. There is no browser-side session query and no decoded token — the client never asks, so it has no stale answer to reconcile.
+- A 401 from any query or mutation triggers a hard navigation to `/login` from `components/query-provider.tsx`, which discards the client cache. Every 401 the browser sees is a real expiry, since nothing probes the session from the client.
 - `/auth/me` returns the stored user document, hashed password included, and `/auth/login` returns the raw JWT. These are the **only** two responses the BFF does not pass through: `getCurrentUser` drops `password` before returning, and `signIn` splits the token off so it can go into an HttpOnly cookie and nowhere else. Keep both projections; they are a security boundary, not a mapping layer.
 
 ## Authorization
@@ -120,7 +121,7 @@ Permission-based, driven entirely by the flat `permissions` array on `/auth/me` 
 
 Pages under `src/app/(dashboard)/` are thin **server** shells: they own `metadata`, `await searchParams`, and hand off to a `"use client"` view that runs the queries. The URL is the source of truth for list state (view, page, search, filters) — filters write to search params via `router.replace`, and any filter change drops `page`.
 
-Query definitions live in the module's `queries/`, not the component, so keys and fetchers stay together. Global defaults are in `components/query-provider.tsx` (30s `staleTime`, one retry, no refetch on focus) — the QueryClient is per-render on the server and a singleton only in the browser.
+Query definitions live in the module's `queries.ts`, not the component, so keys and fetchers stay together. Global defaults are in `components/query-provider.tsx` (30s `staleTime`, one retry, no refetch on focus) — the QueryClient is per-render on the server and a singleton only in the browser.
 
 ## Mock data still in play
 
@@ -136,7 +137,9 @@ shadcn on **Base UI** (`@base-ui/react`), style `base-nova`, Tailwind v4 (CSS-fi
 
 Base UI composition differs from Radix: render a Button as a link with `render={<Link href="…" />} nativeButton={false}` rather than `asChild`. Icons take `data-icon="inline-start"` for spacing.
 
-`src/components/ui/` is generated and **excluded from Biome** — don't hand-edit it or expect it to be linted. Cross-feature building blocks (`data-toolbar`, `page-header`, `status-badge`, `priority-badge`, `table-pagination`, `table-skeleton`, `query-states`) live in `src/components/shared/`; check there before writing a new one.
+`src/components/ui/` is generated and **excluded from Biome** — don't hand-edit it or expect it to be linted. Cross-feature building blocks (`data-toolbar`, `page-header`, `status-badge`, `priority-badge`, `section-label`, `table-pagination`, `table-skeleton`, `query-states`, `entity-crud`) live in `src/components/shared/`; check there before writing a new one. `entity-crud` is the whole departments/payment-terms screen written once — a module supplies an `EntityCrudConfig` rather than its own copy of the table, form, dialogs and list.
+
+`errorMessage(error)` in `lib/utils.ts` is how a component turns a rejected query into copy; everything it catches has already been through `bffRequest`, so the message is user-safe and the fallback only covers a non-`Error` throw.
 
 ## Comment style
 

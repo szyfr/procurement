@@ -1,4 +1,4 @@
-import type { Permission } from "@/modules/permissions/models/permission";
+import type { Permission } from "@/modules/permissions";
 
 /**
  * The `/roles` list response, verbatim — snake_case, `_id` keys, exactly what

@@ -34,10 +34,6 @@ export async function readCsrfToken(): Promise<string | null> {
   return (await cookies()).get(CSRF_COOKIE)?.value ?? null;
 }
 
-export async function hasSessionCookie(): Promise<boolean> {
-  return (await cookies()).has(SESSION_COOKIE);
-}
-
 /** Session cookie for exactly as long as the JWT is valid. */
 export async function writeSessionCookie(token: string, expiresIn: number) {
   (await cookies()).set(SESSION_COOKIE, token, {

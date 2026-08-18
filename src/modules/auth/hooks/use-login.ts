@@ -1,12 +1,11 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 
-import { login, requestCsrfCookie } from "@/modules/auth/api/client";
+import { login, requestCsrfCookie } from "@/modules/auth/api";
 import { DEFAULT_SIGNED_IN_PATH } from "@/modules/auth/constants";
 import type { Credentials } from "@/modules/auth/models/session";
-import { authKeys } from "@/modules/auth/queries/auth.queries";
 
 /**
  * The sign-in flow: prime the CSRF cookie, then post the credentials.
@@ -17,7 +16,6 @@ import { authKeys } from "@/modules/auth/queries/auth.queries";
  */
 export function useLogin(redirectTo: string = DEFAULT_SIGNED_IN_PATH) {
   const router = useRouter();
-  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (credentials: Credentials) => {
@@ -25,11 +23,9 @@ export function useLogin(redirectTo: string = DEFAULT_SIGNED_IN_PATH) {
 
       return login(credentials);
     },
-    onSuccess: async () => {
-      // The session cookie only exists as of this response, so the cached
-      // "signed out" answer has to go before anything reads it again.
-      await queryClient.invalidateQueries({ queryKey: authKeys.all });
-
+    onSuccess: () => {
+      // Nothing cached needs discarding: the browser never asks who it is, so
+      // there is no "signed out" answer sitting in the query cache.
       router.replace(redirectTo);
       // The protected layouts resolve the session on the server; without this
       // they would re-render from the cached signed-out shell.

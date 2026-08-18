@@ -18,6 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/components/ui/toast";
+import { errorMessage } from "@/lib/utils";
 import {
   purchaseRequestKeys,
   setPurchaseRequestStatus,
@@ -65,8 +66,7 @@ export function CompletePurchaseRequestDialog({
     onError: (cause) => {
       toast.add({
         title: "Couldn't complete this request",
-        description:
-          cause instanceof Error ? cause.message : "Something went wrong.",
+        description: errorMessage(cause),
         type: "error",
       });
     },

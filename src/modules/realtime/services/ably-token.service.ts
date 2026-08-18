@@ -4,7 +4,7 @@ import { ApiError } from "@/lib/api/errors";
 import { isObjectId } from "@/lib/api/object-id";
 import type { AuthenticatedUser } from "@/modules/auth/models/session";
 import { userId } from "@/modules/auth/models/session";
-import { PURCHASE_REQUESTS_CHANNEL } from "@/modules/purchase-requests/constants";
+import { PURCHASE_REQUESTS_CHANNEL } from "@/modules/realtime/constants";
 
 /**
  * Mints the JWT an Ably client trades for a realtime connection.

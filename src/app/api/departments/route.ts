@@ -1,15 +1,14 @@
 import type { NextRequest } from "next/server";
 
 import { toErrorResponse } from "@/lib/api/errors";
-import { readPageParam } from "@/lib/api/pagination";
+import { DEFAULT_PAGE_SIZE, readPageParam } from "@/lib/api/pagination";
+import { parseTitleDescriptionPayload } from "@/lib/api/validation";
 import { PERMISSIONS } from "@/modules/auth/constants/permissions";
 import { requirePermission } from "@/modules/auth/dal/access";
-import { DEFAULT_PAGE_SIZE } from "@/modules/departments/constants";
 import {
   createDepartment,
   listDepartments,
 } from "@/modules/departments/dal/department.dal";
-import { parseDepartmentPayload } from "@/modules/departments/validation/department.validation";
 
 export async function GET(request: NextRequest) {
   try {
@@ -32,7 +31,7 @@ export async function POST(request: NextRequest) {
   try {
     await requirePermission(PERMISSIONS.department.store);
 
-    const payload = parseDepartmentPayload(
+    const payload = parseTitleDescriptionPayload(
       await request.json().catch(() => null),
     );
 

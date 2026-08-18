@@ -68,7 +68,7 @@ import { toast } from "@/components/ui/toast";
 import type { Paginated, Pagination } from "@/lib/api/pagination";
 import { formatDate } from "@/lib/date";
 import { buildPageHref } from "@/lib/page-href";
-import { cn } from "@/lib/utils";
+import { cn, errorMessage } from "@/lib/utils";
 import type { PermissionSlug } from "@/modules/auth/constants/permissions";
 
 /**
@@ -80,7 +80,7 @@ import type { PermissionSlug } from "@/modules/auth/constants/permissions";
  * own copy of every file below.
  */
 
-export interface TitleDescriptionEntity {
+interface TitleDescriptionEntity {
   _id: string;
   title: string;
   description: string;
@@ -88,7 +88,7 @@ export interface TitleDescriptionEntity {
   updated_at: string;
 }
 
-export interface TitleDescriptionDto {
+interface TitleDescriptionDto {
   title: string;
   description: string;
 }
@@ -131,7 +131,7 @@ export interface EntityCrudConfig<
   remove: (id: string) => Promise<unknown>;
 }
 
-export function EntityTable<
+function EntityTable<
   TEntity extends TitleDescriptionEntity,
   TDto extends TitleDescriptionDto,
 >({
@@ -248,7 +248,7 @@ export function EntityTable<
  * state and required-field validation; the caller owns the async submit
  * (create vs. update) and reports back `submitting`/`error`.
  */
-export function EntityForm<
+function EntityForm<
   TEntity extends TitleDescriptionEntity,
   TDto extends TitleDescriptionDto,
 >({
@@ -348,7 +348,7 @@ export function EntityForm<
  * `entity` switches it to edit, pre-filled from the row already loaded by
  * the list (no extra fetch needed).
  */
-export function EntityFormDialog<
+function EntityFormDialog<
   TEntity extends TitleDescriptionEntity,
   TDto extends TitleDescriptionDto,
 >({
@@ -420,13 +420,7 @@ export function EntityFormDialog<
           }
           submitLabel={isEdit ? "Save Changes" : `Create ${label}`}
           submitting={submitting}
-          error={
-            error
-              ? error instanceof Error
-                ? error.message
-                : "Something went wrong."
-              : null
-          }
+          error={error ? errorMessage(error) : null}
           onSubmit={save}
           onCancel={() => onOpenChange(false)}
           config={config}
@@ -441,7 +435,7 @@ export function EntityFormDialog<
  * the row menu only decides *which* entity to confirm, not whether the
  * dialog is open.
  */
-export function DeleteEntityDialog<
+function DeleteEntityDialog<
   TEntity extends TitleDescriptionEntity,
   TDto extends TitleDescriptionDto,
 >({
@@ -477,8 +471,7 @@ export function DeleteEntityDialog<
     onError: (cause) => {
       toast.add({
         title: `Couldn't delete ${label.toLowerCase()}`,
-        description:
-          cause instanceof Error ? cause.message : "Something went wrong.",
+        description: errorMessage(cause),
         type: "error",
       });
     },
@@ -512,7 +505,7 @@ export function DeleteEntityDialog<
   );
 }
 
-export function EntityListView<
+function EntityListView<
   TEntity extends TitleDescriptionEntity,
   TDto extends TitleDescriptionDto,
 >({

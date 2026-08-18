@@ -18,7 +18,7 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import type { Paginated } from "@/lib/api/pagination";
 import { LOOKUP_PAGE_SIZE, type SelectedOption } from "@/lib/lookup";
-import { cn } from "@/lib/utils";
+import { cn, errorMessage } from "@/lib/utils";
 
 /**
  * Reference-data picker for collections too large to put in a `<Select>` —
@@ -187,9 +187,7 @@ export function LookupPicker<T>({
         >
           {isError ? (
             <p className="px-2 py-6 text-center text-xs text-destructive">
-              {error instanceof Error
-                ? error.message
-                : "Couldn't load options."}
+              {errorMessage(error, "Couldn't load options.")}
             </p>
           ) : records.length === 0 && !isFetching ? (
             <p className="px-2 py-6 text-center text-xs text-muted-foreground">

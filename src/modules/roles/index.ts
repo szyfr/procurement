@@ -3,8 +3,7 @@ export {
   fetchRole,
   fetchRoles,
   updateRole,
-} from "@/modules/roles/api/client";
-export { roleEndpoints } from "@/modules/roles/api/endpoints";
+} from "@/modules/roles/api";
 export type { CreateRoleDto, UpdateRoleDto } from "@/modules/roles/dto";
 export type {
   Role,
@@ -15,4 +14,4 @@ export {
   roleDetailQuery,
   roleKeys,
   roleListQuery,
-} from "@/modules/roles/queries/role.queries";
+} from "@/modules/roles/queries";

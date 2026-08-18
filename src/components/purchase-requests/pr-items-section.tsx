@@ -19,6 +19,7 @@ import {
 } from "@/components/purchase-requests/proof-of-order-dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/components/ui/toast";
+import { errorMessage } from "@/lib/utils";
 import { PERMISSIONS } from "@/modules/auth/constants/permissions";
 import {
   createPurchaseRequestProof,
@@ -193,9 +194,7 @@ export function PurchaseRequestItemsSection({
     try {
       await savePartial({ itemId: partialItem._id, amount });
     } catch (error) {
-      setPartialError(
-        error instanceof Error ? error.message : "Something went wrong.",
-      );
+      setPartialError(errorMessage(error));
       return;
     }
 
@@ -230,9 +229,7 @@ export function PurchaseRequestItemsSection({
     try {
       await markDelivered({ itemIds, deliveryDate });
     } catch (error) {
-      setDeliveredError(
-        error instanceof Error ? error.message : "Something went wrong.",
-      );
+      setDeliveredError(errorMessage(error));
       return;
     }
 
@@ -262,9 +259,7 @@ export function PurchaseRequestItemsSection({
     try {
       result = await saveGroups(groups);
     } catch (error) {
-      setSaveError(
-        error instanceof Error ? error.message : "Something went wrong.",
-      );
+      setSaveError(errorMessage(error));
       return;
     }
 

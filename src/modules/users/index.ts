@@ -4,12 +4,13 @@ export {
   fetchUsers,
   updateUser,
   updateUserRoles,
-} from "@/modules/users/api/client";
-export { userEndpoints } from "@/modules/users/api/endpoints";
+} from "@/modules/users/api";
 export { MIN_PASSWORD_LENGTH } from "@/modules/users/constants";
-export type { CreateUserDto } from "@/modules/users/dto/create-user.dto";
-export type { UpdateUserDto } from "@/modules/users/dto/update-user.dto";
-export type { UpdateUserRolesDto } from "@/modules/users/dto/update-user-roles.dto";
+export type {
+  CreateUserDto,
+  UpdateUserDto,
+  UpdateUserRolesDto,
+} from "@/modules/users/dto";
 export type {
   UpdateUserRolesResult,
   User,
@@ -20,4 +21,4 @@ export {
   userDetailQuery,
   userKeys,
   userListQuery,
-} from "@/modules/users/queries/user.queries";
+} from "@/modules/users/queries";

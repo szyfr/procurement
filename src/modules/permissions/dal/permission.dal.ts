@@ -1,6 +1,9 @@
 import { serverFetch } from "@/lib/api/fetcher";
-import { clampPageSize, type Paginated } from "@/lib/api/pagination";
-import { DEFAULT_PAGE_SIZE } from "@/modules/permissions/constants";
+import {
+  clampPageSize,
+  DEFAULT_PAGE_SIZE,
+  type Paginated,
+} from "@/lib/api/pagination";
 import type { Permission } from "@/modules/permissions/models/permission";
 
 export interface ListPermissionsQuery {

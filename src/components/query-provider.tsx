@@ -28,9 +28,9 @@ import { LOGIN_PATH } from "@/modules/auth/constants";
  *
  * A hard navigation rather than `router.push`, because this runs outside the
  * component tree and the point is to discard all client state and let the
- * server decide what happens next. `fetchSession` handles its own 401 (it is
- * the "am I signed in?" probe and a 401 is a valid answer), so it never
- * reaches this.
+ * server decide what happens next. Every 401 that gets here is a real expiry:
+ * nothing in the browser probes the session, so there is no "am I signed in?"
+ * call whose 401 would be a legitimate answer.
  */
 let redirecting = false;
 

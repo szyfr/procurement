@@ -17,7 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/components/ui/toast";
-import { formatCurrency } from "@/lib/utils";
+import { errorMessage, formatCurrency } from "@/lib/utils";
 import { awardQuotation, canvassingKeys } from "@/modules/canvassing";
 
 /**
@@ -84,8 +84,7 @@ export function AwardVendorDialog({
     onError: (cause) => {
       toast.add({
         title: "Couldn't confirm this vendor",
-        description:
-          cause instanceof Error ? cause.message : "Something went wrong.",
+        description: errorMessage(cause),
         type: "error",
       });
     },

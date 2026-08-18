@@ -19,22 +19,11 @@ export const dataTableClass = [
   "[&_tbody_tr]:hover:bg-accent",
 ].join(" ");
 
-/**
- * Same treatment for tables that stand on their own rather than inside a Card,
- * which supplies the 12px shell everywhere else.
- */
-export const tableShellClass =
-  "overflow-x-auto rounded-xl border bg-background";
-
 /** Primary identifier in a cell, with its mono id line as a sibling. */
 export const cellPrimaryClass = "text-[13.5px] font-semibold";
 
 /** Ids, codes and SKUs — the mono face earns its keep here. */
 export const cellIdClass = "font-mono text-[11px] text-muted-foreground";
-
-/** Descriptions and meta beneath a primary identifier. */
-export const cellMetaClass =
-  "text-[12.5px] leading-[1.45] text-muted-foreground";
 
 /**
  * Money, quantities and counts. Right-aligned so the decimal points line up

@@ -1,10 +1,9 @@
 import type { NextRequest } from "next/server";
 
 import { toErrorResponse } from "@/lib/api/errors";
-import { readPageParam } from "@/lib/api/pagination";
+import { DEFAULT_PAGE_SIZE, readPageParam } from "@/lib/api/pagination";
 import { PERMISSIONS } from "@/modules/auth/constants/permissions";
 import { requirePermission } from "@/modules/auth/dal/access";
-import { DEFAULT_PAGE_SIZE } from "@/modules/permissions/constants";
 import { listPermissions } from "@/modules/permissions/dal/permission.dal";
 
 /**

@@ -1,7 +1,10 @@
 import { serverFetch } from "@/lib/api/fetcher";
 import { assertObjectId } from "@/lib/api/object-id";
-import { clampPageSize, type Paginated } from "@/lib/api/pagination";
-import { DEFAULT_PAGE_SIZE } from "@/modules/roles/constants";
+import {
+  clampPageSize,
+  DEFAULT_PAGE_SIZE,
+  type Paginated,
+} from "@/lib/api/pagination";
 import type { CreateRoleDto, UpdateRoleDto } from "@/modules/roles/dto";
 import type {
   Role,
