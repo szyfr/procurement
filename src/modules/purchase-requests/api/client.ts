@@ -5,7 +5,7 @@ import { purchaseRequestEndpoints } from "@/modules/purchase-requests/api/endpoi
 import {
   buildPurchaseRequestProofForm,
   type CreatePurchaseRequestInput,
-  type CreatePurchaseRequestProofDto,
+  type CreatePurchaseRequestProofInput,
   type MarkPurchaseRequestDeliveredDto,
   type RecordPartialDeliveryDto,
   type UpdatePurchaseRequestDto,
@@ -128,7 +128,7 @@ export function recordPartialDelivery(
  * confirmation for a whole vendor group, not one call per item.
  */
 export function createPurchaseRequestProof(
-  payload: CreatePurchaseRequestProofDto,
+  payload: CreatePurchaseRequestProofInput,
   attachments: File[] = [],
 ) {
   const form = buildPurchaseRequestProofForm(payload, attachments);

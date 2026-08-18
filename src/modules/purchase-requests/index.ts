@@ -33,7 +33,7 @@ export {
 } from "@/modules/purchase-requests/constants";
 export type {
   CreatePurchaseRequestInput,
-  CreatePurchaseRequestProofDto,
+  CreatePurchaseRequestProofInput,
   MarkPurchaseRequestDeliveredDto,
   RecordPartialDeliveryDto,
   UpdatePurchaseRequestDto,
