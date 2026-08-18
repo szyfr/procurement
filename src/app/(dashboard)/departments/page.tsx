@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 
 import { DepartmentsPageContent } from "@/components/departments/departments-page-content";
+import { NoAccess } from "@/components/shared/no-access";
+import { PERMISSIONS } from "@/modules/auth/constants/permissions";
+import { canAccess } from "@/modules/auth/dal/access";
 
 export const metadata: Metadata = {
   title: "Departments",
@@ -14,6 +17,10 @@ export default async function DepartmentsPage({
 }) {
   const { page } = await searchParams;
   const activePage = Math.max(Number(page) || 1, 1);
+
+  if (!(await canAccess(PERMISSIONS.department.index))) {
+    return <NoAccess title="Departments" resource="departments" />;
+  }
 
   return <DepartmentsPageContent page={activePage} />;
 }

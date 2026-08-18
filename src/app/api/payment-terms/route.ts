@@ -2,7 +2,8 @@ import type { NextRequest } from "next/server";
 
 import { toErrorResponse } from "@/lib/api/errors";
 import { readPageParam } from "@/lib/api/pagination";
-import { requireUser } from "@/modules/auth/dal/auth.dal";
+import { PERMISSIONS } from "@/modules/auth/constants/permissions";
+import { requirePermission } from "@/modules/auth/dal/access";
 import { DEFAULT_PAGE_SIZE } from "@/modules/payment-terms/constants";
 import {
   createPaymentTerm,
@@ -18,7 +19,7 @@ import { parsePaymentTermPayload } from "@/modules/payment-terms/validation/paym
 
 export async function GET(request: NextRequest) {
   try {
-    await requireUser();
+    await requirePermission(PERMISSIONS.paymentTerm.index);
 
     const { searchParams } = request.nextUrl;
 
@@ -36,7 +37,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    await requireUser();
+    await requirePermission(PERMISSIONS.paymentTerm.write);
 
     const payload = parsePaymentTermPayload(
       await request.json().catch(() => null),

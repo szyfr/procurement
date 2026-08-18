@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 
+import { useCan } from "@/components/providers/permissions-provider";
 import {
   InputGroup,
   InputGroupAddon,
@@ -14,6 +15,7 @@ import {
 } from "@/components/ui/input-group";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
+import { PERMISSIONS } from "@/modules/auth/constants/permissions";
 import {
   fetchPurchaseRequests,
   purchaseRequestKeys,
@@ -29,8 +31,13 @@ const MAX_RESULTS = 5;
  * PR list endpoint's `search` param, which only matches `title` and
  * `justification` today — not PR number or requester/department name. That's
  * backend behavior, not something to fake here.
+ *
+ * Being scoped to that one endpoint, it disappears entirely without the grant
+ * for it — a search box that can only ever answer "couldn't load results" is
+ * worse than no search box.
  */
 export function GlobalSearch({ className }: { className?: string }) {
+  const canSearchRequests = useCan(PERMISSIONS.purchaseRequest.index);
   const router = useRouter();
   const [query, setQuery] = React.useState("");
   const [debouncedQuery, setDebouncedQuery] = React.useState("");
@@ -56,7 +63,7 @@ export function GlobalSearch({ className }: { className?: string }) {
         pageSize: MAX_RESULTS,
         signal,
       }),
-    enabled: searchEnabled,
+    enabled: searchEnabled && canSearchRequests,
   });
 
   const results = data?.data ?? [];
@@ -94,6 +101,8 @@ export function GlobalSearch({ className }: { className?: string }) {
   }
 
   const showDropdown = open && query.trim().length >= MIN_QUERY_LENGTH;
+
+  if (!canSearchRequests) return null;
 
   return (
     <div ref={containerRef} className={cn("relative", className)}>

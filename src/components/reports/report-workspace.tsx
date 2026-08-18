@@ -5,6 +5,7 @@ import { ChartNoAxesColumnIcon, LockIcon } from "lucide-react";
 import { CanvassingComplianceReport } from "@/components/reports/canvassing-compliance-report";
 import { DepartmentSpendingReport } from "@/components/reports/department-spending-report";
 import { PrStatusBreakdownReport } from "@/components/reports/pr-status-breakdown-report";
+import { PurchaserPerformanceReport } from "@/components/reports/purchaser-performance-report";
 import { VendorPerformanceReport } from "@/components/reports/vendor-performance-report";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,7 +17,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
-import { visibleReports } from "@/data/reports";
+import type { ReportDefinition } from "@/data/reports";
 import { cn } from "@/lib/utils";
 
 /**
@@ -33,21 +34,24 @@ import { cn } from "@/lib/utils";
  * dates are part of their query keys.
  */
 export function ReportWorkspace({
+  reports,
   startDate,
   endDate,
   search,
   activeId,
   onActiveIdChange,
 }: {
+  /** Already narrowed to what this user may run — see `ReportsView`. */
+  reports: readonly ReportDefinition[];
   startDate: string;
   endDate: string;
   search: string;
   activeId: string;
   onActiveIdChange: (id: string) => void;
 }) {
-  const activeReport = visibleReports.find((report) => report.id === activeId);
+  const activeReport = reports.find((report) => report.id === activeId);
 
-  if (visibleReports.length === 0) {
+  if (reports.length === 0) {
     return (
       <Card>
         <CardContent>
@@ -58,7 +62,7 @@ export function ReportWorkspace({
               </EmptyMedia>
               <EmptyTitle>No reports available</EmptyTitle>
               <EmptyDescription>
-                There are no report types configured yet.
+                There are no report types you can generate.
               </EmptyDescription>
             </EmptyHeader>
           </Empty>
@@ -74,10 +78,10 @@ export function ReportWorkspace({
       <div
         className={cn(
           "grid gap-4 sm:grid-cols-2 lg:grid-cols-3",
-          visibleReports.length >= 5 ? "xl:grid-cols-5" : "xl:grid-cols-4",
+          reports.length >= 5 ? "xl:grid-cols-5" : "xl:grid-cols-4",
         )}
       >
-        {visibleReports.map((report) => {
+        {reports.map((report) => {
           const Icon = report.icon;
           const isActive = report.id === activeId;
           const isLive = report.availability === "live";
@@ -128,6 +132,8 @@ export function ReportWorkspace({
         <DepartmentSpendingReport startDate={startDate} endDate={endDate} />
       ) : activeId === "canvassing-compliance" ? (
         <CanvassingComplianceReport startDate={startDate} endDate={endDate} />
+      ) : activeId === "purchaser-performance" ? (
+        <PurchaserPerformanceReport startDate={startDate} endDate={endDate} />
       ) : activeReport ? (
         <Card>
           <CardHeader className="border-b">

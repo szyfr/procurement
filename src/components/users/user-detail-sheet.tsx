@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { PencilIcon, UserCogIcon } from "lucide-react";
 import * as React from "react";
 
+import { useCan } from "@/components/providers/permissions-provider";
 import { ErrorAlert } from "@/components/shared/query-states";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { AssignRolesDialog } from "@/components/users/assign-roles-dialog";
 import { formatDate } from "@/lib/date";
+import { PERMISSIONS } from "@/modules/auth/constants/permissions";
 import type { User } from "@/modules/users";
 import { userDetailQuery } from "@/modules/users";
 
@@ -57,6 +59,9 @@ export function UserDetailSheet({
   onOpenChange: (open: boolean) => void;
   onEdit: (user: User) => void;
 }) {
+  const canEdit = useCan(PERMISSIONS.user.update);
+  const canAssignRoles = useCan(PERMISSIONS.userRole.attach);
+
   const { data, isPending, isError, error } = useQuery({
     ...userDetailQuery(user?._id ?? ""),
     enabled: open && Boolean(user),
@@ -98,15 +103,17 @@ export function UserDetailSheet({
             <section className="flex flex-col gap-2">
               <div className="flex items-center justify-between">
                 <SectionLabel>Assigned roles</SectionLabel>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={isPending}
-                  onClick={() => setAssigningRoles(true)}
-                >
-                  <UserCogIcon data-icon="inline-start" />
-                  Assign roles
-                </Button>
+                {canAssignRoles ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={isPending}
+                    onClick={() => setAssigningRoles(true)}
+                  >
+                    <UserCogIcon data-icon="inline-start" />
+                    Assign roles
+                  </Button>
+                ) : null}
               </div>
               {isPending ? (
                 <div className="flex flex-wrap gap-1.5">
@@ -147,12 +154,14 @@ export function UserDetailSheet({
             </section>
           </div>
 
-          <div className="border-t p-4">
-            <Button className="w-full" onClick={() => onEdit(user)}>
-              <PencilIcon data-icon="inline-start" />
-              Edit user
-            </Button>
-          </div>
+          {canEdit ? (
+            <div className="border-t p-4">
+              <Button className="w-full" onClick={() => onEdit(user)}>
+                <PencilIcon data-icon="inline-start" />
+                Edit user
+              </Button>
+            </div>
+          ) : null}
         </SheetContent>
       </Sheet>
 

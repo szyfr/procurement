@@ -9,6 +9,7 @@ import {
   TrashIcon,
 } from "lucide-react";
 import * as React from "react";
+import { useCan } from "@/components/providers/permissions-provider";
 import {
   dropdownContentClass,
   dropdownItemClass,
@@ -68,6 +69,7 @@ import type { Paginated, Pagination } from "@/lib/api/pagination";
 import { formatDate } from "@/lib/date";
 import { buildPageHref } from "@/lib/page-href";
 import { cn } from "@/lib/utils";
+import type { PermissionSlug } from "@/modules/auth/constants/permissions";
 
 /**
  * Departments and payment terms are the same CRUD screen wearing different
@@ -109,6 +111,16 @@ export interface EntityCrudConfig<
   newButtonLabel: string;
   /** Route the list lives at, for pagination hrefs. */
   basePath: string;
+  /**
+   * The grant behind each write. They are not always three distinct slugs —
+   * payment terms gate create, update *and* delete on `payment_term.store`
+   * upstream — so each is named separately rather than inferred from a prefix.
+   */
+  permissions: {
+    create: PermissionSlug;
+    update: PermissionSlug;
+    remove: PermissionSlug;
+  };
   queryKeys: { all: QueryKey };
   listQuery: (
     page: number,
@@ -135,6 +147,12 @@ export function EntityTable<
   onDelete: (entity: TEntity) => void;
   config: EntityCrudConfig<TEntity, TDto>;
 }) {
+  const canEdit = useCan(config.permissions.update);
+  const canDelete = useCan(config.permissions.remove);
+  // With neither write granted the menu has nothing in it, so the trigger goes
+  // too rather than opening an empty popover.
+  const showActions = canEdit || canDelete;
+
   return (
     <Card>
       <CardContent className="px-0">
@@ -167,40 +185,48 @@ export function EntityTable<
                 </TableCell>
                 <TableCell>
                   <div className="flex justify-end">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger
-                        render={
-                          <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            aria-label={`Actions for ${entity.title}`}
-                          />
-                        }
-                      >
-                        <MoreVerticalIcon />
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent
-                        align="end"
-                        className={cn(dropdownContentClass, "min-w-[196px]")}
-                      >
-                        <DropdownMenuItem
-                          className={dropdownItemClass}
-                          onClick={() => onEdit(entity)}
+                    {showActions ? (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger
+                          render={
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              aria-label={`Actions for ${entity.title}`}
+                            />
+                          }
                         >
-                          <PencilIcon />
-                          Edit {config.entityLabel.toLowerCase()}
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          variant="destructive"
-                          className={dropdownItemClass}
-                          onClick={() => onDelete(entity)}
+                          <MoreVerticalIcon />
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                          align="end"
+                          className={cn(dropdownContentClass, "min-w-[196px]")}
                         >
-                          <TrashIcon />
-                          Delete {config.entityLabel.toLowerCase()}
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                          {canEdit ? (
+                            <DropdownMenuItem
+                              className={dropdownItemClass}
+                              onClick={() => onEdit(entity)}
+                            >
+                              <PencilIcon />
+                              Edit {config.entityLabel.toLowerCase()}
+                            </DropdownMenuItem>
+                          ) : null}
+                          {canEdit && canDelete ? (
+                            <DropdownMenuSeparator />
+                          ) : null}
+                          {canDelete ? (
+                            <DropdownMenuItem
+                              variant="destructive"
+                              className={dropdownItemClass}
+                              onClick={() => onDelete(entity)}
+                            >
+                              <TrashIcon />
+                              Delete {config.entityLabel.toLowerCase()}
+                            </DropdownMenuItem>
+                          ) : null}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    ) : null}
                   </div>
                 </TableCell>
               </TableRow>
@@ -549,6 +575,8 @@ export function EntityPageContent<
   TEntity extends TitleDescriptionEntity,
   TDto extends TitleDescriptionDto,
 >({ page, config }: { page: number; config: EntityCrudConfig<TEntity, TDto> }) {
+  const canCreate = useCan(config.permissions.create);
+
   const [dialogState, setDialogState] = React.useState<
     | { mode: "create" }
     | { mode: "edit"; entity: TEntity }
@@ -562,13 +590,15 @@ export function EntityPageContent<
         title={config.pageTitle}
         description={config.pageDescription}
         actions={
-          <Button
-            variant="outline"
-            onClick={() => setDialogState({ mode: "create" })}
-          >
-            <PlusIcon data-icon="inline-start" />
-            {config.newButtonLabel}
-          </Button>
+          canCreate ? (
+            <Button
+              variant="outline"
+              onClick={() => setDialogState({ mode: "create" })}
+            >
+              <PlusIcon data-icon="inline-start" />
+              {config.newButtonLabel}
+            </Button>
+          ) : null
         }
       />
 

@@ -4,10 +4,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { SearchIcon } from "lucide-react";
 import * as React from "react";
 
+import { PermissionModuleList } from "@/components/roles/permission-module-list";
 import { SectionLabel } from "@/components/roles/role-primitives";
 import { ErrorAlert } from "@/components/shared/query-states";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -22,10 +22,15 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group";
 import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/toast";
 import { MAX_PAGE_SIZE } from "@/lib/api/pagination";
-import { permissionListQuery } from "@/modules/permissions";
+import {
+  groupPermissionsByModule,
+  type PermissionModuleGroup,
+  permissionListQuery,
+} from "@/modules/permissions";
 import {
   createRole,
   type Role,
@@ -42,9 +47,9 @@ import {
  * (not the response) drive the toast and cache invalidation.
  *
  * The permission catalogue comes from `GET /permissions`, fetched at the
- * backend's page-size cap — there is no module grouping upstream, so the
- * list renders flat instead of the collapsible-by-module layout a static
- * catalogue would allow.
+ * backend's page-size cap, and is grouped into collapsible module cards. There
+ * is no module field upstream — the grouping is derived from the `module.action`
+ * shape of `title`, see `groupPermissionsByModule`.
  */
 
 interface DraftRole {
@@ -75,6 +80,10 @@ export function RoleFormDialog({
 }) {
   const [draft, setDraft] = React.useState<DraftRole>(() => draftFrom(role));
   const [search, setSearch] = React.useState("");
+  /** Module keys the user has opened. Everything starts collapsed. */
+  const [expandedKeys, setExpandedKeys] = React.useState<Set<string>>(
+    () => new Set(),
+  );
   const queryClient = useQueryClient();
 
   const isEdit = mode === "edit";
@@ -120,6 +129,7 @@ export function RoleFormDialog({
     setLastOpenedFor(openedFor);
     setDraft(draftFrom(role));
     setSearch("");
+    setExpandedKeys(new Set());
   }
 
   const {
@@ -133,15 +143,47 @@ export function RoleFormDialog({
   const totalPermissions = permissionsPage?.pagination.total_items ?? 0;
 
   const query = search.trim().toLowerCase();
-  const visiblePermissions = query
-    ? permissions.filter(
-        (permission) =>
-          permission.title.toLowerCase().includes(query) ||
-          permission.description.toLowerCase().includes(query),
-      )
-    : permissions;
+
+  const allGroups = React.useMemo(
+    () => groupPermissionsByModule(permissions),
+    [permissions],
+  );
+
+  /**
+   * Searching narrows to matching permissions, except when the module's own
+   * name is what matched — then the whole module stays, since "payment terms"
+   * is a search for the group rather than for one action in it.
+   */
+  const visibleGroups = React.useMemo(() => {
+    if (!query) return allGroups;
+
+    return allGroups
+      .map((group) => {
+        if (group.label.toLowerCase().includes(query)) return group;
+
+        const matches = group.permissions.filter(
+          (permission) =>
+            permission.title.toLowerCase().includes(query) ||
+            permission.description.toLowerCase().includes(query),
+        );
+
+        return matches.length > 0 ? { ...group, permissions: matches } : null;
+      })
+      .filter((group): group is PermissionModuleGroup => group !== null);
+  }, [allGroups, query]);
+
+  // While searching, every surviving module is open — the results are the point
+  // of the search, and leaving them behind a chevron hides them twice over.
+  const openKeys = query
+    ? new Set(visibleGroups.map((group) => group.key))
+    : expandedKeys;
 
   const grantedCount = draft.permissions.size;
+  const grantedModuleCount = allGroups.filter((group) =>
+    group.permissions.some((permission) =>
+      draft.permissions.has(permission._id),
+    ),
+  ).length;
 
   function togglePermission(id: string, granted: boolean) {
     setDraft((current) => {
@@ -149,6 +191,29 @@ export function RoleFormDialog({
       if (granted) next.add(id);
       else next.delete(id);
       return { ...current, permissions: next };
+    });
+  }
+
+  /** Grants or clears a whole module in one action. */
+  function setModuleGranted(group: PermissionModuleGroup, granted: boolean) {
+    setDraft((current) => {
+      const next = new Set(current.permissions);
+
+      for (const permission of group.permissions) {
+        if (granted) next.add(permission._id);
+        else next.delete(permission._id);
+      }
+
+      return { ...current, permissions: next };
+    });
+  }
+
+  function setExpanded(key: string, expanded: boolean) {
+    setExpandedKeys((current) => {
+      const next = new Set(current);
+      if (expanded) next.add(key);
+      else next.delete(key);
+      return next;
     });
   }
 
@@ -223,6 +288,33 @@ export function RoleFormDialog({
               {grantedCount} of {totalPermissions} permissions selected
             </p>
             <div className="ml-auto flex items-center gap-2">
+              {/* Hidden while searching: the modules are force-opened then, so
+                  the controls would contradict what's on screen. */}
+              {query ? null : (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={visibleGroups.length === 0}
+                    onClick={() =>
+                      setExpandedKeys(
+                        new Set(visibleGroups.map((group) => group.key)),
+                      )
+                    }
+                  >
+                    Expand all
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={expandedKeys.size === 0}
+                    onClick={() => setExpandedKeys(new Set())}
+                  >
+                    Collapse all
+                  </Button>
+                  <Separator orientation="vertical" className="h-5" />
+                </>
+              )}
               <Button
                 variant="outline"
                 size="sm"
@@ -251,45 +343,29 @@ export function RoleFormDialog({
             </div>
           </div>
 
-          <div className="flex flex-col gap-1 px-5 py-4">
+          <div className="px-5 py-4">
             {isError ? (
               <ErrorAlert title="Couldn't load permissions" error={error} />
             ) : isPending ? (
               <div className="flex flex-col gap-2">
                 {Array.from({ length: 6 }, (_, row) => (
                   // biome-ignore lint/suspicious/noArrayIndexKey: fixed-length placeholder rows
-                  <Skeleton key={row} className="h-10 w-full" />
+                  <Skeleton key={row} className="h-11 w-full" />
                 ))}
               </div>
-            ) : visiblePermissions.length === 0 ? (
+            ) : visibleGroups.length === 0 ? (
               <p className="py-8 text-center text-muted-foreground">
                 No permissions match &ldquo;{search.trim()}&rdquo;
               </p>
             ) : (
-              visiblePermissions.map((permission) => (
-                <Label
-                  key={permission._id}
-                  htmlFor={permission._id}
-                  className="items-start gap-2.5 rounded-lg px-2 py-1.5 font-normal hover:bg-accent"
-                >
-                  <Checkbox
-                    id={permission._id}
-                    className="mt-0.5"
-                    checked={draft.permissions.has(permission._id)}
-                    onCheckedChange={(checked) =>
-                      togglePermission(permission._id, checked)
-                    }
-                  />
-                  <span className="flex min-w-0 flex-col gap-0.5">
-                    <span className="font-medium">
-                      {permission.description}
-                    </span>
-                    <span className="font-mono text-xs text-muted-foreground">
-                      {permission.title}
-                    </span>
-                  </span>
-                </Label>
-              ))
+              <PermissionModuleList
+                groups={visibleGroups}
+                grantedIds={draft.permissions}
+                expandedKeys={openKeys}
+                onExpandedChange={setExpanded}
+                onTogglePermission={togglePermission}
+                onSetModule={setModuleGranted}
+              />
             )}
           </div>
         </div>
@@ -302,7 +378,9 @@ export function RoleFormDialog({
             <p className="text-xs text-muted-foreground">
               {grantedCount === 0
                 ? "No permissions granted yet — the role will have no access."
-                : "permissions granted"}
+                : `permissions granted across ${grantedModuleCount} ${
+                    grantedModuleCount === 1 ? "module" : "modules"
+                  }`}
             </p>
           </div>
           <div className="ml-auto flex items-center gap-2">

@@ -19,14 +19,22 @@ import { cn } from "@/lib/utils";
  *  dialog it opens are owned by the card, not by this. */
 export function QuotationRowActions({
   vendorName,
+  canView,
+  canEdit,
   onView,
   onEdit,
 }: {
   /** Null when the vendor join missed, which the label reads as "unknown". */
   vendorName: string | null;
+  /** Reading one quote in full and editing it are separate grants upstream. */
+  canView: boolean;
+  canEdit: boolean;
   onView: () => void;
   onEdit: () => void;
 }) {
+  // With neither grant the menu would open empty, so the trigger goes too.
+  if (!canView && !canEdit) return null;
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
@@ -44,14 +52,18 @@ export function QuotationRowActions({
         align="end"
         className={cn(dropdownContentClass, "min-w-[196px]")}
       >
-        <DropdownMenuItem className={dropdownItemClass} onClick={onView}>
-          <EyeIcon />
-          View details
-        </DropdownMenuItem>
-        <DropdownMenuItem className={dropdownItemClass} onClick={onEdit}>
-          <PencilIcon />
-          Edit quote
-        </DropdownMenuItem>
+        {canView ? (
+          <DropdownMenuItem className={dropdownItemClass} onClick={onView}>
+            <EyeIcon />
+            View details
+          </DropdownMenuItem>
+        ) : null}
+        {canEdit ? (
+          <DropdownMenuItem className={dropdownItemClass} onClick={onEdit}>
+            <PencilIcon />
+            Edit quote
+          </DropdownMenuItem>
+        ) : null}
       </DropdownMenuContent>
     </DropdownMenu>
   );

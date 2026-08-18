@@ -79,11 +79,10 @@ const ITEM_STATUSES = ["draft", "pending"] as const;
 /**
  * Shared by create and update: every item needs a material and a quantity.
  *
- * `defaultStatus` is only passed on create, where it stamps every item with
- * the request's own status so a submitted request's items come in `pending`
- * rather than sitting at the backend's `draft` default. Update never passes
- * it — item status transitions there are owned by the dedicated status
- * endpoint, not this route.
+ * `defaultStatus` stamps every item that didn't carry its own status. Create
+ * passes the request's own status so a submitted request's items come in
+ * `pending`; update passes `draft` because it has to pass something — see
+ * `parseUpdatePayload`.
  */
 function parseItems(items: unknown, defaultStatus?: "draft" | "pending") {
   if (!Array.isArray(items) || items.length === 0) {
@@ -161,9 +160,19 @@ export function parseCreatePayload(body: unknown): CreatePurchaseRequestInput {
 /**
  * Every field on an update is optional; only what was sent is forwarded.
  *
- * `status` is not among them. FastAPI would accept it here, but only the
- * dedicated status endpoint cascades the change onto the request's items, so
- * that transition has one path and this one carries edits alone.
+ * The request's own `status` is not among them. FastAPI would accept it here,
+ * but only the dedicated status endpoint cascades the change onto the
+ * request's items, so that transition has one path and this one carries edits
+ * alone.
+ *
+ * Item status is a different matter, and `draft` is not a choice we get to
+ * skip. The upstream PUT deletes and recreates every item, passing
+ * `status=item["status"]` straight into `PurchaseRequestItemCreate`, whose
+ * `status` is a non-optional enum. Leaving it off a request body does not
+ * reach the backend as "absent" — its own `itemRequest.status` defaults to
+ * `None`, which then fails validation and surfaces as a 500. Editing is only
+ * offered on a draft, and submitting still goes through the status endpoint
+ * afterwards, so stamping `draft` here recreates the items as they were.
  */
 export function parseUpdatePayload(body: unknown): UpdatePurchaseRequestDto {
   if (!body || typeof body !== "object") return {};
@@ -184,7 +193,7 @@ export function parseUpdatePayload(body: unknown): UpdatePurchaseRequestDto {
       : { justification: payload.justification }),
     ...(payload.items === undefined
       ? {}
-      : { items: parseItems(payload.items) }),
+      : { items: parseItems(payload.items, "draft") }),
   };
 }
 

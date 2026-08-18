@@ -15,6 +15,8 @@ export interface PurchaseRequestProof {
   /** `YYYY-MM-DD`. */
   delivery_date: string;
   vendor_reference_no: string;
+  /** Whoever recorded the proof — the BFF fills it from the session. */
+  user_id: string;
   purchase_request_item_ids: string[];
   created_at: string;
   updated_at: string;

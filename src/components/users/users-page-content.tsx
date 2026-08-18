@@ -23,6 +23,12 @@ import { userListQuery } from "@/modules/users";
  * visible in the row action menu but disabled — FastAPI's soft delete lives on
  * the model with no controller exposing it, and there is no active/inactive
  * flag on a user at all.
+ *
+ * Editing, viewing and role assignment are each gated on their own grant.
+ * Creating is not, and cannot be: it posts to `/auth/register`, the one write
+ * in this module that carries no `require_permission` upstream — so anyone who
+ * can list users can also create one, and hiding the button here would claim a
+ * restriction the API does not enforce. It is a backend gap, noted in CLAUDE.md.
  */
 
 /** Overlay currently on top of the list; only one is ever open. */

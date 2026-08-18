@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 
 import { CanvassingListView } from "@/components/canvassing/canvassing-list-view";
+import { NoAccess } from "@/components/shared/no-access";
 import { PageHeader } from "@/components/shared/page-header";
+import { PERMISSIONS } from "@/modules/auth/constants/permissions";
+import { canAccess } from "@/modules/auth/dal/access";
 
 export const metadata: Metadata = {
   title: "Canvassing",
@@ -26,6 +29,10 @@ export default async function CanvassingPage({
 }) {
   const { page } = await searchParams;
   const activePage = Math.max(Number(page) || 1, 1);
+
+  if (!(await canAccess(PERMISSIONS.canvassing.index))) {
+    return <NoAccess title="Canvassing" resource="canvassing" />;
+  }
 
   return (
     <>

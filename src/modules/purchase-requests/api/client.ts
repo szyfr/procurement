@@ -5,7 +5,7 @@ import { purchaseRequestEndpoints } from "@/modules/purchase-requests/api/endpoi
 import {
   buildPurchaseRequestProofForm,
   type CreatePurchaseRequestInput,
-  type CreatePurchaseRequestProofDto,
+  type CreatePurchaseRequestProofInput,
   type MarkPurchaseRequestDeliveredDto,
   type RecordPartialDeliveryDto,
   type UpdatePurchaseRequestDto,
@@ -14,6 +14,7 @@ import type { Material } from "@/modules/purchase-requests/models/material";
 import type {
   PurchaseRequest,
   PurchaseRequestDetail,
+  PurchaseRequestWriteResult,
   SettablePurchaseRequestStatus,
 } from "@/modules/purchase-requests/models/purchase-request";
 import type {
@@ -58,17 +59,17 @@ export function fetchPurchaseRequest(id: string, signal?: AbortSignal) {
 }
 
 export function createPurchaseRequest(payload: CreatePurchaseRequestInput) {
-  return bffRequest<PurchaseRequestDetail>(purchaseRequestEndpoints.create, {
-    method: "POST",
-    body: payload,
-  });
+  return bffRequest<PurchaseRequestWriteResult>(
+    purchaseRequestEndpoints.create,
+    { method: "POST", body: payload },
+  );
 }
 
 export function updatePurchaseRequest(
   id: string,
   payload: UpdatePurchaseRequestDto,
 ) {
-  return bffRequest<PurchaseRequestDetail>(
+  return bffRequest<PurchaseRequestWriteResult>(
     purchaseRequestEndpoints.detail(id),
     { method: "PUT", body: payload },
   );
@@ -127,7 +128,7 @@ export function recordPartialDelivery(
  * confirmation for a whole vendor group, not one call per item.
  */
 export function createPurchaseRequestProof(
-  payload: CreatePurchaseRequestProofDto,
+  payload: CreatePurchaseRequestProofInput,
   attachments: File[] = [],
 ) {
   const form = buildPurchaseRequestProofForm(payload, attachments);

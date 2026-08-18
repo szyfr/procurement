@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import * as React from "react";
+import { useCan } from "@/components/providers/permissions-provider";
 import { CancelPurchaseRequestDialog } from "@/components/purchase-requests/cancel-pr-dialog";
 import { CompletePurchaseRequestDialog } from "@/components/purchase-requests/complete-pr-dialog";
 import { PurchaseRequestActionPanel } from "@/components/purchase-requests/pr-action-panel";
@@ -20,6 +21,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { formatShortDate } from "@/lib/date";
+import { PERMISSIONS } from "@/modules/auth/constants/permissions";
 import {
   type PurchaseRequestDetail,
   purchaseRequestDetailQuery,
@@ -81,6 +83,13 @@ function DetailSkeleton() {
 
 export function PurchaseRequestDetailView({ id }: { id: string }) {
   const queryClient = useQueryClient();
+
+  // Every transition on this page — submit, cancel, complete — is the same
+  // `PATCH /purchase-requests/{id}/status/{status}` endpoint behind one grant.
+  const canChangeStatus = useCan(PERMISSIONS.purchaseRequest.updateStatus);
+  const canEdit = useCan(PERMISSIONS.purchaseRequest.update);
+  const canCreate = useCan(PERMISSIONS.purchaseRequest.store);
+  const canViewQuotes = useCan(PERMISSIONS.canvassing.quotations);
 
   usePurchaseRequestUpdates();
 
@@ -223,29 +232,39 @@ export function PurchaseRequestDetailView({ id }: { id: string }) {
         actions={
           isDraft ? (
             <>
-              <CancelPurchaseRequestDialog id={request._id} no={request.no} />
-              <Button
-                variant="outline"
-                render={
-                  <Link href={`/purchase-requests/${request._id}/edit`} />
-                }
-                nativeButton={false}
-              >
-                Continue Editing
-              </Button>
-              <Button onClick={submitForApproval} disabled={submitting}>
-                {submitting ? <Spinner data-icon="inline-start" /> : null}
-                Submit for Approval
-              </Button>
+              {canChangeStatus ? (
+                <CancelPurchaseRequestDialog id={request._id} no={request.no} />
+              ) : null}
+              {canEdit ? (
+                <Button
+                  variant="outline"
+                  render={
+                    <Link href={`/purchase-requests/${request._id}/edit`} />
+                  }
+                  nativeButton={false}
+                >
+                  Continue Editing
+                </Button>
+              ) : null}
+              {canChangeStatus ? (
+                <Button onClick={submitForApproval} disabled={submitting}>
+                  {submitting ? <Spinner data-icon="inline-start" /> : null}
+                  Submit for Approval
+                </Button>
+              ) : null}
             </>
           ) : isRejected ? (
-            <Button
-              render={<Link href="/purchase-requests/new" />}
-              nativeButton={false}
-            >
-              Revise &amp; Resubmit
-            </Button>
-          ) : canComplete ? (
+            // Revising means raising a fresh request, so this is the create
+            // grant rather than a transition on the rejected one.
+            canCreate ? (
+              <Button
+                render={<Link href="/purchase-requests/new" />}
+                nativeButton={false}
+              >
+                Revise &amp; Resubmit
+              </Button>
+            ) : null
+          ) : !canChangeStatus ? null : canComplete ? (
             <>
               <CompletePurchaseRequestDialog
                 id={request._id}
@@ -323,7 +342,9 @@ export function PurchaseRequestDetailView({ id }: { id: string }) {
         </div>
 
         <div className="flex min-w-0 flex-col gap-5">
-          {canvassingItem ? (
+          {/* The panel's only content is a link to the canvassing screen, so
+              it goes when that screen is out of reach. */}
+          {canvassingItem && canViewQuotes ? (
             <PurchaseRequestActionPanel purchaseRequestId={request._id} />
           ) : null}
 

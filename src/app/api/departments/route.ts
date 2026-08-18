@@ -2,7 +2,8 @@ import type { NextRequest } from "next/server";
 
 import { toErrorResponse } from "@/lib/api/errors";
 import { readPageParam } from "@/lib/api/pagination";
-import { requireUser } from "@/modules/auth/dal/auth.dal";
+import { PERMISSIONS } from "@/modules/auth/constants/permissions";
+import { requirePermission } from "@/modules/auth/dal/access";
 import { DEFAULT_PAGE_SIZE } from "@/modules/departments/constants";
 import {
   createDepartment,
@@ -12,7 +13,7 @@ import { parseDepartmentPayload } from "@/modules/departments/validation/departm
 
 export async function GET(request: NextRequest) {
   try {
-    await requireUser();
+    await requirePermission(PERMISSIONS.department.index);
 
     const { searchParams } = request.nextUrl;
 
@@ -29,7 +30,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    await requireUser();
+    await requirePermission(PERMISSIONS.department.store);
 
     const payload = parseDepartmentPayload(
       await request.json().catch(() => null),

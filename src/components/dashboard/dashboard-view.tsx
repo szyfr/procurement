@@ -10,6 +10,7 @@ import Link from "next/link";
 
 import { ActivityFeed } from "@/components/dashboard/activity-feed";
 import { type KpiCardData, KpiCards } from "@/components/dashboard/kpi-cards";
+import { useCan } from "@/components/providers/permissions-provider";
 import { PriorityBadge } from "@/components/shared/priority-badge";
 import { ErrorAlert } from "@/components/shared/query-states";
 import { StatusBadge } from "@/components/shared/status-badge";
@@ -31,6 +32,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { PERMISSIONS } from "@/modules/auth/constants/permissions";
 import { canvassingListQuery } from "@/modules/canvassing";
 import {
   purchaseRequestListQuery,
@@ -46,37 +48,60 @@ import {
  * endpoint on the backend today — only `/purchase-requests` (filterable by
  * `pr_status`) and `/canvassing` have real data, so those are the only two
  * sections wired here. See `DASHBOARD_BACKEND_GAPS.md` for what's missing.
+ *
+ * Those two reads are separately permissioned, and this is where sign-in lands,
+ * so each is disabled rather than left to 403: a user with neither still gets a
+ * page, with the tiles reading "—" the way the never-backed ones already do.
  */
+/** Panel-sized stand-in for a section this user isn't permitted to read. */
+function NoAccessNote({ resource }: { resource: string }) {
+  return (
+    <p className="px-4 py-6 text-center text-xs text-muted-foreground">
+      You don&apos;t have permission to view {resource}.
+    </p>
+  );
+}
+
 export function DashboardView() {
+  const canViewRequests = useCan(PERMISSIONS.purchaseRequest.index);
+  const canViewCanvassing = useCan(PERMISSIONS.canvassing.index);
+
   // Only `pagination.total_items` is read from these two, so pageSize stays
   // at 1 to keep the payload minimal.
-  const pendingCount = useQuery(
-    purchaseRequestListQuery(1, { status: ["pending"], pageSize: 1 }),
-  );
-  const partialCount = useQuery(
-    purchaseRequestListQuery(1, {
+  const pendingCount = useQuery({
+    ...purchaseRequestListQuery(1, { status: ["pending"], pageSize: 1 }),
+    enabled: canViewRequests,
+  });
+  const partialCount = useQuery({
+    ...purchaseRequestListQuery(1, {
       status: ["partially-completed"],
       pageSize: 1,
     }),
-  );
-  const actionable = useQuery(
-    purchaseRequestListQuery(1, {
+    enabled: canViewRequests,
+  });
+  const actionable = useQuery({
+    ...purchaseRequestListQuery(1, {
       status: ["pending", "canvassing", "po-created", "partially-completed"],
       pageSize: 6,
     }),
-  );
+    enabled: canViewRequests,
+  });
   // Shared by the Pending Quotations KPI tile and the widget below — one
   // fetch, not two.
-  const canvassing = useQuery(canvassingListQuery(1));
+  const canvassing = useQuery({
+    ...canvassingListQuery(1),
+    enabled: canViewCanvassing,
+  });
 
   const kpiItems: KpiCardData[] = [
     {
       id: "pending-prs",
       label: "Pending Purchase Requests",
-      value: pendingCount.isError
-        ? "—"
-        : (pendingCount.data?.pagination.total_items ?? 0),
-      isPending: pendingCount.isPending,
+      value:
+        !canViewRequests || pendingCount.isError
+          ? "—"
+          : (pendingCount.data?.pagination.total_items ?? 0),
+      isPending: canViewRequests && pendingCount.isPending,
     },
     // No per-user assignment concept exists on the backend, so there's no
     // way to scope this to the signed-in user's own action items.
@@ -87,18 +112,20 @@ export function DashboardView() {
       // Counts every item currently in canvassing, including ones with a
       // vendor already selected pending award — the backend has no finer
       // filter than that.
-      value: canvassing.isError
-        ? "—"
-        : (canvassing.data?.pagination.total_items ?? 0),
-      isPending: canvassing.isPending,
+      value:
+        !canViewCanvassing || canvassing.isError
+          ? "—"
+          : (canvassing.data?.pagination.total_items ?? 0),
+      isPending: canViewCanvassing && canvassing.isPending,
     },
     {
       id: "partial-prs",
       label: "Partially Completed PRs",
-      value: partialCount.isError
-        ? "—"
-        : (partialCount.data?.pagination.total_items ?? 0),
-      isPending: partialCount.isPending,
+      value:
+        !canViewRequests || partialCount.isError
+          ? "—"
+          : (partialCount.data?.pagination.total_items ?? 0),
+      isPending: canViewRequests && partialCount.isPending,
     },
     // No delivery/PO entity exists on the backend.
     { id: "overdue", label: "Overdue Deliveries", value: "—" },
@@ -120,7 +147,9 @@ export function DashboardView() {
               ) : null}
             </CardHeader>
             <CardContent className="px-0">
-              {actionable.isError ? (
+              {!canViewRequests ? (
+                <NoAccessNote resource="purchase requests" />
+              ) : actionable.isError ? (
                 <div className="p-4">
                   <ErrorAlert
                     title="Couldn't load requests requiring action"
@@ -250,7 +279,9 @@ export function DashboardView() {
               <CardTitle>Pending Quotations</CardTitle>
             </CardHeader>
             <CardContent className="px-0">
-              {canvassing.isError ? (
+              {!canViewCanvassing ? (
+                <NoAccessNote resource="canvassing" />
+              ) : canvassing.isError ? (
                 <div className="p-4">
                   <ErrorAlert
                     title="Couldn't load pending quotations"

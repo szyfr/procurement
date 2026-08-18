@@ -9,6 +9,7 @@ import { AwardVendorDialog } from "@/components/canvassing/award-vendor-dialog";
 import { EditQuotationDialog } from "@/components/canvassing/edit-quotation-dialog";
 import { QuotationDetailSheet } from "@/components/canvassing/quotation-detail-sheet";
 import { QuotationRowActions } from "@/components/canvassing/quotation-row-actions";
+import { useCan } from "@/components/providers/permissions-provider";
 import { ErrorAlert } from "@/components/shared/query-states";
 import { StatusBadge } from "@/components/shared/status-badge";
 import {
@@ -30,6 +31,7 @@ import {
 } from "@/components/ui/table";
 import { formatShortDate } from "@/lib/date";
 import { cn, formatCurrency } from "@/lib/utils";
+import { PERMISSIONS } from "@/modules/auth/constants/permissions";
 import {
   canvassingQuotationsQuery,
   type Quotation,
@@ -127,6 +129,38 @@ export function CanvassingQuotationsView({ id }: { id: string }) {
   );
 }
 
+/**
+ * Wraps the quote table in a radio group only when a winner can actually be
+ * picked. Base UI's RadioGroup renders `role="radiogroup"`, and one with no
+ * radios inside is announced as an empty set of choices.
+ */
+function ConditionalRadioGroup({
+  enabled,
+  value,
+  onSelect,
+  label,
+  children,
+}: {
+  enabled: boolean;
+  value: string | null;
+  onSelect: (quotationId: string) => void;
+  label: string;
+  children: React.ReactNode;
+}) {
+  if (!enabled) return <>{children}</>;
+
+  return (
+    <RadioGroup
+      value={value}
+      onValueChange={(next) => onSelect(String(next))}
+      aria-label={label}
+      className="block"
+    >
+      {children}
+    </RadioGroup>
+  );
+}
+
 function QuoteComparison({
   purchaseRequestId,
   item,
@@ -148,6 +182,11 @@ function QuoteComparison({
     item.material?.description?.trim() || item.material?.no || item.material_id;
   const unit = item.material?.uom || null;
   const quantity = `${item.quantity}${unit ? ` ${unit}` : ""}`;
+
+  const canAddQuote = useCan(PERMISSIONS.quotation.store);
+  const canViewQuote = useCan(PERMISSIONS.quotation.show);
+  const canEditQuote = useCan(PERMISSIONS.quotation.update);
+  const canAward = useCan(PERMISSIONS.canvassing.award);
 
   // One sheet and one dialog for the whole card rather than a pair per row, so
   // a table of quotes doesn't mount a detail query each. Viewing and editing
@@ -240,35 +279,10 @@ function QuoteComparison({
             {quotations.length} {quotations.length === 1 ? "quote" : "quotes"}{" "}
             received
           </StatusBadge>
-          <Button
-            variant="outline"
-            size="sm"
-            nativeButton={false}
-            render={
-              <Link
-                href={`/purchase-requests/${purchaseRequestId}/canvassing/quotes/new?items=${item._id}`}
-              />
-            }
-          >
-            <PlusIcon data-icon="inline-start" />
-            Add Vendor Quote
-          </Button>
-        </div>
-      </div>
-
-      {quotations.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center gap-2 py-10 text-center">
-            <InboxIcon className="size-6 text-muted-foreground" />
-            <p className="font-medium text-sm">No quotes yet</p>
-            <p className="max-w-sm text-xs text-muted-foreground">
-              No quotes have been entered for this item yet. Add a vendor quote
-              to start the comparison.
-            </p>
+          {canAddQuote ? (
             <Button
               variant="outline"
               size="sm"
-              className="mt-2"
               nativeButton={false}
               render={
                 <Link
@@ -279,23 +293,59 @@ function QuoteComparison({
               <PlusIcon data-icon="inline-start" />
               Add Vendor Quote
             </Button>
+          ) : null}
+        </div>
+      </div>
+
+      {quotations.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center gap-2 py-10 text-center">
+            <InboxIcon className="size-6 text-muted-foreground" />
+            <p className="font-medium text-sm">No quotes yet</p>
+            <p className="max-w-sm text-xs text-muted-foreground">
+              No quotes have been entered for this item yet.
+              {canAddQuote
+                ? " Add a vendor quote to start the comparison."
+                : null}
+            </p>
+            {canAddQuote ? (
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-2"
+                nativeButton={false}
+                render={
+                  <Link
+                    href={`/purchase-requests/${purchaseRequestId}/canvassing/quotes/new?items=${item._id}`}
+                  />
+                }
+              >
+                <PlusIcon data-icon="inline-start" />
+                Add Vendor Quote
+              </Button>
+            ) : null}
           </CardContent>
         </Card>
       ) : (
         <Card>
           <CardContent className="px-0">
-            <RadioGroup
+            {/* The radio group only exists to pick a winner, so without the
+                award grant the table stands on its own rather than sitting in
+                a radiogroup with no options in it. */}
+            <ConditionalRadioGroup
+              enabled={canAward}
               value={selected}
-              onValueChange={(value) => onSelect(String(value))}
-              aria-label={`Select winning vendor for ${name}`}
-              className="block"
+              onSelect={onSelect}
+              label={`Select winning vendor for ${name}`}
             >
               <Table className={dataTableClass}>
                 <TableHeader>
                   <TableRow>
-                    <TableHead scope="col" className="w-8">
-                      <span className="sr-only">Select</span>
-                    </TableHead>
+                    {canAward ? (
+                      <TableHead scope="col" className="w-8">
+                        <span className="sr-only">Select</span>
+                      </TableHead>
+                    ) : null}
                     <TableHead scope="col">Vendor</TableHead>
                     <TableHead scope="col">Reference</TableHead>
                     <TableHead scope="col" className={numericCellClass}>
@@ -323,12 +373,14 @@ function QuoteComparison({
                         key={quotation._id}
                         className={cn(isLowest && "bg-status-success-subtle")}
                       >
-                        <TableCell>
-                          <RadioGroupItem
-                            value={quotation._id}
-                            aria-label={`Select vendor ${vendorName ?? "unknown"}`}
-                          />
-                        </TableCell>
+                        {canAward ? (
+                          <TableCell>
+                            <RadioGroupItem
+                              value={quotation._id}
+                              aria-label={`Select vendor ${vendorName ?? "unknown"}`}
+                            />
+                          </TableCell>
+                        ) : null}
                         <TableCell
                           className={cn(
                             isLowest && "font-semibold text-status-success-fg",
@@ -368,6 +420,8 @@ function QuoteComparison({
                         <TableCell>
                           <QuotationRowActions
                             vendorName={vendorName}
+                            canView={canViewQuote}
+                            canEdit={canEditQuote}
                             onView={() =>
                               setOverlay({ kind: "view", quotation })
                             }
@@ -381,25 +435,27 @@ function QuoteComparison({
                   })}
                 </TableBody>
               </Table>
-            </RadioGroup>
+            </ConditionalRadioGroup>
           </CardContent>
-          <CardFooter className="justify-between gap-2">
-            <span className="text-xs text-muted-foreground">
-              Pick the winning quote, then confirm the vendor.
-            </span>
-            <AwardVendorDialog
-              quotationId={selected}
-              itemId={item._id}
-              itemName={name}
-              vendorName={quotationVendorLabel(selectedQuotation)}
-              unitPrice={
-                selectedQuotation
-                  ? unitPriceFor(selectedQuotation, item._id)
-                  : null
-              }
-              quantity={quantity}
-            />
-          </CardFooter>
+          {canAward ? (
+            <CardFooter className="justify-between gap-2">
+              <span className="text-xs text-muted-foreground">
+                Pick the winning quote, then confirm the vendor.
+              </span>
+              <AwardVendorDialog
+                quotationId={selected}
+                itemId={item._id}
+                itemName={name}
+                vendorName={quotationVendorLabel(selectedQuotation)}
+                unitPrice={
+                  selectedQuotation
+                    ? unitPriceFor(selectedQuotation, item._id)
+                    : null
+                }
+                quantity={quantity}
+              />
+            </CardFooter>
+          ) : null}
         </Card>
       )}
 
@@ -408,6 +464,7 @@ function QuoteComparison({
         referenceNo={overlay?.quotation.reference_no ?? ""}
         itemId={item._id}
         itemName={name}
+        canEdit={canEditQuote}
         open={overlay?.kind === "view"}
         onOpenChange={(open) => {
           if (!open) setOverlay(null);

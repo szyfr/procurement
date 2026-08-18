@@ -3,12 +3,13 @@
 import { useQueries } from "@tanstack/react-query";
 import { ArrowRightIcon, CalendarIcon, FileTextIcon } from "lucide-react";
 import * as React from "react";
-
+import { useCan } from "@/components/providers/permissions-provider";
 import { ProofDetailDialog } from "@/components/purchase-requests/proof-detail-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatShortDate } from "@/lib/date";
 import { cn } from "@/lib/utils";
+import { PERMISSIONS } from "@/modules/auth/constants/permissions";
 import {
   type PurchaseRequestDetail,
   type PurchaseRequestItem,
@@ -38,6 +39,11 @@ export function PurchaseRequestProofsSection({
   request: PurchaseRequestDetail;
   highlightedItemId: string | null;
 }) {
+  // The summary below comes from the purchase request response, which is
+  // already permitted; only opening a proof is a separate read.
+  const canViewProof = useCan(PERMISSIONS.purchaseRequestProof.show);
+  const canAddProof = useCan(PERMISSIONS.purchaseRequestProof.store);
+
   const [openProofId, setOpenProofId] = React.useState<string | null>(null);
   const sectionRef = React.useRef<HTMLDivElement>(null);
 
@@ -83,9 +89,11 @@ export function PurchaseRequestProofsSection({
             <span className="text-[13px] font-medium">
               No proofs of order yet
             </span>
-            <span className="text-xs text-muted-foreground">
-              Select items in the table above to record one.
-            </span>
+            {canAddProof ? (
+              <span className="text-xs text-muted-foreground">
+                Select items in the table above to record one.
+              </span>
+            ) : null}
           </div>
         ) : (
           <ul className="flex flex-col gap-2.5">
@@ -99,9 +107,11 @@ export function PurchaseRequestProofsSection({
                 <li key={proof._id}>
                   <button
                     type="button"
+                    disabled={!canViewProof}
                     onClick={() => setOpenProofId(proof._id)}
                     className={cn(
-                      "group flex w-full flex-col gap-3 rounded-lg border px-4 py-3.5 text-left hover:bg-accent",
+                      "group flex w-full flex-col gap-3 rounded-lg border px-4 py-3.5 text-left",
+                      canViewProof && "hover:bg-accent",
                       highlighted && "ring-2 ring-foreground",
                     )}
                   >
@@ -144,10 +154,12 @@ export function PurchaseRequestProofsSection({
                       ))}
                     </div>
 
-                    <span className="flex items-center justify-end gap-1.5 text-[13px] font-medium group-hover:underline">
-                      View proof
-                      <ArrowRightIcon aria-hidden className="size-3.5" />
-                    </span>
+                    {canViewProof ? (
+                      <span className="flex items-center justify-end gap-1.5 text-[13px] font-medium group-hover:underline">
+                        View proof
+                        <ArrowRightIcon aria-hidden className="size-3.5" />
+                      </span>
+                    ) : null}
                   </button>
                 </li>
               );

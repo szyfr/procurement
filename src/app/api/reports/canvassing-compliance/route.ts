@@ -1,7 +1,8 @@
 import type { NextRequest } from "next/server";
 
 import { ApiError, toErrorResponse } from "@/lib/api/errors";
-import { requireUser } from "@/modules/auth/dal/auth.dal";
+import { PERMISSIONS } from "@/modules/auth/constants/permissions";
+import { requirePermission } from "@/modules/auth/dal/access";
 import { getCanvassingCompliance } from "@/modules/reports/dal/canvassing-compliance-report.dal";
 
 /**
@@ -12,7 +13,7 @@ import { getCanvassingCompliance } from "@/modules/reports/dal/canvassing-compli
 
 export async function GET(request: NextRequest) {
   try {
-    await requireUser();
+    await requirePermission(PERMISSIONS.report.canvassingCompliance);
 
     const { searchParams } = request.nextUrl;
 

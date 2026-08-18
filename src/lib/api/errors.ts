@@ -44,9 +44,12 @@ const publicMessages: Record<ApiErrorCode, string> = {
   bad_request:
     "That request couldn't be processed. Check the details and try again.",
   unauthorized: "Your session has expired. Sign in again to continue.",
-  // Today the only 403 FastAPI raises is a failed CSRF check, which a reload
-  // fixes; revisit this copy when real permission checks land upstream.
-  forbidden: "That request was blocked. Refresh the page and try again.",
+  // Two different failures share this status: a missing permission (from our
+  // own `requirePermission`, or from FastAPI's `require_permission`) and a
+  // failed CSRF check on sign-in. The copy leads with the common one and still
+  // suggests the reload that fixes the other.
+  forbidden:
+    "You don't have permission to do that. If you think you should, ask an administrator — or reload the page and try again.",
   not_found: "We couldn't find what you were looking for.",
   validation_failed:
     "Some details are missing or invalid. Review the form and try again.",

@@ -21,6 +21,7 @@ export {
   updatePurchaseRequest,
 } from "@/modules/purchase-requests/api/client";
 export {
+  closedToQuotingItemStatuses,
   LOOKUP_PAGE_SIZE,
   PURCHASE_REQUEST_UPDATED_EVENT,
   PURCHASE_REQUESTS_CHANNEL,
@@ -32,7 +33,7 @@ export {
 } from "@/modules/purchase-requests/constants";
 export type {
   CreatePurchaseRequestInput,
-  CreatePurchaseRequestProofDto,
+  CreatePurchaseRequestProofInput,
   MarkPurchaseRequestDeliveredDto,
   RecordPartialDeliveryDto,
   UpdatePurchaseRequestDto,
@@ -45,6 +46,7 @@ export type {
   PurchaseRequestDetail,
   PurchaseRequestItem,
   PurchaseRequestStatus,
+  PurchaseRequestWriteResult,
   SettablePurchaseRequestStatus,
 } from "@/modules/purchase-requests/models/purchase-request";
 export type {

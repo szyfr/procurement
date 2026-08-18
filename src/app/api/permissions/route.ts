@@ -2,13 +2,21 @@ import type { NextRequest } from "next/server";
 
 import { toErrorResponse } from "@/lib/api/errors";
 import { readPageParam } from "@/lib/api/pagination";
-import { requireUser } from "@/modules/auth/dal/auth.dal";
+import { PERMISSIONS } from "@/modules/auth/constants/permissions";
+import { requirePermission } from "@/modules/auth/dal/access";
 import { DEFAULT_PAGE_SIZE } from "@/modules/permissions/constants";
 import { listPermissions } from "@/modules/permissions/dal/permission.dal";
 
+/**
+ * The permission catalogue the role editor picks from.
+ *
+ * `permission.index` is what `permission_controller.py` requires, so the role
+ * form needs it alongside `role.store` / `role.update` — a role admin without
+ * it would be denied the list upstream anyway.
+ */
 export async function GET(request: NextRequest) {
   try {
-    await requireUser();
+    await requirePermission(PERMISSIONS.permission.index);
 
     const { searchParams } = request.nextUrl;
 

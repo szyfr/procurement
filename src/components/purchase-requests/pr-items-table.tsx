@@ -90,6 +90,8 @@ function earliestDeliveryDate(proofs: PurchaseRequestProof[]) {
 /** Per-item sourcing status, plus proof-of-order state where one has been recorded. */
 export function PurchaseRequestItemsTable({
   request,
+  selectable: selectionEnabled,
+  canRecordPartialDelivery: partialDeliveryGranted,
   selectedIds,
   onToggleItem,
   onToggleAll,
@@ -97,13 +99,22 @@ export function PurchaseRequestItemsTable({
   onRecordPartialDelivery,
 }: {
   request: PurchaseRequestDetail;
+  /**
+   * False when the user holds neither bulk action's grant. The checkbox column
+   * stays as an empty cell rather than being removed, so the header and body
+   * keep the same shape as everywhere else the table renders.
+   */
+  selectable: boolean;
+  canRecordPartialDelivery: boolean;
   selectedIds: Set<string>;
   onToggleItem: (id: string, checked: boolean) => void;
   onToggleAll: (checked: boolean) => void;
   onHighlightProofs: (itemId: string) => void;
   onRecordPartialDelivery: (item: PurchaseRequestItem) => void;
 }) {
-  const selectableItems = request.items.filter(isItemSelectable);
+  const selectableItems = selectionEnabled
+    ? request.items.filter(isItemSelectable)
+    : [];
   const allSelected =
     selectableItems.length > 0 &&
     selectableItems.every((item) => selectedIds.has(item._id));
@@ -140,7 +151,7 @@ export function PurchaseRequestItemsTable({
       </TableHeader>
       <TableBody>
         {request.items.map((item) => {
-          const selectable = isItemSelectable(item);
+          const selectable = selectionEnabled && isItemSelectable(item);
           const proofs = proofsForItem(item, request);
           // A proof's date is the date the vendor promised; `delivered_at` is
           // the date someone recorded the goods as actually arriving, so it
@@ -256,7 +267,7 @@ export function PurchaseRequestItemsTable({
               <TableCell>
                 {/* Nothing to offer on a closed or not-yet-ordered row, so the
                     trigger is absent rather than present-but-empty. */}
-                {canRecordPartialDelivery(item) ? (
+                {partialDeliveryGranted && canRecordPartialDelivery(item) ? (
                   <PurchaseRequestItemRowActions
                     itemLabel={item.material?.description || item.material_id}
                     onRecordPartialDelivery={() =>

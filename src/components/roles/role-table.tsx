@@ -8,6 +8,7 @@ import {
   Trash2Icon,
 } from "lucide-react";
 
+import { useCan } from "@/components/providers/permissions-provider";
 import {
   dropdownContentClass,
   dropdownItemClass,
@@ -34,6 +35,7 @@ import {
 import type { Pagination } from "@/lib/api/pagination";
 import { formatDate } from "@/lib/date";
 import { cn } from "@/lib/utils";
+import { PERMISSIONS } from "@/modules/auth/constants/permissions";
 import type { Role } from "@/modules/roles";
 
 /**
@@ -62,6 +64,13 @@ export function RoleTable({
   onEdit: (role: Role) => void;
   onDelete: (role: Role) => void;
 }) {
+  // The sheet reads `GET /roles/{id}` for the granted permissions, so viewing
+  // is its own grant rather than something the list read implies.
+  const canViewDetails = useCan(PERMISSIONS.role.show);
+  const canEdit = useCan(PERMISSIONS.role.update);
+  const canDelete = useCan(PERMISSIONS.role.delete);
+  const showActions = canViewDetails || canEdit || canDelete;
+
   return (
     <Card>
       <CardContent className="px-0">
@@ -84,9 +93,12 @@ export function RoleTable({
             {roles.map((role) => (
               <TableRow
                 key={role._id}
-                className="cursor-pointer hover:bg-accent aria-selected:bg-accent"
+                className={cn(
+                  "hover:bg-accent aria-selected:bg-accent",
+                  canViewDetails && "cursor-pointer",
+                )}
                 aria-selected={openRoleId === role._id}
-                onClick={() => onView(role)}
+                onClick={canViewDetails ? () => onView(role) : undefined}
               >
                 <TableCell className="align-middle">
                   <div className="flex items-start gap-2.5">
@@ -118,50 +130,62 @@ export function RoleTable({
                 </TableCell>
                 <TableCell className="align-middle">
                   <div className="flex justify-end">
-                    <DropdownMenu>
-                      {/* The menu lives in a portal, so only the trigger's own
+                    {showActions ? (
+                      <DropdownMenu>
+                        {/* The menu lives in a portal, so only the trigger's own
                             click can reach the row and open the sheet behind it. */}
-                      <DropdownMenuTrigger
-                        onClick={(event) => event.stopPropagation()}
-                        render={
-                          <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            aria-label={`Actions for ${role.title}`}
-                          />
-                        }
-                      >
-                        <MoreVerticalIcon />
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent
-                        align="end"
-                        className={cn(dropdownContentClass, "min-w-[196px]")}
-                      >
-                        <DropdownMenuItem
-                          className={dropdownItemClass}
-                          onClick={() => onView(role)}
+                        <DropdownMenuTrigger
+                          onClick={(event) => event.stopPropagation()}
+                          render={
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              aria-label={`Actions for ${role.title}`}
+                            />
+                          }
                         >
-                          <EyeIcon />
-                          View details
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          className={dropdownItemClass}
-                          onClick={() => onEdit(role)}
+                          <MoreVerticalIcon />
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                          align="end"
+                          className={cn(dropdownContentClass, "min-w-[196px]")}
                         >
-                          <PencilIcon />
-                          Edit role
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          variant="destructive"
-                          className={dropdownItemClass}
-                          onClick={() => onDelete(role)}
-                        >
-                          <Trash2Icon />
-                          Delete role
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                          {canViewDetails ? (
+                            <DropdownMenuItem
+                              className={dropdownItemClass}
+                              onClick={() => onView(role)}
+                            >
+                              <EyeIcon />
+                              View details
+                            </DropdownMenuItem>
+                          ) : null}
+                          {canEdit ? (
+                            <DropdownMenuItem
+                              className={dropdownItemClass}
+                              onClick={() => onEdit(role)}
+                            >
+                              <PencilIcon />
+                              Edit role
+                            </DropdownMenuItem>
+                          ) : null}
+                          {canDelete ? (
+                            <>
+                              {canViewDetails || canEdit ? (
+                                <DropdownMenuSeparator />
+                              ) : null}
+                              <DropdownMenuItem
+                                variant="destructive"
+                                className={dropdownItemClass}
+                                onClick={() => onDelete(role)}
+                              >
+                                <Trash2Icon />
+                                Delete role
+                              </DropdownMenuItem>
+                            </>
+                          ) : null}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    ) : null}
                   </div>
                 </TableCell>
               </TableRow>
