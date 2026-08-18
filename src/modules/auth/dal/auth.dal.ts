@@ -9,7 +9,7 @@ import type {
   CurrentUserDto,
   LoginRequestDto,
   LoginResponseDto,
-} from "@/modules/auth/dto/auth.dto";
+} from "@/modules/auth/dto";
 import type {
   AuthenticatedUser,
   Credentials,

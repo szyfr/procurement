@@ -1,11 +1,10 @@
 import type { NextRequest } from "next/server";
 
 import { toErrorResponse } from "@/lib/api/errors";
-import { readPageParam } from "@/lib/api/pagination";
+import { DEFAULT_PAGE_SIZE, readPageParam } from "@/lib/api/pagination";
 import { PERMISSIONS } from "@/modules/auth/constants/permissions";
 import { requirePermission } from "@/modules/auth/dal/access";
 import { requireUser } from "@/modules/auth/dal/auth.dal";
-import { DEFAULT_PAGE_SIZE } from "@/modules/users/constants";
 import { createUser, listUsers } from "@/modules/users/dal/user.dal";
 import { parseCreateUserPayload } from "@/modules/users/validation/user.validation";
 

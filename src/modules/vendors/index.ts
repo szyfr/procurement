@@ -8,4 +8,4 @@
  */
 
 export type { Vendor } from "@/modules/vendors/models/vendor";
-export { vendorListQuery } from "@/modules/vendors/queries/vendor.queries";
+export { vendorListQuery } from "@/modules/vendors/queries";

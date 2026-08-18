@@ -3,10 +3,10 @@ import { serverFetch } from "@/lib/api/fetcher";
 import { assertObjectId } from "@/lib/api/object-id";
 import {
   clampPageSize,
+  DEFAULT_PAGE_SIZE,
   MAX_PAGE_SIZE,
   type Paginated,
 } from "@/lib/api/pagination";
-import { DEFAULT_PAGE_SIZE } from "@/modules/departments/constants";
 import type {
   CreateDepartmentDto,
   UpdateDepartmentDto,

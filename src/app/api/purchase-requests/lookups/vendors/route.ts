@@ -2,9 +2,9 @@ import type { NextRequest } from "next/server";
 
 import { toErrorResponse } from "@/lib/api/errors";
 import { readPageParam } from "@/lib/api/pagination";
+import { LOOKUP_PAGE_SIZE } from "@/lib/lookup";
 import { PERMISSIONS } from "@/modules/auth/constants/permissions";
 import { requirePermission } from "@/modules/auth/dal/access";
-import { LOOKUP_PAGE_SIZE } from "@/modules/purchase-requests/constants";
 import { listVendors } from "@/modules/purchase-requests/dal/lookup.dal";
 
 /**

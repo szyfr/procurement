@@ -3,11 +3,11 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useChannel } from "ably/react";
 
-import { canvassingKeys } from "@/modules/canvassing/queries/canvassing.queries";
+import { canvassingKeys } from "@/modules/canvassing/queries";
 import {
   PURCHASE_REQUEST_UPDATED_EVENT,
   PURCHASE_REQUESTS_CHANNEL,
-} from "@/modules/purchase-requests";
+} from "@/modules/realtime";
 
 /**
  * Keeps the quote comparison live when an award happens elsewhere. Awarding

@@ -12,7 +12,7 @@ export {
   deleteDepartment,
   fetchDepartments,
   updateDepartment,
-} from "@/modules/departments/api/client";
+} from "@/modules/departments/api";
 export type {
   CreateDepartmentDto,
   UpdateDepartmentDto,
@@ -21,4 +21,4 @@ export type { Department } from "@/modules/departments/models/department";
 export {
   departmentKeys,
   departmentListQuery,
-} from "@/modules/departments/queries/department.queries";
+} from "@/modules/departments/queries";

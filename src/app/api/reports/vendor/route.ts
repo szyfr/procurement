@@ -1,36 +1,20 @@
 import type { NextRequest } from "next/server";
 
-import { ApiError, toErrorResponse } from "@/lib/api/errors";
+import { toErrorResponse } from "@/lib/api/errors";
 import { PERMISSIONS } from "@/modules/auth/constants/permissions";
 import { requirePermission } from "@/modules/auth/dal/access";
-import { getVendorPerformance } from "@/modules/reports/dal/vendor-report.dal";
+import { getVendorPerformance } from "@/modules/reports/dal/report.dal";
+import { parseReportRange } from "@/modules/reports/validation/report-range.validation";
 
-/**
- * Vendor performance report. Read-only, and both dates are required — FastAPI
- * rejects the call without them, so the missing-parameter case is answered here
- * rather than round-tripped.
- */
-
+/** Vendor performance report. Read-only; `parseReportRange` enforces the required bounds. */
 export async function GET(request: NextRequest) {
   try {
     await requirePermission(PERMISSIONS.report.vendor);
 
     const { searchParams } = request.nextUrl;
 
-    const startDate = searchParams.get("start_date");
-    const endDate = searchParams.get("end_date");
-
-    if (!startDate || !endDate) {
-      throw new ApiError(
-        422,
-        "validation_failed",
-        "A start and end date are required.",
-      );
-    }
-
     const result = await getVendorPerformance({
-      startDate,
-      endDate,
+      ...parseReportRange(searchParams),
       search: searchParams.get("search") || undefined,
     });
 

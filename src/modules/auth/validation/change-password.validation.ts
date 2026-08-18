@@ -1,6 +1,6 @@
 import { ApiError } from "@/lib/api/errors";
 import { MIN_PASSWORD_LENGTH } from "@/modules/auth/constants";
-import type { ChangePasswordDto } from "@/modules/auth/dto/auth.dto";
+import type { ChangePasswordDto } from "@/modules/auth/dto";
 
 /**
  * Request-body validation for `PATCH /api/auth/change-password`.

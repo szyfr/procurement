@@ -2,13 +2,12 @@
 
 import { useQueryClient } from "@tanstack/react-query";
 import { useChannel } from "ably/react";
-
+import type { PurchaseRequestDetail } from "@/modules/purchase-requests/models/purchase-request";
+import { purchaseRequestKeys } from "@/modules/purchase-requests/queries";
 import {
   PURCHASE_REQUEST_UPDATED_EVENT,
   PURCHASE_REQUESTS_CHANNEL,
-} from "@/modules/purchase-requests/constants";
-import type { PurchaseRequestDetail } from "@/modules/purchase-requests/models/purchase-request";
-import { purchaseRequestKeys } from "@/modules/purchase-requests/queries/purchase-request.queries";
+} from "@/modules/realtime";
 
 /**
  * Keeps purchase request views live when a status change happens elsewhere.

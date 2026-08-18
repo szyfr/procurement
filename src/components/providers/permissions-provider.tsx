@@ -10,10 +10,11 @@ import { hasPermission } from "@/modules/auth/models/access";
  * the dashboard.
  *
  * Seeded from the `(dashboard)` layout, which already has the user from
- * `getOptionalUser()`. That is deliberate: reading grants through `useSession()`
- * instead would put a fetch and a loading state in front of every gated button,
- * so a page would briefly render as though the user could do nothing and then
- * pop the actions in. Coming down as a prop, the answer is there on first paint.
+ * `getOptionalUser()`. That is deliberate, and it is why no browser-side
+ * session query exists: fetching the grants here instead would put a request
+ * and a loading state in front of every gated button, so a page would briefly
+ * render as though the user could do nothing and then pop the actions in.
+ * Coming down as a prop, the answer is there on first paint.
  *
  * The trade is that the grants are as fresh as the last server render. A role
  * change made elsewhere shows up on the next navigation or refresh, not
@@ -36,7 +37,8 @@ export function PermissionsProvider({
   );
 }
 
-function usePermissionsContext() {
+/** The raw grant list. Prefer `useCan` unless you need the list itself. */
+export function usePermissions() {
   const permissions = React.useContext(PermissionsContext);
 
   if (permissions === null) {
@@ -51,11 +53,6 @@ function usePermissionsContext() {
   return permissions;
 }
 
-/** The raw grant list. Prefer `useCan`/`useCanAny` unless you need the list itself. */
-export function usePermissions() {
-  return usePermissionsContext();
-}
-
 export function useCan(permission: PermissionSlug) {
-  return hasPermission(usePermissionsContext(), permission);
+  return hasPermission(usePermissions(), permission);
 }

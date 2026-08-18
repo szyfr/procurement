@@ -15,8 +15,7 @@ export {
   deletePaymentTerm,
   fetchPaymentTerms,
   updatePaymentTerm,
-} from "@/modules/payment-terms/api/client";
-export { paymentTermEndpoints } from "@/modules/payment-terms/api/endpoints";
+} from "@/modules/payment-terms/api";
 export type {
   CreatePaymentTermDto,
   UpdatePaymentTermDto,
@@ -25,4 +24,4 @@ export type { PaymentTerm } from "@/modules/payment-terms/models/payment-term";
 export {
   paymentTermKeys,
   paymentTermListQuery,
-} from "@/modules/payment-terms/queries/payment-term.queries";
+} from "@/modules/payment-terms/queries";

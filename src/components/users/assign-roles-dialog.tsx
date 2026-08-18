@@ -29,6 +29,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/components/ui/toast";
 import { LOOKUP_PAGE_SIZE } from "@/lib/lookup";
+import { errorMessage } from "@/lib/utils";
 import type { RoleDetail } from "@/modules/roles";
 import { fetchRoles, roleDetailQuery, roleKeys } from "@/modules/roles";
 import { updateUserRoles, userKeys } from "@/modules/users";
@@ -167,10 +168,7 @@ export function AssignRolesDialog({
     onError: (mutationError) => {
       toast.add({
         title: "Couldn't update roles",
-        description:
-          mutationError instanceof Error
-            ? mutationError.message
-            : "Something went wrong.",
+        description: errorMessage(mutationError),
         type: "error",
       });
     },

@@ -2,7 +2,7 @@
 
 import { ChannelProvider } from "ably/react";
 
-import { PURCHASE_REQUESTS_CHANNEL } from "@/modules/purchase-requests/constants";
+import { PURCHASE_REQUESTS_CHANNEL } from "@/modules/realtime";
 
 /**
  * Registers the `purchase-requests` channel for `ably/react`'s `useChannel` to

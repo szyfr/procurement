@@ -9,27 +9,23 @@
 
 export {
   changePassword,
-  fetchSession,
   login,
   logout,
   requestCsrfCookie,
-} from "@/modules/auth/api/client";
-export { authEndpoints } from "@/modules/auth/api/endpoints";
+} from "@/modules/auth/api";
 export {
   DEFAULT_SIGNED_IN_PATH,
   LOGIN_PATH,
   MIN_PASSWORD_LENGTH,
   REDIRECT_PARAM,
 } from "@/modules/auth/constants";
-export type { ChangePasswordDto } from "@/modules/auth/dto/auth.dto";
-export { useChangePassword } from "@/modules/auth/hooks/use-change-password";
+export type { ChangePasswordDto } from "@/modules/auth/dto";
 export { useLogin } from "@/modules/auth/hooks/use-login";
-export { useLogout, useSession } from "@/modules/auth/hooks/use-session";
+export { useLogout } from "@/modules/auth/hooks/use-logout";
 export type {
   AuthenticatedUser,
   Credentials,
   SignedInUser,
 } from "@/modules/auth/models/session";
 export { userId, userName } from "@/modules/auth/models/session";
-export { authKeys, sessionQuery } from "@/modules/auth/queries/auth.queries";
 export { safeRedirectPath } from "@/modules/auth/validation/redirect.validation";

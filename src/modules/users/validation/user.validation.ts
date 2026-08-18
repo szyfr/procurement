@@ -1,8 +1,10 @@
 import { ApiError } from "@/lib/api/errors";
 import { MIN_PASSWORD_LENGTH } from "@/modules/users/constants";
-import type { CreateUserDto } from "@/modules/users/dto/create-user.dto";
-import type { UpdateUserDto } from "@/modules/users/dto/update-user.dto";
-import type { UpdateUserRolesDto } from "@/modules/users/dto/update-user-roles.dto";
+import type {
+  CreateUserDto,
+  UpdateUserDto,
+  UpdateUserRolesDto,
+} from "@/modules/users/dto";
 
 /**
  * Request-body validation for the user BFF routes, so a bad payload can be

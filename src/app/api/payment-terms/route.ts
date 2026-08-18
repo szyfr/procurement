@@ -1,15 +1,14 @@
 import type { NextRequest } from "next/server";
 
 import { toErrorResponse } from "@/lib/api/errors";
-import { readPageParam } from "@/lib/api/pagination";
+import { DEFAULT_PAGE_SIZE, readPageParam } from "@/lib/api/pagination";
+import { parseTitleDescriptionPayload } from "@/lib/api/validation";
 import { PERMISSIONS } from "@/modules/auth/constants/permissions";
 import { requirePermission } from "@/modules/auth/dal/access";
-import { DEFAULT_PAGE_SIZE } from "@/modules/payment-terms/constants";
 import {
   createPaymentTerm,
   listPaymentTerms,
 } from "@/modules/payment-terms/dal/payment-term.dal";
-import { parsePaymentTermPayload } from "@/modules/payment-terms/validation/payment-term.validation";
 
 /**
  * BFF for the payment term collection. Serves both the Payment Terms
@@ -39,7 +38,7 @@ export async function POST(request: NextRequest) {
   try {
     await requirePermission(PERMISSIONS.paymentTerm.write);
 
-    const payload = parsePaymentTermPayload(
+    const payload = parseTitleDescriptionPayload(
       await request.json().catch(() => null),
     );
 

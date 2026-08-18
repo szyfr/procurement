@@ -21,6 +21,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { formatShortDate } from "@/lib/date";
+import { errorMessage } from "@/lib/utils";
 import { PERMISSIONS } from "@/modules/auth/constants/permissions";
 import {
   type PurchaseRequestDetail,
@@ -132,12 +133,7 @@ export function PurchaseRequestDetailView({ id }: { id: string }) {
   });
 
   const submitError =
-    validationError ??
-    (submitFailure
-      ? submitFailure instanceof Error
-        ? submitFailure.message
-        : "Something went wrong."
-      : null);
+    validationError ?? (submitFailure ? errorMessage(submitFailure) : null);
 
   if (isError) {
     return (

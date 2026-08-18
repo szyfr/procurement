@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { FileTextIcon, PencilIcon } from "lucide-react";
 
 import { ErrorAlert } from "@/components/shared/query-states";
+import { SectionLabel } from "@/components/shared/section-label";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -26,15 +27,6 @@ function Field({ label, value }: { label: string; value: React.ReactNode }) {
       <p className="text-xs text-muted-foreground">{label}</p>
       <p className="font-medium">{value}</p>
     </div>
-  );
-}
-
-function SectionLabel(props: React.ComponentProps<"p">) {
-  return (
-    <p
-      className="text-xs font-semibold tracking-[0.06em] text-muted-foreground uppercase"
-      {...props}
-    />
   );
 }
 

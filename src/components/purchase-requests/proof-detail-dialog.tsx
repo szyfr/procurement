@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDate } from "@/lib/date";
+import { errorMessage } from "@/lib/utils";
 import {
   type PurchaseRequestItem,
   type PurchaseRequestProof,
@@ -145,11 +146,7 @@ export function ProofDetailDialog({
               <Alert variant="destructive">
                 <AlertTitle>Couldn&apos;t load this proof</AlertTitle>
                 <AlertDescription className="flex flex-col items-start gap-2">
-                  <span>
-                    {error instanceof Error
-                      ? error.message
-                      : "Something went wrong."}
-                  </span>
+                  <span>{errorMessage(error)}</span>
                   <Button
                     variant="outline"
                     size="sm"

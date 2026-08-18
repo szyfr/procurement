@@ -23,6 +23,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/components/ui/toast";
+import { errorMessage } from "@/lib/utils";
 import {
   createUser,
   MIN_PASSWORD_LENGTH,
@@ -178,11 +179,7 @@ export function UserFormDialog({
                 <AlertTitle>
                   Couldn&apos;t {isEdit ? "update" : "create"} this user
                 </AlertTitle>
-                <AlertDescription>
-                  {error instanceof Error
-                    ? error.message
-                    : "Something went wrong."}
-                </AlertDescription>
+                <AlertDescription>{errorMessage(error)}</AlertDescription>
               </Alert>
             ) : null}
 

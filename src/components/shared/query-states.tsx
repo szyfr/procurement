@@ -9,7 +9,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
-import { cn } from "@/lib/utils";
+import { cn, errorMessage } from "@/lib/utils";
 
 /**
  * The states every BFF-backed screen can land in besides rendering its data.
@@ -41,7 +41,7 @@ export function ErrorAlert({
           {title}
         </p>
         <p className="text-[13px] text-status-danger-subtle-fg">
-          {error instanceof Error ? error.message : "Something went wrong."}
+          {errorMessage(error)}
         </p>
       </div>
     </div>

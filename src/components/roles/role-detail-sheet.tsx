@@ -4,8 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { PencilIcon, Trash2Icon } from "lucide-react";
 
 import { useCan } from "@/components/providers/permissions-provider";
-import { SectionLabel } from "@/components/roles/role-primitives";
 import { ErrorAlert } from "@/components/shared/query-states";
+import { SectionLabel } from "@/components/shared/section-label";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import {

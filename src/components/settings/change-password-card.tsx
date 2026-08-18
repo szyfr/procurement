@@ -1,5 +1,6 @@
 "use client";
 
+import { useMutation } from "@tanstack/react-query";
 import * as React from "react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -22,7 +23,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "@/components/ui/toast";
-import { MIN_PASSWORD_LENGTH, useChangePassword } from "@/modules/auth";
+import { changePassword, MIN_PASSWORD_LENGTH } from "@/modules/auth";
 
 /**
  * The one profile write the backend has: `PATCH /auth/me/change-password`,
@@ -31,7 +32,9 @@ import { MIN_PASSWORD_LENGTH, useChangePassword } from "@/modules/auth";
  *
  * The session is not disturbed by a successful change — the JWT is not
  * invalidated upstream — so there is nothing to re-authenticate and the form
- * just clears itself.
+ * just clears itself. Nothing is invalidated in the cache either: a password
+ * was never part of any cached query, since `/auth/me` never carried it to the
+ * browser.
  */
 
 const EMPTY = { oldPassword: "", password: "", confirmPassword: "" };
@@ -44,7 +47,7 @@ export function ChangePasswordCard() {
     isPending: submitting,
     error,
     reset,
-  } = useChangePassword();
+  } = useMutation({ mutationFn: changePassword });
 
   function setField(field: keyof typeof draft, value: string) {
     setDraft((current) => ({ ...current, [field]: value }));

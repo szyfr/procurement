@@ -11,7 +11,7 @@ export {
   awardQuotation,
   createQuotation,
   updateQuotation,
-} from "@/modules/canvassing/api/client";
+} from "@/modules/canvassing/api";
 export {
   canvassingStatusOptions,
   canvassingStatusTone,
@@ -45,4 +45,4 @@ export {
   canvassingListQuery,
   canvassingQuotationsQuery,
   quotationDetailQuery,
-} from "@/modules/canvassing/queries/canvassing.queries";
+} from "@/modules/canvassing/queries";

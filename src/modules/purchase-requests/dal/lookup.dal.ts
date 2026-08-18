@@ -4,8 +4,8 @@ import {
   MAX_PAGE_SIZE,
   type Paginated,
 } from "@/lib/api/pagination";
+import { LOOKUP_PAGE_SIZE } from "@/lib/lookup";
 import type { Department } from "@/modules/departments";
-import { LOOKUP_PAGE_SIZE } from "@/modules/purchase-requests/constants";
 import type { Material } from "@/modules/purchase-requests/models/material";
 import type { Vendor } from "@/modules/vendors";
 

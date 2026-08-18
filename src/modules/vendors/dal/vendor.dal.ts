@@ -1,6 +1,9 @@
 import { serverFetch } from "@/lib/api/fetcher";
-import { clampPageSize, type Paginated } from "@/lib/api/pagination";
-import { DEFAULT_PAGE_SIZE } from "@/modules/vendors/constants";
+import {
+  clampPageSize,
+  DEFAULT_PAGE_SIZE,
+  type Paginated,
+} from "@/lib/api/pagination";
 import type { Vendor } from "@/modules/vendors/models/vendor";
 
 /**

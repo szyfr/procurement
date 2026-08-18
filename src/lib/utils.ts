@@ -39,3 +39,15 @@ export function formatCurrency(amount: number, withCentavos = false) {
     ? pesoWithCentavosFormatter.format(amount)
     : pesoFormatter.format(amount);
 }
+
+/**
+ * The message a rejected query or mutation carries. Everything the UI catches
+ * has already been through `bffRequest`, which throws `BffError` with user-safe
+ * copy — the fallback only covers a value that isn't an `Error` at all.
+ */
+export function errorMessage(
+  error: unknown,
+  fallback = "Something went wrong.",
+) {
+  return error instanceof Error ? error.message : fallback;
+}

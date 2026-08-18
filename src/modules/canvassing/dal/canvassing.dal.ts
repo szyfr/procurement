@@ -1,7 +1,10 @@
 import { serverFetch } from "@/lib/api/fetcher";
 import { assertObjectId } from "@/lib/api/object-id";
-import { clampPageSize, type Paginated } from "@/lib/api/pagination";
-import { DEFAULT_PAGE_SIZE } from "@/modules/canvassing/constants";
+import {
+  clampPageSize,
+  DEFAULT_PAGE_SIZE,
+  type Paginated,
+} from "@/lib/api/pagination";
 import type { AwardQuotationResult } from "@/modules/canvassing/models/award";
 import type { CanvassingEntry } from "@/modules/canvassing/models/canvassing";
 

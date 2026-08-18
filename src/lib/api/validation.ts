@@ -1,14 +1,14 @@
 import { ApiError } from "@/lib/api/errors";
 
 /**
- * Shared shape for modules whose write payload is just `{title, description}`
- * (departments, payment terms). FastAPI is lenient about both, so the
- * required-title check happens here where a failure can be reported as a
- * proper 422.
+ * The write payload shared by departments and payment terms. FastAPI is
+ * lenient about both fields, so the required-title check happens here where a
+ * failure can be reported as a proper 422.
  */
-export function parseTitleDescriptionPayload<
-  T extends { title: string; description: string },
->(body: unknown): T {
+export function parseTitleDescriptionPayload(body: unknown): {
+  title: string;
+  description: string;
+} {
   const invalid = (message: string) =>
     new ApiError(422, "validation_failed", message);
 
@@ -34,5 +34,5 @@ export function parseTitleDescriptionPayload<
     title,
     description:
       typeof rawDescription === "string" ? rawDescription.trim() : "",
-  } as T;
+  };
 }
