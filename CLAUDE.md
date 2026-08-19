@@ -74,7 +74,7 @@ index.ts             public surface (no DAL)
 
 There is no `mappers/`. A response has one shape and it is the backend's: `models/` declares it and every layer above reads it directly. `dto/` holds request bodies only — a resource whose writes take the same fields it returns needs no response DTO at all, and vendors (read-only) have no `dto/` directory.
 
-`purchase-requests`, `departments`, `vendors`, `payment-terms`, `canvassing`, `realtime` and `auth` exist. New modules should mirror this. `auth` adds `hooks/` (the sign-in and sign-out mutations) and keeps its cookie writer beside the DAL, so both stay out of the barrel.
+`purchase-requests`, `departments`, `vendors`, `payment-terms`, `canvassing`, `realtime` and `auth` exist. New modules should mirror this. `auth` adds `hooks/` (the sign-in and sign-out mutations) and keeps `dal/access.ts` beside the DAL, so both stay out of the barrel.
 
 `realtime` has no DAL — it never reaches FastAPI. Its JWT signer sits in `services/` instead and is kept out of the barrel for the same reason a DAL would be: it reads `ABLY_API_KEY`.
 
@@ -84,18 +84,19 @@ Display concerns — date formatting, status labels, priority copy, "fall back t
 
 ## Authentication
 
-Cookie-based, and the BFF boundary is what makes it work: FastAPI's cookies are scoped to FastAPI and never reach the browser, so the `auth` module re-issues its own on this origin.
+Cookie-based, and **FastAPI owns the cookie**. It creates the session cookie, sets its attributes, validates it and expires it. The BFF is a relay in both directions and issues nothing of its own — there is no second session here to drift out of step with the backend's.
 
-- `lib/api/fetcher.ts` forwards the caller's cookies upstream on **every** DAL call — that is how FastAPI sees the session.
-- Route Handlers under `/api/auth/*` are the only place `Set-Cookie` is written, via `modules/auth/dal/auth-cookies.ts`. Both cookies are `HttpOnly`, `SameSite=Lax`, `Secure` in production.
-- The JWT reaches the browser as a cookie and nothing else. Nothing is kept in `localStorage`, `sessionStorage` or any store, and no client code reads or parses a cookie.
-- CSRF is a double submit completed **server-side**: the BFF holds the token in an HttpOnly cookie and echoes it in `X-XSRF-TOKEN`. `SameSite=Lax` is the actual cross-site defense at our own boundary.
+- `lib/api/fetcher.ts` forwards the caller's cookies upstream on **every** DAL call — that is how FastAPI sees the session it issued — and adds `X-XSRF-TOKEN` from the caller's own CSRF cookie. Both halves are centralized there, so no Route Handler has to remember either.
+- The three routes that change session state (`login`, `logout`, `csrf-cookie`) read the upstream response with `serverFetchWithCookies` and pass its `Set-Cookie` lines to `relayCookieHeaders` **verbatim**. The attributes are FastAPI's: `HttpOnly` on the session cookie, `SameSite=Lax`, `Path=/`, `Secure` when `APP_ENVIRONMENT=production`, `Max-Age` sized to the JWT, and no `Domain` — a host-only cookie on this app's origin, the only origin the browser ever sees. Nothing rewrites them on the way through; a wrong attribute is a backend fix, in `app/services/cookie_service.py`.
+- Signing out is FastAPI's as well: `PATCH /auth/logout` expires both cookies and the BFF relays those headers. There is deliberately no local clear, so an upstream failure surfaces as a failed sign-out rather than a signed-out app in a browser that still holds a live cookie.
+- The JWT reaches the browser as that cookie and nothing else. Nothing is kept in `localStorage`, `sessionStorage` or any store, and no client code reads or parses a cookie.
+- CSRF is FastAPI's double submit (`validate_xsrf`, which guards `POST /auth/login` and nothing else today). The browser holds the token in the cookie FastAPI minted and the BFF relayed; `serverFetch` supplies the header half from it. `useLogin` primes it with `GET /api/auth/csrf-cookie` before every sign-in, and there is no server-side fallback that mints one — a login from a browser without the cookie is a 403, which is the point. `SameSite=Lax` is still the actual cross-site defense at our own boundary.
 - Route protection is two layers, per the Next.js auth guide. `src/proxy.ts` (Next 16's renamed middleware) does the cheap check — no session cookie, no protected page. The `(dashboard)` layout and the login page do the authoritative one via `getOptionalUser()`, because only FastAPI can say whether a token is still valid. Never bounce off cookie presence in both directions or the two layers will loop.
 - **Every Route Handler outside `/api/auth/*` opens with a gate — `await requirePermission(...)`, or `await requireUser()` where no slug applies.** `proxy.ts` deliberately skips `/api/*`, so this is what stands between a BFF route and an unauthorized caller. Adding a route means adding the gate. The three DALs that need the caller's id (`purchase-request.dal.ts`, `quotation.dal.ts`) call `getCurrentUser()` themselves and are safe either way.
 - The BFF gate only closes the hole if **FastAPI is not independently reachable** by users. It must be bound to a private network or container-internal address, never published.
 - "Am I signed in?" is always a question for the backend (`GET /api/auth/session` → `/auth/me`), never a decoded token.
 - A 401 from any query or mutation triggers a hard navigation to `/login` from `components/query-provider.tsx`, which discards the client cache. `fetchSession` handles its own 401 and never reaches it.
-- `/auth/me` returns the stored user document, hashed password included, and `/auth/login` returns the raw JWT. These are the **only** two responses the BFF does not pass through: `getCurrentUser` drops `password` before returning, and `signIn` splits the token off so it can go into an HttpOnly cookie and nowhere else. Keep both projections; they are a security boundary, not a mapping layer.
+- `/auth/me` returns the stored user document, hashed password included, and `/auth/login` returns the raw JWT in its body as well as in its cookie. These are the **only** two responses the BFF does not pass through: `getCurrentUser` drops `password` before returning, and `signIn` hands on `user` and drops the token — the browser gets it only in the form it cannot read. Keep both projections; they are a security boundary, not a mapping layer.
 
 ## Authorization
 

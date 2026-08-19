@@ -11,9 +11,11 @@ import { authKeys } from "@/modules/auth/queries/auth.queries";
 /**
  * The sign-in flow: prime the CSRF cookie, then post the credentials.
  *
- * Both calls go to this app's origin and both come back as `Set-Cookie`, so
- * nothing is returned that the caller has to store. `isPending` is the guard
- * against a double submit — a mutation already in flight is not restarted.
+ * Both calls go to this app's origin, and both come back carrying a cookie
+ * FastAPI issued and the BFF relayed — the prime has to land first, because
+ * the browser's copy of it is what the sign-in is checked against. Nothing is
+ * returned that the caller has to store. `isPending` is the guard against a
+ * double submit: a mutation already in flight is not restarted.
  */
 export function useLogin(redirectTo: string = DEFAULT_SIGNED_IN_PATH) {
   const router = useRouter();

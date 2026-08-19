@@ -1,15 +1,17 @@
 /**
  * Names and paths the auth flow is built around.
  *
- * The cookie names match FastAPI's, because the BFF re-issues the same two
- * cookies on this app's origin rather than inventing its own — one place to
- * look when comparing the two sides.
+ * Both cookie names are FastAPI's. It creates them, sets their attributes and
+ * expires them; the BFF only relays the headers. These constants exist so the
+ * two places that still have to recognize a cookie by name — the proxy's
+ * presence check and the CSRF header forwarding — spell it the same way the
+ * backend does.
  */
 
-/** Carries the JWT. HttpOnly on our origin; the browser never reads it. */
+/** Carries the JWT. HttpOnly, so nothing client-side can read it. */
 export const SESSION_COOKIE = "access_token";
 
-/** The CSRF token FastAPI mints, kept for the double submit below. */
+/** The CSRF token FastAPI mints. Readable by design; see `validate_xsrf`. */
 export const CSRF_COOKIE = "XSRF-TOKEN";
 
 /** Header `validate_xsrf` compares the CSRF cookie against. */

@@ -8,9 +8,10 @@ import type {
 } from "@/modules/auth/models/session";
 
 /**
- * Auth calls against the BFF. Runs in the browser and handles no cookies of
- * its own: the session and CSRF cookies are HttpOnly and same-origin, so the
- * browser attaches them and nothing here reads, writes or parses them.
+ * Auth calls against the BFF. Runs in the browser and handles no cookies at
+ * all: FastAPI issues both, the BFF relays them onto this origin, and the
+ * browser attaches them on its own. Nothing here reads, writes or parses one —
+ * the session cookie is HttpOnly and could not be read anyway.
  */
 
 /** Primes the CSRF cookie. Must precede `login`. */

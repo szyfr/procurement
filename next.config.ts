@@ -6,9 +6,10 @@ const isProduction = process.env.NODE_ENV === "production";
  * Sent on every response.
  *
  * `X-Frame-Options` matters more here than it usually would: the CSRF story at
- * this origin rests entirely on `SameSite=Lax` (see `auth-cookies.ts`), which
- * says nothing about framing — and the one-click approve/cancel actions on a
- * purchase request are exactly what a clickjacking overlay would target.
+ * this origin rests entirely on the `SameSite=Lax` FastAPI sets on the session
+ * cookie, which says nothing about framing — and the one-click approve/cancel
+ * actions on a purchase request are exactly what a clickjacking overlay would
+ * target.
  *
  * A full `Content-Security-Policy` is deliberately not here yet: Next injects
  * inline bootstrap scripts, so it needs a nonce and a pass over every page

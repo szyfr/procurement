@@ -1,14 +1,18 @@
 import { getApiBaseUrl, REQUEST_TIMEOUT_MS } from "@/lib/api/config";
-import { forwardedCookieHeader } from "@/lib/api/cookies";
+import { forwardedCookieHeader, forwardedCsrfToken } from "@/lib/api/cookies";
 import { ApiError, normalizeBackendError } from "@/lib/api/errors";
+import { CSRF_HEADER } from "@/modules/auth/constants";
 
 /**
  * The single place the server talks to FastAPI. Used only by DALs — Route
  * Handlers and components go through those, never here directly.
  *
  * Every call forwards the caller's cookies upstream — how FastAPI sees the
- * session. There's no cookie jar on the server, so it's an explicit header
- * rather than a `credentials` flag.
+ * session it issued. There's no cookie jar on the server, so it's an explicit
+ * header rather than a `credentials` flag. The CSRF token rides along in the
+ * header upstream compares against its cookie, for the same reason: both
+ * halves of the double submit have to arrive, and doing it here means no route
+ * has to remember to.
  */
 
 export interface ServerFetchOptions {
@@ -25,11 +29,7 @@ export interface ServerFetchOptions {
    * `list[str] = Query(...)` parameter — a comma-joined value is rejected.
    */
   query?: Record<string, string | number | string[] | undefined | null>;
-  /**
-   * Merged over the defaults, so a caller can replace the forwarded `Cookie`
-   * header outright — the login DAL does, to send the exact CSRF token it is
-   * about to echo in `X-XSRF-TOKEN`.
-   */
+  /** Merged over the defaults, including the forwarded auth headers below. */
   headers?: Record<string, string>;
   signal?: AbortSignal;
 }
@@ -81,6 +81,7 @@ async function request<T>(
   const multipart = body instanceof FormData;
 
   const cookie = await forwardedCookieHeader();
+  const csrfToken = await forwardedCsrfToken();
 
   let response: Response;
 
@@ -93,6 +94,7 @@ async function request<T>(
           ? {}
           : { "Content-Type": "application/json" }),
         ...(cookie ? { Cookie: cookie } : {}),
+        ...(csrfToken ? { [CSRF_HEADER]: csrfToken } : {}),
         ...headers,
       },
       body:
@@ -131,13 +133,14 @@ export async function serverFetch<T>(
 }
 
 /**
- * The same call, keeping the upstream `Set-Cookie` lines.
+ * The same call, keeping the upstream `Set-Cookie` lines so a Route Handler can
+ * relay them to the browser.
  *
- * Only the auth DAL needs them — FastAPI's CSRF endpoint returns an empty body
- * and mints its token via a cookie header alone. Everything else uses
- * `serverFetch`, which discards them: an upstream cookie is scoped to
- * FastAPI's origin and means nothing to the browser until a Route Handler
- * re-issues it on ours.
+ * Only the auth routes need them: sign-in, sign-out and the CSRF prime are the
+ * three responses where FastAPI issues or expires a cookie. Everything else
+ * uses `serverFetch`, which discards them — no other endpoint sets one, and
+ * passing an unexpected upstream cookie through to the browser is not
+ * something a data route should do silently.
  */
 export async function serverFetchWithCookies<T>(
   path: string,

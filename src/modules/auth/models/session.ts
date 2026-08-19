@@ -7,10 +7,10 @@
  * passed through, which is the single deliberate exception to "hand back what
  * the backend sent". See `getCurrentUser`.
  *
- * There is no token here either, by design. The JWT lives in an HttpOnly
- * cookie the browser cannot read, so "am I signed in?" is answered by asking
- * the backend (`GET /api/auth/session`), never by inspecting anything held
- * client-side.
+ * There is no token here either, by design. The JWT lives in the HttpOnly
+ * cookie FastAPI set, which the browser cannot read, so "am I signed in?" is
+ * answered by asking the backend (`GET /api/auth/session`), never by
+ * inspecting anything held client-side.
  */
 export interface AuthenticatedUser {
   /**

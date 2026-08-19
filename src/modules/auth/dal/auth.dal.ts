@@ -1,9 +1,11 @@
 import { cache } from "react";
 
-import { readSetCookieValue } from "@/lib/api/cookies";
 import { ApiError } from "@/lib/api/errors";
-import { serverFetch, serverFetchWithCookies } from "@/lib/api/fetcher";
-import { CSRF_COOKIE, CSRF_HEADER } from "@/modules/auth/constants";
+import {
+  serverFetch,
+  serverFetchWithCookies,
+  type UpstreamResponse,
+} from "@/lib/api/fetcher";
 import type {
   ChangePasswordDto,
   CurrentUserDto,
@@ -20,87 +22,53 @@ import type {
  * Authentication against FastAPI. Server-side only, called from Route Handlers
  * and from the server shells that gate protected pages — never from a
  * component that runs in the browser.
+ *
+ * FastAPI owns the session and the cookie that carries it. The three calls that
+ * change that state hand their upstream `Set-Cookie` lines back for the Route
+ * Handler to relay; this app issues no cookie of its own.
  */
-
-/** The pieces a Route Handler needs to turn a sign-in into cookies on our origin. */
-export interface SignInResult {
-  user: SignedInUser;
-  /** The raw JWT. Goes straight into an HttpOnly cookie and no further. */
-  accessToken: string;
-  /** Seconds; sizes the session cookie to the token's real lifetime. */
-  expiresIn: number;
-  /**
-   * The CSRF token the sign-in was made with — the caller's own, or the one
-   * minted for it. Worth persisting in the latter case so the cookie matches
-   * what the next request will echo.
-   */
-  csrfToken: string;
-}
 
 /**
- * Mints a CSRF token upstream.
+ * Primes the CSRF cookie.
  *
- * `GET /auth/csrf-cookie` answers with an empty body and reports the token
- * through a `Set-Cookie` header alone, which is the one place the BFF has to
- * read an upstream cookie rather than a response payload.
+ * `GET /auth/csrf-cookie` answers with an empty body and reports its token
+ * through `Set-Cookie` alone, so the header is the whole payload. Relayed to
+ * the browser, it becomes the cookie half of the double submit that
+ * `validate_xsrf` checks on sign-in.
  */
-export async function requestCsrfToken(): Promise<string> {
+export async function issueCsrfCookie(): Promise<string[]> {
   const { setCookies } =
     await serverFetchWithCookies<null>("/auth/csrf-cookie");
 
-  const token = readSetCookieValue(setCookies, CSRF_COOKIE);
-
-  if (!token) {
-    throw new ApiError(
-      502,
-      "upstream_unavailable",
-      "The sign-in service did not issue a CSRF token.",
-    );
-  }
-
-  return token;
+  return setCookies;
 }
 
 /**
  * Exchanges credentials for a session.
  *
- * `validate_xsrf` upstream is a plain double submit — it compares the cookie
- * against the header and keeps no state of its own — so both halves are sent
- * from here. That is what lets the CSRF cookie stay HttpOnly on our origin:
- * the browser never has to read it back to complete the pair.
+ * The header half of the CSRF pair is added by `serverFetch` from the caller's
+ * own cookie, so the browser has to hold one by the time it posts — which is
+ * what the CSRF prime is for.
  *
- * A caller with no token in hand gets a freshly minted one rather than a 403,
- * which matters because the upstream cookie is issued with a very short
- * `Max-Age` and is routinely gone before a login form is submitted.
+ * Only the user crosses back. The response body also carries the raw JWT, and
+ * that is where it stops: the same token is already in FastAPI's `Set-Cookie`,
+ * HttpOnly, which is the only form the browser has any business receiving.
  */
 export async function signIn(
   credentials: Credentials,
-  csrfToken: string | null,
-): Promise<SignInResult> {
-  const token = csrfToken ?? (await requestCsrfToken());
-
-  const response = await serverFetch<LoginResponseDto>("/auth/login", {
-    method: "POST",
-    body: {
-      email: credentials.email,
-      password: credentials.password,
-    } satisfies LoginRequestDto,
-    headers: {
-      [CSRF_HEADER]: token,
-      // Replaces the forwarded cookies outright. Login needs exactly one
-      // cookie upstream, and pinning it here keeps the pair provably matched.
-      Cookie: `${CSRF_COOKIE}=${token}`,
+): Promise<UpstreamResponse<SignedInUser>> {
+  const { data, setCookies } = await serverFetchWithCookies<LoginResponseDto>(
+    "/auth/login",
+    {
+      method: "POST",
+      body: {
+        email: credentials.email,
+        password: credentials.password,
+      } satisfies LoginRequestDto,
     },
-  });
+  );
 
-  return {
-    // Only `user` crosses back to the Route Handler; the token is split off
-    // here so it can go into a cookie and nowhere else.
-    user: response.user,
-    accessToken: response.token.access_token,
-    expiresIn: response.token.expires_in,
-    csrfToken: token,
-  };
+  return { data: data.user, setCookies };
 }
 
 /**
@@ -109,9 +77,9 @@ export async function signIn(
  * — the cookie's presence is not.
  *
  * Memoized per request with React `cache`, so the several callers a single
- * request can have — `requireUser()` at the top of a Route Handler, then a DAL
- * that needs the caller's id for `user_id` — cost one upstream `/auth/me`
- * between them rather than one each.
+ * request can have — `requirePermission(...)` at the top of a Route Handler,
+ * then a DAL that needs the caller's id for `user_id` — cost one upstream
+ * `/auth/me` between them rather than one each.
  */
 export const getCurrentUser = cache(async (): Promise<AuthenticatedUser> => {
   const { password: _password, ...user } =
@@ -143,14 +111,14 @@ export async function getOptionalUser(): Promise<AuthenticatedUser | null> {
 /**
  * The gate every Route Handler outside `/api/auth/*` runs first.
  *
- * `proxy.ts` deliberately skips `/api/*` on the assumption that those routes
- * answer 401 on their own — this is what makes that true. It matters more than
- * defense in depth: FastAPI authenticates `/auth/*` and nothing else today, so
- * without this an unauthenticated caller reaches every read and write in the
- * system.
+ * FastAPI authenticates every router of its own (`api.py` hangs
+ * `get_current_active_user` off each `include_router`), so this is defense in
+ * depth rather than the only line — but it is the line that matters here,
+ * because `proxy.ts` deliberately skips `/api/*` and would otherwise let an
+ * unauthenticated caller reach a route handler before anything checked.
  *
- * Authorization is a separate question and still unenforced here; see the note
- * in CLAUDE.md.
+ * Where a permission slug applies, `requirePermission` in `dal/access.ts`
+ * replaces this and checks both at once.
  */
 export async function requireUser(): Promise<AuthenticatedUser> {
   return getCurrentUser();
@@ -200,10 +168,16 @@ export async function changePassword(
 }
 
 /**
- * Ends the session upstream. Our own cookies are cleared by the Route Handler
- * regardless of what this does — signing out has to work even when FastAPI is
- * unreachable.
+ * Ends the session.
+ *
+ * FastAPI expires both cookies and answers with the `Set-Cookie` lines that do
+ * it; relaying those is the whole of signing out. Nothing is cleared here, so
+ * a user only ends up signed out when the backend says they are.
  */
-export async function signOut(): Promise<void> {
-  await serverFetch<unknown>("/auth/logout", { method: "PATCH" });
+export async function signOut(): Promise<string[]> {
+  const { setCookies } = await serverFetchWithCookies<unknown>("/auth/logout", {
+    method: "PATCH",
+  });
+
+  return setCookies;
 }

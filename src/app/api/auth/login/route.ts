@@ -1,20 +1,17 @@
 import type { NextRequest } from "next/server";
 
+import { relayCookieHeaders } from "@/lib/api/cookies";
 import { toErrorResponse } from "@/lib/api/errors";
 import { signIn } from "@/modules/auth/dal/auth.dal";
-import {
-  readCsrfToken,
-  writeCsrfCookie,
-  writeSessionCookie,
-} from "@/modules/auth/dal/auth-cookies";
 import { parseCredentials } from "@/modules/auth/validation/login.validation";
 
 /**
- * Exchanges credentials for a session cookie.
+ * Exchanges credentials for FastAPI's session cookie.
  *
- * The JWT stops here: it comes back in the upstream response body, goes into
- * an HttpOnly cookie, and is not part of what this route returns. The browser
- * receives the user's name and email and no credential of any kind.
+ * The cookie is created upstream and relayed here with its attributes intact —
+ * this route sets nothing of its own. The JWT also comes back in the upstream
+ * body, and that copy stops at the DAL: the browser receives the user's name
+ * and email, and the token only in the form it cannot read.
  */
 
 export async function POST(request: NextRequest) {
@@ -23,16 +20,12 @@ export async function POST(request: NextRequest) {
       await request.json().catch(() => null),
     );
 
-    const csrfToken = await readCsrfToken();
-    const result = await signIn(credentials, csrfToken);
+    const { data: user, setCookies } = await signIn(credentials);
 
-    await writeSessionCookie(result.accessToken, result.expiresIn);
-
-    // `signIn` mints a token when the caller had none, so persist it — the
-    // cookie and the header it will be compared against have to stay a pair.
-    if (!csrfToken) await writeCsrfCookie(result.csrfToken);
-
-    return Response.json({ data: result.user });
+    return Response.json(
+      { data: user },
+      { headers: relayCookieHeaders(setCookies) },
+    );
   } catch (error) {
     return toErrorResponse(error);
   }

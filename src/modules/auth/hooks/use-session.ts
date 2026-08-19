@@ -22,10 +22,12 @@ export function useLogout() {
 
   return useMutation({
     mutationFn: logout,
-    // Runs whether or not the upstream call succeeded: the Route Handler
-    // clears our cookies either way, so the client must not keep showing a
-    // session it no longer has.
-    onSettled: () => {
+    // Only on success, because only FastAPI can end the session: it expires
+    // the cookie and the BFF relays that. Clearing the cache and leaving for
+    // the login page after a failed call would show a signed-out app to a
+    // browser that still holds a live cookie — the login page would verify the
+    // session and send them straight back.
+    onSuccess: () => {
       // Everything cached was fetched as the signed-out user's predecessor.
       queryClient.clear();
       router.replace(LOGIN_PATH);

@@ -4,9 +4,10 @@ import type { SignedInUser } from "@/modules/auth/models/session";
  * The FastAPI `/auth` contracts that do not reach the browser.
  *
  * `LoginResponseDto` is the one response shape still declared as a DTO: its
- * payload carries the raw JWT, so the sign-in route takes the token out and
- * writes it to an HttpOnly cookie instead of passing the response through.
- * Everything else the BFF serves is handed back as it arrived.
+ * payload carries the raw JWT, so the sign-in DAL hands on the user and drops
+ * the rest. The same token is already in the cookie FastAPI sets, where the
+ * browser cannot read it. Everything else the BFF serves is handed back as it
+ * arrived.
  */
 
 export interface LoginRequestDto {
@@ -34,7 +35,7 @@ export interface LoginResponseDto {
   token: {
     access_token: string;
     token_type: string;
-    /** Seconds. The JWT's real lifetime, and what our session cookie is sized to. */
+    /** Seconds. Sizes FastAPI's own cookie; nothing here reads it. */
     expires_in: number;
   };
 }
