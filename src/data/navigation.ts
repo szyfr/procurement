@@ -1,6 +1,7 @@
 import {
   Building2Icon,
   ChartColumnIcon,
+  CircleQuestionMarkIcon,
   ClipboardListIcon,
   HandCoinsIcon,
   LayoutDashboardIcon,
@@ -90,6 +91,12 @@ export const mainNav = [
       },
     ],
   },
+  {
+    title: "HELP",
+    items: [
+      { title: "FAQ", url: "/faq", icon: CircleQuestionMarkIcon },
+    ],
+  },
 ];
 
 /**
@@ -110,6 +117,7 @@ export const breadcrumbLabels: Record<string, string> = {
   settings: "Settings",
   account: "My Account",
   users: "Users",
+  faq: "FAQ",
 };
 
 /**
