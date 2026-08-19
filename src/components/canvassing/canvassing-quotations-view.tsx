@@ -109,6 +109,13 @@ export function CanvassingQuotationsView({ id }: { id: string }) {
 
   const byItemId = new Map(quoted.map((entry) => [entry._id, entry]));
 
+  // Awarding the last of these ends canvassing for the request, which the
+  // award toast says instead of leaving the reader on a screen whose contents
+  // just filtered themselves away.
+  const unawardedCount = canvassingItems.filter(
+    (item) => !byItemId.get(item._id)?.quotation_id,
+  ).length;
+
   return (
     <>
       {canvassingItems.map((item) => (
@@ -123,6 +130,7 @@ export function CanvassingQuotationsView({ id }: { id: string }) {
             setSelected((current) => ({ ...current, [item._id]: quotationId }))
           }
           awardedQuotationId={byItemId.get(item._id)?.quotation_id ?? null}
+          isFinalItem={unawardedCount === 1}
         />
       ))}
     </>
@@ -168,6 +176,7 @@ function QuoteComparison({
   selected,
   onSelect,
   awardedQuotationId,
+  isFinalItem,
 }: {
   purchaseRequestId: string;
   item: PurchaseRequestItem;
@@ -175,6 +184,8 @@ function QuoteComparison({
   selected: string | null;
   onSelect: (quotationId: string) => void;
   awardedQuotationId: string | null;
+  /** This is the last item on the request still waiting on an award. */
+  isFinalItem: boolean;
 }) {
   // The detail pipeline joins the material; the ERP number, then the raw id,
   // stand in if the lookup missed.
@@ -443,8 +454,10 @@ function QuoteComparison({
                 Pick the winning quote, then confirm the vendor.
               </span>
               <AwardVendorDialog
+                purchaseRequestId={purchaseRequestId}
                 quotationId={selected}
                 itemId={item._id}
+                isFinalItem={isFinalItem}
                 itemName={name}
                 vendorName={quotationVendorLabel(selectedQuotation)}
                 unitPrice={

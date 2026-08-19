@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRightIcon, PackageXIcon } from "lucide-react";
+import { ArrowLeftIcon, ArrowRightIcon, PackageXIcon } from "lucide-react";
 import Link from "next/link";
 import * as React from "react";
 
@@ -127,6 +127,17 @@ export function CanvassingItemsView({ id }: { id: string }) {
   // and the footer go rather than sitting there permanently inert.
   const canSelect = canAddQuote && quotableCount > 0;
 
+  /**
+   * Awarding sets the item to `po-created` and clears `is_needs_canvass`, so
+   * once the last item is awarded the quote comparison below filters itself
+   * away entirely and this card is all that is left on the screen. The status
+   * is the only trace of the award that survives — `is_needs_canvass` no
+   * longer says which items ever went out for canvassing.
+   */
+  const awardedCount = request.items.filter(
+    (item) => item.status === "po-created",
+  ).length;
+
   const quoteParams = new URLSearchParams();
   for (const itemId of selected) quoteParams.append("items", itemId);
 
@@ -248,30 +259,51 @@ export function CanvassingItemsView({ id }: { id: string }) {
               </Table>
             </CardContent>
 
-            {canAddQuote && quotableCount > 0 ? (
+            {quotableCount > 0 ? (
+              canAddQuote ? (
+                <CardFooter className="justify-between gap-2">
+                  <span className="text-xs text-muted-foreground">
+                    {selected.length} {selected.length === 1 ? "item" : "items"}{" "}
+                    selected
+                    {selected.length > 0
+                      ? " — one quote will cover all of them"
+                      : ""}
+                  </span>
+                  <Button
+                    size="sm"
+                    disabled={selected.length === 0}
+                    render={
+                      <Link
+                        href={`/purchase-requests/${request._id}/canvassing/quotes/new?${quoteParams}`}
+                      />
+                    }
+                    nativeButton={false}
+                  >
+                    Create Quotation for Selected Items
+                    <ArrowRightIcon data-icon="inline-end" />
+                  </Button>
+                </CardFooter>
+              ) : null
+            ) : (
+              /* Nothing left to quote: the comparison below has unmounted and
+                 this footer carries the only way on from here. Not gated —
+                 it is navigation back to a page the reader already reached. */
               <CardFooter className="justify-between gap-2">
                 <span className="text-xs text-muted-foreground">
-                  {selected.length} {selected.length === 1 ? "item" : "items"}{" "}
-                  selected
-                  {selected.length > 0
-                    ? " — one quote will cover all of them"
-                    : ""}
+                  {awardedCount > 0
+                    ? `Canvassing complete — ${awardedCount} ${awardedCount === 1 ? "item has" : "items have"} a vendor`
+                    : "Nothing on this request is open for quotation"}
                 </span>
                 <Button
                   size="sm"
-                  disabled={selected.length === 0}
-                  render={
-                    <Link
-                      href={`/purchase-requests/${request._id}/canvassing/quotes/new?${quoteParams}`}
-                    />
-                  }
+                  render={<Link href={`/purchase-requests/${request._id}`} />}
                   nativeButton={false}
                 >
-                  Create Quotation for Selected Items
-                  <ArrowRightIcon data-icon="inline-end" />
+                  <ArrowLeftIcon data-icon="inline-start" />
+                  Back to {request.no}
                 </Button>
               </CardFooter>
-            ) : null}
+            )}
           </>
         )}
       </Card>

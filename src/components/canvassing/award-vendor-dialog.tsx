@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import * as React from "react";
 
 import {
@@ -28,14 +29,17 @@ import { awardQuotation, canvassingKeys } from "@/modules/canvassing";
  * records a second one.
  */
 export function AwardVendorDialog({
+  purchaseRequestId,
   quotationId,
   itemId,
   itemName,
   vendorName,
   unitPrice,
   quantity,
+  isFinalItem,
   disabled,
 }: {
+  purchaseRequestId: string;
   /** Null until a row is picked; the trigger stays disabled meanwhile. */
   quotationId: string | null;
   itemId: string;
@@ -45,9 +49,17 @@ export function AwardVendorDialog({
   unitPrice: number | null;
   /** Already display copy, e.g. "10 pcs". */
   quantity: string;
+  /**
+   * The last item on this request still waiting on an award. Awarding it
+   * clears `is_needs_canvass` upstream, which unmounts the whole comparison —
+   * so the toast carries the way on rather than leaving the reader looking at
+   * a section that just disappeared.
+   */
+  isFinalItem: boolean;
   disabled?: boolean;
 }) {
   const [open, setOpen] = React.useState(false);
+  const router = useRouter();
   const queryClient = useQueryClient();
 
   const { mutate: award, isPending: awarding } = useMutation({
@@ -76,9 +88,20 @@ export function AwardVendorDialog({
       }
 
       toast.add({
-        title: "Vendor selection confirmed",
-        description: `${itemName} was awarded to the selected quote.`,
+        title: isFinalItem
+          ? "Canvassing complete"
+          : "Vendor selection confirmed",
+        description: isFinalItem
+          ? `${itemName} was the last item — every item on this request now has a vendor.`
+          : `${itemName} was awarded to the selected quote.`,
         type: "success",
+        actionProps: isFinalItem
+          ? {
+              children: "View purchase request",
+              onClick: () =>
+                router.push(`/purchase-requests/${purchaseRequestId}`),
+            }
+          : undefined,
       });
     },
     onError: (cause) => {
