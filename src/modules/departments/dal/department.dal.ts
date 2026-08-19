@@ -26,6 +26,8 @@ const NOT_FOUND = "Department not found";
 export interface ListDepartmentsQuery {
   page?: number;
   pageSize?: number;
+  /** Matches against department title and description. */
+  search?: string | null;
 }
 
 export function listDepartments(
@@ -35,6 +37,7 @@ export function listDepartments(
     query: {
       page: query.page ?? 1,
       page_size: clampPageSize(query.pageSize, DEFAULT_PAGE_SIZE),
+      search: query.search || undefined,
     },
   });
 }

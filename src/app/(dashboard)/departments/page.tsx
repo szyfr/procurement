@@ -13,14 +13,14 @@ export const metadata: Metadata = {
 export default async function DepartmentsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{ page?: string; search?: string }>;
 }) {
-  const { page } = await searchParams;
+  const { page, search } = await searchParams;
   const activePage = Math.max(Number(page) || 1, 1);
 
   if (!(await canAccess(PERMISSIONS.department.index))) {
     return <NoAccess title="Departments" resource="departments" />;
   }
 
-  return <DepartmentsPageContent page={activePage} />;
+  return <DepartmentsPageContent page={activePage} search={search ?? ""} />;
 }

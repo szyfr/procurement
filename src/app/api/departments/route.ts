@@ -20,6 +20,7 @@ export async function GET(request: NextRequest) {
     const result = await listDepartments({
       page: readPageParam(searchParams.get("page"), 1),
       pageSize: readPageParam(searchParams.get("pageSize"), DEFAULT_PAGE_SIZE),
+      search: searchParams.get("search"),
     });
 
     return Response.json({ data: result });

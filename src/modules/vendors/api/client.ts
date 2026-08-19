@@ -5,12 +5,14 @@ import type { Vendor } from "@/modules/vendors/models/vendor";
 
 export interface ListVendorsParams {
   page?: number;
+  /** Matches against vendor name and number. */
+  search?: string;
   signal?: AbortSignal;
 }
 
-export function fetchVendors({ page, signal }: ListVendorsParams = {}) {
+export function fetchVendors({ page, search, signal }: ListVendorsParams = {}) {
   return bffRequest<Paginated<Vendor>>(vendorEndpoints.list, {
-    query: { page },
+    query: { page, search },
     signal,
   });
 }

@@ -15,7 +15,7 @@ export interface Pagination {
   page_size: number;
   next_page: number | null;
   prev_page: number | null;
-  /** Echoed back by the backend. Unused until list search ships. */
+  /** Echoed back by the backend; list screens read the term off the URL instead. */
   search_term: string | null;
 }
 
@@ -39,4 +39,9 @@ export function clampPageSize(pageSize: number | undefined, fallback: number) {
 export function readPageParam(value: string | null, fallback: number) {
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : fallback;
+}
+
+/** Free-text search is the one list filter every collection screen shares. */
+export interface ListSearchFilters {
+  search?: string;
 }

@@ -25,11 +25,11 @@ const config: EntityCrudConfig<Department, CreateDepartmentDto> = {
   emptyStateTitle: "No departments yet",
   emptyStateDescription:
     "Create one to start assigning purchase requests to a department.",
+  searchPlaceholder: "Filter departments…",
   pageTitle: "Departments",
   pageDescription: "Manage the departments purchase requests are assigned to",
   createDescription: "Add a department purchase requests can be assigned to.",
   newButtonLabel: "New Department",
-  basePath: "/departments",
   permissions: {
     create: PERMISSIONS.department.store,
     update: PERMISSIONS.department.update,
@@ -42,6 +42,12 @@ const config: EntityCrudConfig<Department, CreateDepartmentDto> = {
   remove: deleteDepartment,
 };
 
-export function DepartmentsPageContent({ page }: { page: number }) {
-  return <EntityPageContent page={page} config={config} />;
+export function DepartmentsPageContent({
+  page,
+  search,
+}: {
+  page: number;
+  search: string;
+}) {
+  return <EntityPageContent page={page} search={search} config={config} />;
 }

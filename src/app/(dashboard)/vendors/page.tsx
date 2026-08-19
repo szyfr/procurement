@@ -14,9 +14,9 @@ export const metadata: Metadata = {
 export default async function VendorsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{ page?: string; search?: string }>;
 }) {
-  const { page } = await searchParams;
+  const { page, search } = await searchParams;
   const activePage = Math.max(Number(page) || 1, 1);
 
   if (!(await canAccess(PERMISSIONS.vendor.index))) {
@@ -30,7 +30,7 @@ export default async function VendorsPage({
         description="Suppliers available for canvassing and directly-sourced items"
       />
 
-      <VendorListView page={activePage} />
+      <VendorListView page={activePage} search={search ?? ""} />
     </>
   );
 }

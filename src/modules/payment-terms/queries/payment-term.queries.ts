@@ -1,5 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
 
+import type { ListSearchFilters } from "@/lib/api/pagination";
 import { fetchPaymentTerms } from "@/modules/payment-terms/api/client";
 
 /**
@@ -12,12 +13,17 @@ export const paymentTermKeys = {
   /** Prefix for every payment term query; invalidating it refetches all of them. */
   all: ["payment-terms"] as const,
   options: () => [...paymentTermKeys.all, "options"] as const,
-  list: (page: number) => [...paymentTermKeys.all, page] as const,
+  list: (page: number, filters: ListSearchFilters = {}) =>
+    [...paymentTermKeys.all, page, filters] as const,
 };
 
-export function paymentTermListQuery(page: number) {
+export function paymentTermListQuery(
+  page: number,
+  filters: ListSearchFilters = {},
+) {
   return queryOptions({
-    queryKey: paymentTermKeys.list(page),
-    queryFn: ({ signal }) => fetchPaymentTerms({ page, signal }),
+    queryKey: paymentTermKeys.list(page, filters),
+    queryFn: ({ signal }) =>
+      fetchPaymentTerms({ page, search: filters.search, signal }),
   });
 }

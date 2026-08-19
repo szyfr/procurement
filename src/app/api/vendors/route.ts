@@ -21,6 +21,7 @@ export async function GET(request: NextRequest) {
     const result = await listVendors({
       page: readPageParam(searchParams.get("page"), 1),
       pageSize: readPageParam(searchParams.get("pageSize"), DEFAULT_PAGE_SIZE),
+      search: searchParams.get("search") || undefined,
     });
 
     return Response.json({ data: result });

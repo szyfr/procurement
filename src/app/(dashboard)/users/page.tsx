@@ -12,14 +12,14 @@ export const metadata: Metadata = {
 export default async function UsersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{ page?: string; search?: string }>;
 }) {
-  const { page } = await searchParams;
+  const { page, search } = await searchParams;
   const activePage = Math.max(Number(page) || 1, 1);
 
   if (!(await canAccess(PERMISSIONS.user.index))) {
     return <NoAccess title="Users" resource="the user directory" />;
   }
 
-  return <UsersPageContent page={activePage} />;
+  return <UsersPageContent page={activePage} search={search ?? ""} />;
 }

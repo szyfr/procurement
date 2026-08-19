@@ -25,13 +25,13 @@ const config: EntityCrudConfig<PaymentTerm, CreatePaymentTermDto> = {
   emptyStateTitle: "No payment terms yet",
   emptyStateDescription:
     "Create one to make it available when creating a quotation.",
+  searchPlaceholder: "Filter payment terms…",
   pageTitle: "Payment Terms",
   pageDescription:
     "Manage the payment terms available when creating a quotation",
   createDescription:
     "Add a payment term that can be selected when creating a quotation.",
   newButtonLabel: "New Payment Term",
-  basePath: "/payment-terms",
   // All three are `payment_term.store`: the controller reuses that slug on
   // update and delete, and no `.update`/`.delete` permission exists upstream.
   permissions: {
@@ -46,6 +46,12 @@ const config: EntityCrudConfig<PaymentTerm, CreatePaymentTermDto> = {
   remove: deletePaymentTerm,
 };
 
-export function PaymentTermsPageContent({ page }: { page: number }) {
-  return <EntityPageContent page={page} config={config} />;
+export function PaymentTermsPageContent({
+  page,
+  search,
+}: {
+  page: number;
+  search: string;
+}) {
+  return <EntityPageContent page={page} search={search} config={config} />;
 }

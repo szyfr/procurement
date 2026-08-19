@@ -120,6 +120,8 @@ Permission-based, driven entirely by the flat `permissions` array on `/auth/me` 
 
 Pages under `src/app/(dashboard)/` are thin **server** shells: they own `metadata`, `await searchParams`, and hand off to a `"use client"` view that runs the queries. The URL is the source of truth for list state (view, page, search, filters) — filters write to search params via `router.replace`, and any filter change drops `page`.
 
+`hooks/use-list-search.ts` (`useListSearch`) is that pattern for the `search` param specifically — debounced field state, the `router.replace` that writes it, and a pagination href that carries it. Vendors, Departments, Payment Terms and Users all use it; Purchase Requests keeps its own `updateParams` because its dropdowns write the same URL.
+
 Query definitions live in the module's `queries/`, not the component, so keys and fetchers stay together. Global defaults are in `components/query-provider.tsx` (30s `staleTime`, one retry, no refetch on focus) — the QueryClient is per-render on the server and a singleton only in the browser.
 
 ## Mock data still in play

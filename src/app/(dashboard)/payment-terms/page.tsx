@@ -13,14 +13,14 @@ export const metadata: Metadata = {
 export default async function PaymentTermsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{ page?: string; search?: string }>;
 }) {
-  const { page } = await searchParams;
+  const { page, search } = await searchParams;
   const activePage = Math.max(Number(page) || 1, 1);
 
   if (!(await canAccess(PERMISSIONS.paymentTerm.index))) {
     return <NoAccess title="Payment Terms" resource="payment terms" />;
   }
 
-  return <PaymentTermsPageContent page={activePage} />;
+  return <PaymentTermsPageContent page={activePage} search={search ?? ""} />;
 }

@@ -10,16 +10,19 @@ import type { Department } from "@/modules/departments/models/department";
 export interface ListDepartmentsParams {
   page?: number;
   pageSize?: number;
+  /** Matches against department title and description. */
+  search?: string;
   signal?: AbortSignal;
 }
 
 export function fetchDepartments({
   page,
   pageSize,
+  search,
   signal,
 }: ListDepartmentsParams = {}) {
   return bffRequest<Paginated<Department>>(departmentEndpoints.list, {
-    query: { page, pageSize },
+    query: { page, pageSize, search },
     signal,
   });
 }

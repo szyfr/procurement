@@ -14,6 +14,8 @@ import type { Vendor } from "@/modules/vendors/models/vendor";
 export interface ListVendorsQuery {
   page?: number;
   pageSize?: number;
+  /** Matches against vendor name and number. */
+  search?: string;
 }
 
 export function listVendors(
@@ -23,6 +25,7 @@ export function listVendors(
     query: {
       page: query.page ?? 1,
       page_size: clampPageSize(query.pageSize, DEFAULT_PAGE_SIZE),
+      search: query.search,
     },
   });
 }

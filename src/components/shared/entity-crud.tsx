@@ -6,10 +6,12 @@ import {
   MoreVerticalIcon,
   PencilIcon,
   PlusIcon,
+  SearchIcon,
   TrashIcon,
 } from "lucide-react";
 import * as React from "react";
 import { useCan } from "@/components/providers/permissions-provider";
+import { DataToolbar } from "@/components/shared/data-toolbar";
 import {
   dropdownContentClass,
   dropdownItemClass,
@@ -65,9 +67,13 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/toast";
-import type { Paginated, Pagination } from "@/lib/api/pagination";
+import { useListSearch } from "@/hooks/use-list-search";
+import type {
+  ListSearchFilters,
+  Paginated,
+  Pagination,
+} from "@/lib/api/pagination";
 import { formatDate } from "@/lib/date";
-import { buildPageHref } from "@/lib/page-href";
 import { cn } from "@/lib/utils";
 import type { PermissionSlug } from "@/modules/auth/constants/permissions";
 
@@ -104,13 +110,13 @@ export interface EntityCrudConfig<
   emptyStateIcon: React.ReactNode;
   emptyStateTitle: string;
   emptyStateDescription: string;
+  /** Search box copy — upstream matches the term against title and description. */
+  searchPlaceholder: string;
   pageTitle: string;
   pageDescription: string;
   /** Shown under the dialog title only when creating (edit reuses a fixed sentence). */
   createDescription: string;
   newButtonLabel: string;
-  /** Route the list lives at, for pagination hrefs. */
-  basePath: string;
   /**
    * The grant behind each write. They are not always three distinct slugs —
    * payment terms gate create, update *and* delete on `payment_term.store`
@@ -124,6 +130,7 @@ export interface EntityCrudConfig<
   queryKeys: { all: QueryKey };
   listQuery: (
     page: number,
+    filters?: ListSearchFilters,
     // biome-ignore lint/suspicious/noExplicitAny: each module's queryOptions() narrows its own tuple-shaped query key, which useQuery accepts structurally but UseQueryOptions can't express generically here.
   ) => UseQueryOptions<Paginated<TEntity>, Error, Paginated<TEntity>, any>;
   create: (values: TDto) => Promise<TEntity>;
@@ -137,12 +144,14 @@ export function EntityTable<
 >({
   entities,
   page,
+  buildPageHref,
   onEdit,
   onDelete,
   config,
 }: {
   entities: TEntity[];
   page: Pagination;
+  buildPageHref: (page: number) => string;
   onEdit: (entity: TEntity) => void;
   onDelete: (entity: TEntity) => void;
   config: EntityCrudConfig<TEntity, TDto>;
@@ -237,7 +246,7 @@ export function EntityTable<
       <TablePagination
         shown={entities.length}
         page={page}
-        buildPageHref={(next) => buildPageHref(config.basePath, next)}
+        buildPageHref={buildPageHref}
       />
     </Card>
   );
@@ -517,18 +526,24 @@ export function EntityListView<
   TDto extends TitleDescriptionDto,
 >({
   page,
+  search,
+  buildPageHref,
   onEdit,
   onDelete,
   config,
 }: {
   page: number;
+  search: string;
+  buildPageHref: (page: number) => string;
   onEdit: (entity: TEntity) => void;
   onDelete: (entity: TEntity) => void;
   config: EntityCrudConfig<TEntity, TDto>;
 }) {
   // Create, edit and delete invalidate the entity cache, so the list
   // refetches itself — no reload token has to be threaded down from the page.
-  const { data, isPending, isError, error } = useQuery(config.listQuery(page));
+  const { data, isPending, isError, error } = useQuery(
+    config.listQuery(page, { search: search || undefined }),
+  );
 
   if (isError) {
     return (
@@ -546,7 +561,14 @@ export function EntityListView<
   const { data: entities, pagination } = data;
 
   if (pagination.total_items === 0) {
-    return (
+    return search ? (
+      <EmptyState
+        variant="no-results"
+        icon={<SearchIcon />}
+        title={`No matching ${config.pageTitle.toLowerCase()}`}
+        description="Try a different search term."
+      />
+    ) : (
       <EmptyState
         icon={config.emptyStateIcon}
         title={config.emptyStateTitle}
@@ -559,6 +581,7 @@ export function EntityListView<
     <EntityTable
       entities={entities}
       page={pagination}
+      buildPageHref={buildPageHref}
       onEdit={onEdit}
       onDelete={onDelete}
       config={config}
@@ -574,8 +597,17 @@ export function EntityListView<
 export function EntityPageContent<
   TEntity extends TitleDescriptionEntity,
   TDto extends TitleDescriptionDto,
->({ page, config }: { page: number; config: EntityCrudConfig<TEntity, TDto> }) {
+>({
+  page,
+  search,
+  config,
+}: {
+  page: number;
+  search: string;
+  config: EntityCrudConfig<TEntity, TDto>;
+}) {
   const canCreate = useCan(config.permissions.create);
+  const { searchInput, setSearchInput, pageHref } = useListSearch(search);
 
   const [dialogState, setDialogState] = React.useState<
     | { mode: "create" }
@@ -602,8 +634,17 @@ export function EntityPageContent<
         }
       />
 
+      <DataToolbar
+        placeholder={config.searchPlaceholder}
+        filters={[]}
+        searchValue={searchInput}
+        onSearchChange={setSearchInput}
+      />
+
       <EntityListView
         page={page}
+        search={search}
+        buildPageHref={pageHref}
         onEdit={(entity) => setDialogState({ mode: "edit", entity })}
         onDelete={(entity) => setDialogState({ mode: "delete", entity })}
         config={config}

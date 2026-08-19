@@ -34,6 +34,11 @@ function dropPassword<T extends { password: string }>(
 export interface ListUsersQuery {
   page?: number;
   pageSize?: number;
+  /**
+   * Upstream matches this against `firstname` and `lastname` only — email is
+   * deliberately not in its `$or`, so searching for one finds nothing.
+   */
+  search?: string | null;
 }
 
 export async function listUsers(
@@ -43,6 +48,7 @@ export async function listUsers(
     query: {
       page: query.page ?? 1,
       page_size: clampPageSize(query.pageSize, DEFAULT_PAGE_SIZE),
+      search: query.search || undefined,
     },
   });
 

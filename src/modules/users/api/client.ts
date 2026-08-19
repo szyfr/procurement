@@ -13,12 +13,19 @@ import type {
 export interface ListUsersParams {
   page?: number;
   pageSize?: number;
+  /** Matches against first and last name only — not email. */
+  search?: string;
   signal?: AbortSignal;
 }
 
-export function fetchUsers({ page, pageSize, signal }: ListUsersParams = {}) {
+export function fetchUsers({
+  page,
+  pageSize,
+  search,
+  signal,
+}: ListUsersParams = {}) {
   return bffRequest<Paginated<User>>(userEndpoints.list, {
-    query: { page, pageSize },
+    query: { page, pageSize, search },
     signal,
   });
 }
