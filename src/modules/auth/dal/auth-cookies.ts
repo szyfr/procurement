@@ -23,7 +23,7 @@ import { CSRF_COOKIE, SESSION_COOKIE } from "@/modules/auth/constants";
 const cookieOptions = {
   httpOnly: true,
   sameSite: "lax",
-  secure: process.env.NODE_ENV === "production",
+  secure: false,
   path: "/",
 } as const;
 
