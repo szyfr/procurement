@@ -1,12 +1,15 @@
 import { PlusIcon } from "lucide-react";
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import Link from "next/link";
 
 import { PurchaseRequestListView } from "@/components/purchase-requests/pr-list-view";
 import {
+  LIST_VIEW_COOKIE,
   type ListView,
-  ViewToggle,
-} from "@/components/purchase-requests/view-toggle";
+  parseListView,
+} from "@/components/purchase-requests/view-preference";
+import { ViewToggle } from "@/components/purchase-requests/view-toggle";
 import { NoAccess } from "@/components/shared/no-access";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
@@ -29,9 +32,16 @@ export default async function PurchaseRequestsPage({
     departments?: string;
   }>;
 }) {
-  const { view, page, search, status, priority, departments } =
-    await searchParams;
-  const activeView: ListView = view === "table" ? "table" : "cards";
+  const [{ view, page, search, status, priority, departments }, cookieStore] =
+    await Promise.all([searchParams, cookies()]);
+
+  // The URL wins, so a shared link opens the view it names. Only a visit that
+  // asks for nothing falls back to the remembered choice, and cards when there
+  // is none.
+  const activeView: ListView =
+    parseListView(view) ??
+    parseListView(cookieStore.get(LIST_VIEW_COOKIE)?.value) ??
+    "cards";
   const activePage = Math.max(Number(page) || 1, 1);
 
   if (!(await canAccess(PERMISSIONS.purchaseRequest.index))) {

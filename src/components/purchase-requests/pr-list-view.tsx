@@ -9,7 +9,7 @@ import { PurchaseRequestCard } from "@/components/purchase-requests/pr-card";
 import { PurchaseRequestCardsSkeleton } from "@/components/purchase-requests/pr-cards-skeleton";
 import { StatusLegend } from "@/components/purchase-requests/pr-status-legend";
 import { PurchaseRequestTable } from "@/components/purchase-requests/pr-table";
-import type { ListView } from "@/components/purchase-requests/view-toggle";
+import type { ListView } from "@/components/purchase-requests/view-preference";
 import { DataToolbar } from "@/components/shared/data-toolbar";
 import type { FilterSelectOption } from "@/components/shared/filter-select";
 import { EmptyState, ErrorAlert } from "@/components/shared/query-states";

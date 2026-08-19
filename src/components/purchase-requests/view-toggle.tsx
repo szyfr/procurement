@@ -4,14 +4,24 @@ import { LayoutGridIcon, TableIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 
+import {
+  type ListView,
+  rememberListView,
+} from "@/components/purchase-requests/view-preference";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 
-export type ListView = "cards" | "table";
-
 /**
  * Switches the purchase request list between card and table views. Backed by
- * the URL so the choice survives reload and can be linked to.
+ * the URL so the choice survives reload and can be linked to, and mirrored
+ * into a cookie so arriving at the bare `/purchase-requests` — from the
+ * sidebar, a bookmark, a new tab — reopens the view last chosen.
+ *
+ * Both buttons name the view explicitly, cards included. Cards used to be the
+ * view the URL expressed by omission, but that now means "ask the cookie", and
+ * a click has to beat its own navigation to the cookie for that to land on the
+ * right view. An explicit param decides it in the URL, where the server reads
+ * it first.
  */
 export function ViewToggle({ view }: { view: ListView }) {
   const pathname = usePathname();
@@ -19,13 +29,9 @@ export function ViewToggle({ view }: { view: ListView }) {
 
   function hrefFor(next: ListView) {
     const params = new URLSearchParams(searchParams);
-    if (next === "cards") {
-      params.delete("view");
-    } else {
-      params.set("view", next);
-    }
-    const query = params.toString();
-    return query ? `${pathname}?${query}` : pathname;
+    params.set("view", next);
+
+    return `${pathname}?${params.toString()}`;
   }
 
   return (
@@ -34,6 +40,7 @@ export function ViewToggle({ view }: { view: ListView }) {
         variant={view === "cards" ? "secondary" : "outline"}
         size="sm"
         aria-current={view === "cards" ? "true" : undefined}
+        onClick={() => rememberListView("cards")}
         render={<Link href={hrefFor("cards")} />}
         nativeButton={false}
       >
@@ -44,6 +51,7 @@ export function ViewToggle({ view }: { view: ListView }) {
         variant={view === "table" ? "secondary" : "outline"}
         size="sm"
         aria-current={view === "table" ? "true" : undefined}
+        onClick={() => rememberListView("table")}
         render={<Link href={hrefFor("table")} />}
         nativeButton={false}
       >
