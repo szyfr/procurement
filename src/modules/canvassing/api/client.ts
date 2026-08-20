@@ -16,12 +16,18 @@ import type {
 
 export interface ListCanvassingParams {
   page?: number;
+  /** Matches against the item's title and description. */
+  search?: string;
   signal?: AbortSignal;
 }
 
-export function fetchCanvassing({ page, signal }: ListCanvassingParams = {}) {
+export function fetchCanvassing({
+  page,
+  search,
+  signal,
+}: ListCanvassingParams = {}) {
   return bffRequest<Paginated<CanvassingEntry>>(canvassingEndpoints.list, {
-    query: { page },
+    query: { page, search },
     signal,
   });
 }

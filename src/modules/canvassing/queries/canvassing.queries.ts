@@ -1,5 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
 
+import type { ListSearchFilters } from "@/lib/api/pagination";
 import {
   fetchCanvassing,
   fetchCanvassingQuotations,
@@ -8,7 +9,8 @@ import {
 
 export const canvassingKeys = {
   all: ["canvassing"] as const,
-  list: (page: number) => ["canvassing", page] as const,
+  list: (page: number, filters: ListSearchFilters = {}) =>
+    ["canvassing", page, filters] as const,
   // Sorted, so the same set of items is one cache entry however it was ordered.
   quotations: (itemIds: string[]) =>
     ["canvassing", "quotations", [...itemIds].sort()] as const,
@@ -16,12 +18,16 @@ export const canvassingKeys = {
     ["canvassing", "quotation", quotationId] as const,
 };
 
-export function canvassingListQuery(page: number) {
+export function canvassingListQuery(
+  page: number,
+  filters: ListSearchFilters = {},
+) {
   return queryOptions({
-    queryKey: canvassingKeys.list(page),
+    queryKey: canvassingKeys.list(page, filters),
     // TanStack supplies an AbortSignal it aborts when the query is cancelled,
     // which covers unmount and page changes.
-    queryFn: ({ signal }) => fetchCanvassing({ page, signal }),
+    queryFn: ({ signal }) =>
+      fetchCanvassing({ page, search: filters.search, signal }),
   });
 }
 

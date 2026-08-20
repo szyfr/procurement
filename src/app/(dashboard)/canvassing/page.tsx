@@ -11,23 +11,19 @@ export const metadata: Metadata = {
 };
 
 /**
- * No toolbar. There was one, and every control on it was inert: the search box
- * accepted typing and filtered nothing, and the Status dropdown selected and
- * did nothing — `DataToolbar` leaves a filter presentational when it is handed
- * no `value`/`onValueChange`, so both looked exactly like the working ones on
- * Purchase Requests.
- *
- * Nothing is plumbed for it yet: `listCanvassing` takes only `page`/`pageSize`,
- * and neither the client nor the Route Handler carries a search or status term.
- * Restoring it means threading those through the DAL first. There is no
- * Department filter either — a canvassing row carries no department.
+ * Search is the only working control here. Upstream `GET /canvassing` takes a
+ * `search` term and matches it against the item's title and description, and
+ * nothing else: there is no status filter (the row's status is derived by the
+ * aggregation, not queried) and no department one (a canvassing row carries no
+ * department), so the toolbar carries no dropdowns rather than presentational
+ * ones — `DataToolbar` leaves a filter inert when handed no `value`.
  */
 export default async function CanvassingPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{ page?: string; search?: string }>;
 }) {
-  const { page } = await searchParams;
+  const { page, search } = await searchParams;
   const activePage = Math.max(Number(page) || 1, 1);
 
   if (!(await canAccess(PERMISSIONS.canvassing.index))) {
@@ -41,7 +37,7 @@ export default async function CanvassingPage({
         description="Items out for vendor quotation, grouped into batches"
       />
 
-      <CanvassingListView page={activePage} />
+      <CanvassingListView page={activePage} search={search ?? ""} />
     </>
   );
 }

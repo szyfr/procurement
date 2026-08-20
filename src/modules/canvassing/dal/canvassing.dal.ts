@@ -19,6 +19,8 @@ const NOT_FOUND = "We couldn't find that quotation.";
 export interface ListCanvassingQuery {
   page?: number;
   pageSize?: number;
+  /** Matches against the item's title and description. */
+  search?: string;
 }
 
 export function listCanvassing(
@@ -28,6 +30,7 @@ export function listCanvassing(
     query: {
       page: query.page ?? 1,
       page_size: clampPageSize(query.pageSize, DEFAULT_PAGE_SIZE),
+      search: query.search,
     },
   });
 }
