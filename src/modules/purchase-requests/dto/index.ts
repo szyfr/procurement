@@ -1,4 +1,8 @@
 export type {
+  AssignVendorDto,
+  AssignVendorEntry,
+} from "@/modules/purchase-requests/dto/assign-vendor.dto";
+export type {
   CreatePurchaseRequestDto,
   CreatePurchaseRequestInput,
   PurchaseRequestItemDto,

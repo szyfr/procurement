@@ -45,11 +45,18 @@ export const PERMISSIONS = {
     updateStatus: "purchase_request_item.update-status",
     delivered: "purchase_request_item.delivered",
     partialDelivery: "purchase_request_item.partial-delivery",
+    /** `PATCH .../items/assign-vendor` — gives a direct-sourced item its vendor. */
+    assignVendor: "purchase_request_item.assign-vendor",
   },
 
   purchaseRequestProof: {
     show: "purchase_request_proof.show",
     store: "purchase_request_proof.store",
+  },
+
+  /** `GET /purchaser` — the purchaser's queue of pending requests, not gated by requester. */
+  purchaser: {
+    index: "purchaser.index",
   },
 
   canvassing: {

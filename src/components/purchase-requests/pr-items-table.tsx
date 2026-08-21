@@ -69,6 +69,17 @@ export function isItemSelectable(item: PurchaseRequestItem) {
   );
 }
 
+/**
+ * A direct-sourced item still waiting on its vendor. `is_needs_canvass`
+ * excludes a canvassed item — that one gets its vendor through an award
+ * instead, never through this route — and the decision window matches
+ * `isProcessSelectable`: once approved or rejected, assigning a vendor no
+ * longer does anything useful.
+ */
+export function canAssignVendor(item: PurchaseRequestItem) {
+  return !item.vendor_id && !item.is_needs_canvass && isProcessSelectable(item);
+}
+
 /** How much of the order has yet to arrive. */
 export function outstandingQuantity(item: PurchaseRequestItem) {
   return item.quantity - (item.partial_delivered ?? 0);
@@ -109,11 +120,13 @@ export function PurchaseRequestItemsTable({
   request,
   selectable: selectionEnabled,
   canRecordPartialDelivery: partialDeliveryGranted,
+  canAssignVendor: assignVendorGranted,
   selectedIds,
   onToggleItem,
   onToggleAll,
   onHighlightProofs,
   onRecordPartialDelivery,
+  onAssignVendor,
 }: {
   request: PurchaseRequestDetail;
   /**
@@ -123,11 +136,13 @@ export function PurchaseRequestItemsTable({
    */
   selectable: boolean;
   canRecordPartialDelivery: boolean;
+  canAssignVendor: boolean;
   selectedIds: Set<string>;
   onToggleItem: (id: string, checked: boolean) => void;
   onToggleAll: (checked: boolean) => void;
   onHighlightProofs: (itemId: string) => void;
   onRecordPartialDelivery: (item: PurchaseRequestItem) => void;
+  onAssignVendor: (item: PurchaseRequestItem) => void;
 }) {
   const selectableItems = selectionEnabled
     ? request.items.filter(isItemSelectable)
@@ -235,6 +250,15 @@ export function PurchaseRequestItemsTable({
                   >
                     {item.vendor?.name || item.vendor_id}
                   </span>
+                ) : assignVendorGranted && canAssignVendor(item) ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="-ml-2 gap-1.5 font-normal text-muted-foreground"
+                    onClick={() => onAssignVendor(item)}
+                  >
+                    Assign Vendor
+                  </Button>
                 ) : (
                   <span className="text-muted-foreground italic">
                     {item.is_needs_canvass

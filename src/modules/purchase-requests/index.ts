@@ -8,6 +8,7 @@
  */
 
 export {
+  assignPurchaseRequestItemVendors,
   createPurchaseRequest,
   createPurchaseRequestProof,
   fetchDepartmentOptions,
@@ -34,6 +35,8 @@ export {
   purchaseRequestTone,
 } from "@/modules/purchase-requests/constants";
 export type {
+  AssignVendorDto,
+  AssignVendorEntry,
   CreatePurchaseRequestInput,
   CreatePurchaseRequestProofInput,
   MarkPurchaseRequestDeliveredDto,

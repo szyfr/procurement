@@ -3,10 +3,12 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import * as React from "react";
 import { useCan } from "@/components/providers/permissions-provider";
+import { AssignVendorDialog } from "@/components/purchase-requests/assign-vendor-dialog";
 import { MarkDeliveredDialog } from "@/components/purchase-requests/mark-delivered-dialog";
 import { PartialDeliveryDialog } from "@/components/purchase-requests/partial-delivery-dialog";
 import { PurchaseRequestItemsBulkBar } from "@/components/purchase-requests/pr-items-bulk-bar";
 import {
+  canAssignVendor,
   canRecordPartialDelivery,
   isDeliverySelectable,
   isItemSelectable,
@@ -23,6 +25,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/components/ui/toast";
 import { PERMISSIONS } from "@/modules/auth/constants/permissions";
 import {
+  assignPurchaseRequestItemVendors,
   createPurchaseRequestProof,
   markPurchaseRequestDelivered,
   type ProcessItemDecision,
@@ -34,10 +37,10 @@ import {
 } from "@/modules/purchase-requests";
 
 /**
- * Items table plus the three bulk workflows that run off its checkbox column:
- * the approve/reject decision, proof of order and delivery. All read the same
- * selection and each re-filters it through its own eligibility rule, so one
- * set of checkboxes serves all three.
+ * Items table plus the four bulk workflows that run off its checkbox column:
+ * the approve/reject decision, proof of order, delivery and vendor
+ * assignment. All read the same selection and each re-filters it through its
+ * own eligibility rule, so one set of checkboxes serves all four.
  *
  * Decision: one `PATCH /purchase-requests/{id}/items` covering the selection.
  * FastAPI also exposes a per-item route and the BFF still carries it, but no
@@ -55,13 +58,21 @@ import {
  * Delivery: a single `PATCH /purchase-requests/{id}/delivered` covering the
  * whole selection.
  *
+ * Vendor assignment: one `PATCH .../items/assign-vendor` covering the
+ * selection, one vendor for every item in it. Reachable two ways — the bulk
+ * bar for a multi-item pick, or the Vendor cell's own button for a single row
+ * (which opens the same dialog with a one-item list) — on a direct-sourced
+ * item still missing a vendor. The create/edit line items editor dropped the
+ * vendor picker, so this is now the only path such an item reaches one.
+ *
  * Partial delivery is the exception and hangs off the row action menu instead:
  * its amount is specific to one line, so there is nothing sensible to batch.
  *
- * Neither overlays its result locally. The proof response carries no filename
- * to show (see `pr-items-table.tsx`) and the delivery response carries nothing
- * at all, so a successful save just invalidates the detail query and the table
- * picks up what actually persisted.
+ * None of these overlay a result locally — the proof response carries no
+ * filename to show (see `pr-items-table.tsx`) and the delivery and
+ * assign-vendor responses carry nothing at all — so a successful save just
+ * invalidates the detail query and the table picks up what actually
+ * persisted.
  */
 export function PurchaseRequestItemsSection({
   request,
@@ -80,13 +91,20 @@ export function PurchaseRequestItemsSection({
   const canRecordPartial = useCan(
     PERMISSIONS.purchaseRequestItem.partialDelivery,
   );
+  const canAssignItemVendor = useCan(
+    PERMISSIONS.purchaseRequestItem.assignVendor,
+  );
   // The bulk decision route carries its own grant upstream, separate from the
   // per-item `.process` one the BFF still exposes.
   const canProcessSelection = useCan(
     PERMISSIONS.purchaseRequestItem.massProcess,
   );
   // Nothing to act on means nothing to select; the checkbox column goes too.
-  const canSelectItems = canAddProof || canMarkDelivered || canProcessSelection;
+  const canSelectItems =
+    canAddProof ||
+    canMarkDelivered ||
+    canProcessSelection ||
+    canAssignItemVendor;
 
   const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
   const [dialogOpen, setDialogOpen] = React.useState(false);
@@ -99,6 +117,14 @@ export function PurchaseRequestItemsSection({
   // item itself so a refetch can't leave the dialog rendering a stale row.
   const [partialItemId, setPartialItemId] = React.useState<string | null>(null);
   const [partialError, setPartialError] = React.useState<string | null>(null);
+  // Holds the ids the dialog is open for — a single row from its own action,
+  // or a copy of the selection from the bulk bar. A copy rather than a live
+  // read of `selectedIds`, so a selection made after the dialog opens doesn't
+  // silently widen what gets submitted.
+  const [assignVendorItemIds, setAssignVendorItemIds] = React.useState<
+    string[]
+  >([]);
+  const [assignError, setAssignError] = React.useState<string | null>(null);
   // The decision awaiting confirmation. It always applies to the selection, so
   // unlike `partialItemId` there is no row to remember alongside it.
   const [decision, setDecision] = React.useState<ProcessItemDecision | null>(
@@ -158,6 +184,16 @@ export function PurchaseRequestItemsSection({
       }),
   });
 
+  const { mutateAsync: saveVendor, isPending: assigningVendor } = useMutation({
+    mutationFn: (input: { itemIds: string[]; vendorId: string }) =>
+      assignPurchaseRequestItemVendors(request._id, {
+        items: input.itemIds.map((itemId) => ({
+          item_id: itemId,
+          vendor_id: input.vendorId,
+        })),
+      }),
+  });
+
   const { mutateAsync: submitDecision, isPending: deciding } = useMutation({
     mutationFn: (input: { outcome: ProcessItemDecision; itemIds: string[] }) =>
       processPurchaseRequestItems(request._id, {
@@ -174,6 +210,13 @@ export function PurchaseRequestItemsSection({
     request.items.find(
       (item) => item._id === partialItemId && canRecordPartialDelivery(item),
     ) ?? null;
+  // Same reasoning: re-checked through the table's own rule, so an item a
+  // refetch has since moved on (or given a vendor from elsewhere) drops out of
+  // the dialog rather than being resubmitted for a row that no longer
+  // qualifies.
+  const assignVendorItems = request.items.filter(
+    (item) => assignVendorItemIds.includes(item._id) && canAssignVendor(item),
+  );
 
   const selectableIds = request.items
     .filter(isItemSelectable)
@@ -191,6 +234,9 @@ export function PurchaseRequestItemsSection({
   );
   const selectedProcessItems = request.items.filter(
     (item) => selectedIds.has(item._id) && isProcessSelectable(item),
+  );
+  const selectedAssignVendorItems = request.items.filter(
+    (item) => selectedIds.has(item._id) && canAssignVendor(item),
   );
   // What the confirmation is actually about. Re-filtered from the live list
   // above on every render, so an item the backend has since moved on drops
@@ -219,6 +265,13 @@ export function PurchaseRequestItemsSection({
   React.useEffect(() => {
     if (decisionItems.length === 0) setDecision(null);
   }, [decisionItems.length]);
+
+  // Same reasoning, for the vendor-assignment dialog: its `open` is derived
+  // from `assignVendorItems`, so an emptied selection or a refetch that moves
+  // every targeted item on closes it without `onOpenChange` firing.
+  React.useEffect(() => {
+    if (assignVendorItems.length === 0) setAssignVendorItemIds([]);
+  }, [assignVendorItems.length]);
 
   function toggleItem(id: string, checked: boolean) {
     setSelectedIds((prev) => {
@@ -258,6 +311,40 @@ export function PurchaseRequestItemsSection({
     setPartialItemId(null);
     toast.add({
       title: `${label}: ${amount} of ${partialItem.quantity} received`,
+      type: "success",
+    });
+  }
+
+  async function handleAssignVendor(vendorId: string) {
+    const itemIds = assignVendorItems.map((item) => item._id);
+    if (itemIds.length === 0) return;
+
+    setAssignError(null);
+
+    try {
+      await saveVendor({ itemIds, vendorId });
+    } catch (error) {
+      setAssignError(
+        error instanceof Error ? error.message : "Something went wrong.",
+      );
+      return;
+    }
+
+    // The assigned ids leave the selection; anything else the user had picked
+    // stays put.
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      for (const id of itemIds) next.delete(id);
+      return next;
+    });
+    queryClient.invalidateQueries({
+      queryKey: purchaseRequestKeys.detail(request._id),
+    });
+    queryClient.invalidateQueries({ queryKey: purchaseRequestKeys.lists() });
+
+    setAssignVendorItemIds([]);
+    toast.add({
+      title: `Vendor assigned to ${itemIds.length} item${itemIds.length === 1 ? "" : "s"}`,
       type: "success",
     });
   }
@@ -419,26 +506,37 @@ export function PurchaseRequestItemsSection({
                 showProcess={canProcessSelection}
                 showAddProof={canAddProof}
                 showMarkDelivered={canMarkDelivered}
+                showAssignVendor={canAssignItemVendor}
                 canProcess={selectedProcessItems.length > 0}
                 canAddProof={selectedItems.length > 0}
                 canMarkDelivered={selectedDeliveryItems.length > 0}
+                canAssignVendor={selectedAssignVendorItems.length > 0}
                 onClear={() => setSelectedIds(new Set())}
                 onApprove={() => setDecision("approved")}
                 onReject={() => setDecision("rejected")}
                 onAddProof={() => setDialogOpen(true)}
                 onMarkDelivered={() => setDeliveredOpen(true)}
+                onAssignVendor={() =>
+                  setAssignVendorItemIds(
+                    selectedAssignVendorItems.map((item) => item._id),
+                  )
+                }
               />
             ) : null}
             <PurchaseRequestItemsTable
               request={request}
               selectable={canSelectItems}
               canRecordPartialDelivery={canRecordPartial}
+              canAssignVendor={canAssignItemVendor}
               selectedIds={selectedIds}
               onToggleItem={toggleItem}
               onToggleAll={toggleAll}
               onHighlightProofs={onHighlightProofs}
               onRecordPartialDelivery={(item: PurchaseRequestItem) =>
                 setPartialItemId(item._id)
+              }
+              onAssignVendor={(item: PurchaseRequestItem) =>
+                setAssignVendorItemIds([item._id])
               }
             />
           </>
@@ -496,6 +594,20 @@ export function PurchaseRequestItemsSection({
         saving={savingPartial}
         saveError={partialError}
         onSave={handleRecordPartialDelivery}
+      />
+
+      <AssignVendorDialog
+        open={assignVendorItems.length > 0}
+        onOpenChange={(next) => {
+          if (!next) {
+            setAssignVendorItemIds([]);
+            setAssignError(null);
+          }
+        }}
+        items={assignVendorItems}
+        saving={assigningVendor}
+        saveError={assignError}
+        onSave={handleAssignVendor}
       />
     </Card>
   );

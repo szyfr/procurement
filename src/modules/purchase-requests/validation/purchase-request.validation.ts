@@ -2,6 +2,7 @@ import { ApiError } from "@/lib/api/errors";
 import { isObjectId } from "@/lib/api/object-id";
 import type { Priority } from "@/lib/types";
 import type {
+  AssignVendorDto,
   CreatePurchaseRequestInput,
   MarkPurchaseRequestDeliveredDto,
   ProcessItemDecision,
@@ -311,4 +312,38 @@ export function parseProcessItemsPayload(
   });
 
   return { status: parseDecision(payload.status), items: payload.items };
+}
+
+/**
+ * The assign-vendor body. Upstream's request model requires both ids on every
+ * entry, so an entry missing either is rejected here by name rather than
+ * arriving as a bare FastAPI 422.
+ */
+export function parseAssignVendorPayload(body: unknown): AssignVendorDto {
+  if (!body || typeof body !== "object")
+    throw invalid("Request body is missing.");
+
+  const payload = body as Partial<AssignVendorDto>;
+
+  if (!Array.isArray(payload.items) || payload.items.length === 0) {
+    throw invalid("Select at least one item.");
+  }
+
+  const items = payload.items.map((entry, index) => {
+    const { item_id, vendor_id } = (entry ?? {}) as {
+      item_id?: unknown;
+      vendor_id?: unknown;
+    };
+
+    if (typeof item_id !== "string" || !isObjectId(item_id)) {
+      throw invalid(`Item ${index + 1} is not valid.`);
+    }
+    if (typeof vendor_id !== "string" || !isObjectId(vendor_id)) {
+      throw invalid(`Item ${index + 1} needs a vendor selected.`);
+    }
+
+    return { item_id, vendor_id };
+  });
+
+  return { items };
 }

@@ -6,6 +6,7 @@ import { getCurrentUser } from "@/modules/auth/dal/auth.dal";
 import { userId } from "@/modules/auth/models/session";
 import { DEFAULT_PAGE_SIZE } from "@/modules/purchase-requests/constants";
 import type {
+  AssignVendorDto,
   CreatePurchaseRequestDto,
   CreatePurchaseRequestInput,
   MarkPurchaseRequestDeliveredDto,
@@ -179,6 +180,30 @@ export async function processPurchaseRequestItems(
   for (const itemId of payload.items) assertObjectId(itemId, ITEM_NOT_FOUND);
 
   await serverFetch<null>(`/purchase-requests/${id}/items`, {
+    method: "PATCH",
+    body: payload,
+  });
+}
+
+/**
+ * Gives a set of the request's items a vendor in one call. Upstream writes
+ * each entry independently — one `PurchaseRequestItemModel.update` per item —
+ * so a bad id in the middle of the list still leaves the earlier ones written.
+ *
+ * The path segment names the request, but the controller never reads it: only
+ * the item ids in the body are looked up. Every id is checked here regardless,
+ * so a malformed one is reported by name instead of surfacing as whatever
+ * upstream does with it.
+ *
+ * FastAPI answers 200 with a `{}` body, which `serverFetch` drops.
+ */
+export async function assignPurchaseRequestItemVendors(
+  id: string,
+  payload: AssignVendorDto,
+): Promise<void> {
+  assertObjectId(id, NOT_FOUND);
+
+  await serverFetch<null>(`/purchase-requests/${id}/items/assign-vendor`, {
     method: "PATCH",
     body: payload,
   });

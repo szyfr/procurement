@@ -20,45 +20,52 @@ function vendorSummary(items: PurchaseRequestItem[]) {
  * Appears above the items table only while a row is selected; disappears once
  * the selection clears.
  *
- * All three bulk actions run off the one selection, and their eligibility
+ * All four bulk actions run off the one selection, and their eligibility
  * differs — a decision is only open while an item is still `pending`, a proof
- * of order is only meaningful once it is `po-created`, and delivery also
- * closes out a `partially-completed` one. Each button is disabled rather than
- * hidden when its own rule fails, so the action doesn't vanish as the
- * selection grows.
+ * of order is only meaningful once it is `po-created`, delivery also closes
+ * out a `partially-completed` one, and a vendor can only be assigned to a
+ * direct-sourced item that doesn't have one yet. Each button is disabled
+ * rather than hidden when its own rule fails, so the action doesn't vanish as
+ * the selection grows.
  */
 export function PurchaseRequestItemsBulkBar({
   selectedItems,
   showProcess,
   showAddProof,
   showMarkDelivered,
+  showAssignVendor,
   canProcess,
   canAddProof,
   canMarkDelivered,
+  canAssignVendor,
   onClear,
   onApprove,
   onReject,
   onAddProof,
   onMarkDelivered,
+  onAssignVendor,
 }: {
   selectedItems: PurchaseRequestItem[];
   /**
    * Whether the user holds the grant at all. Distinct from `canProcess`,
-   * `canAddProof` and `canMarkDelivered` below, which are about *this
-   * selection*: an action the user could take on a different selection is
-   * disabled, one they can never take is absent.
+   * `canAddProof`, `canMarkDelivered` and `canAssignVendor` below, which are
+   * about *this selection*: an action the user could take on a different
+   * selection is disabled, one they can never take is absent.
    */
   showProcess: boolean;
   showAddProof: boolean;
   showMarkDelivered: boolean;
+  showAssignVendor: boolean;
   canProcess: boolean;
   canAddProof: boolean;
   canMarkDelivered: boolean;
+  canAssignVendor: boolean;
   onClear: () => void;
   onApprove: () => void;
   onReject: () => void;
   onAddProof: () => void;
   onMarkDelivered: () => void;
+  onAssignVendor: () => void;
 }) {
   if (selectedItems.length === 0) return null;
 
@@ -89,6 +96,16 @@ export function PurchaseRequestItemsBulkBar({
             Approve
           </Button>
         </>
+      ) : null}
+      {showAssignVendor ? (
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={!canAssignVendor}
+          onClick={onAssignVendor}
+        >
+          Assign Vendor
+        </Button>
       ) : null}
       {showAddProof ? (
         <Button

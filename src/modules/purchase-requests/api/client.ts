@@ -3,6 +3,7 @@ import type { Paginated } from "@/lib/api/pagination";
 import type { Department } from "@/modules/departments";
 import { purchaseRequestEndpoints } from "@/modules/purchase-requests/api/endpoints";
 import {
+  type AssignVendorDto,
   buildPurchaseRequestProofForm,
   type CreatePurchaseRequestInput,
   type CreatePurchaseRequestProofInput,
@@ -159,6 +160,22 @@ export function processPurchaseRequestItems(
   payload: ProcessPurchaseRequestItemsDto,
 ) {
   return bffRequest<void>(purchaseRequestEndpoints.items(id), {
+    method: "PATCH",
+    body: payload,
+  });
+}
+
+/**
+ * Gives a set of the request's items a vendor in one call. This is the only
+ * UI path a direct-sourced item reaches a `vendor_id` by — the create/edit
+ * line items editor no longer offers a vendor picker. Returns nothing;
+ * callers refetch.
+ */
+export function assignPurchaseRequestItemVendors(
+  id: string,
+  payload: AssignVendorDto,
+) {
+  return bffRequest<void>(purchaseRequestEndpoints.assignVendor(id), {
     method: "PATCH",
     body: payload,
   });

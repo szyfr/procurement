@@ -19,6 +19,9 @@ export const purchaseRequestEndpoints = {
   /** Approve/reject a single item — a separate grant upstream, see the client. */
   item: (id: string, itemId: string) =>
     `${BASE}/${encodeURIComponent(id)}/items/${encodeURIComponent(itemId)}`,
+  /** Gives a set of the request's items a vendor in one call. */
+  assignVendor: (id: string) =>
+    `${BASE}/${encodeURIComponent(id)}/items/assign-vendor`,
   /** Partial delivery: how much of a single item arrived. */
   partialDelivery: (id: string, itemId: string) =>
     `${BASE}/${encodeURIComponent(id)}/items/${encodeURIComponent(itemId)}/partial-delivery`,

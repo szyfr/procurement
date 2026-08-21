@@ -1,6 +1,7 @@
 import {
   Building2Icon,
   ChartColumnIcon,
+  ClipboardCheckIcon,
   ClipboardListIcon,
   HandCoinsIcon,
   LayoutDashboardIcon,
@@ -38,6 +39,12 @@ export const mainNav = [
         url: "/purchase-requests",
         icon: ClipboardListIcon,
         requires: [PERMISSIONS.purchaseRequest.index],
+      },
+      {
+        title: "Pending Purchase Requests",
+        url: "/pending-purchase-requests",
+        icon: ClipboardCheckIcon,
+        requires: [PERMISSIONS.purchaser.index],
       },
       {
         title: "Canvassing",
@@ -101,6 +108,7 @@ export const breadcrumbLabels: Record<string, string> = {
   "purchase-requests": "Purchase Requests",
   new: "New",
   canvassing: "Canvassing",
+  "pending-purchase-requests": "Pending Purchase Requests",
   quotes: "Quotes",
   reports: "Reports",
   departments: "Departments",
