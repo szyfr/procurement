@@ -2,6 +2,7 @@ import { CardFooter } from "@/components/ui/card";
 import {
   Pagination,
   PaginationContent,
+  PaginationEllipsis,
   PaginationItem,
   PaginationLink,
   PaginationNext,
@@ -10,12 +11,34 @@ import {
 // Aliased only because shadcn's `Pagination` component shares the name.
 import type { Pagination as PaginationEnvelope } from "@/lib/api/pagination";
 
-/** Page numbers to render, windowed so long result sets stay readable. */
-function pageWindow(current: number, total: number) {
-  const start = Math.max(1, Math.min(current - 1, total - 2));
-  const end = Math.min(total, start + 2);
+const ELLIPSIS = "ellipsis";
+type PageItem = number | typeof ELLIPSIS;
 
-  return Array.from({ length: end - start + 1 }, (_, index) => start + index);
+/**
+ * Page numbers to render: always the first and last page, plus a small
+ * window around the current page, with an ellipsis filling any gap between
+ * them — so a result set with e.g. 120 pages reads as `1 … 46 47 48 … 120`
+ * instead of either a 3-page window or 120 unusable links.
+ */
+function pageItems(current: number, total: number): PageItem[] {
+  const siblingCount = 1;
+  const pages = new Set(
+    [1, total, current - siblingCount, current, current + siblingCount].filter(
+      (page) => page >= 1 && page <= total,
+    ),
+  );
+  const sorted = [...pages].sort((a, b) => a - b);
+
+  const items: PageItem[] = [];
+  let previous = 0;
+  for (const page of sorted) {
+    if (previous && page - previous > 1) {
+      items.push(ELLIPSIS);
+    }
+    items.push(page);
+    previous = page;
+  }
+  return items;
 }
 
 /**
@@ -55,17 +78,23 @@ export function TablePagination({
                 }
               />
             </PaginationItem>
-            {pageWindow(page.current_page, page.total_pages).map(
-              (pageNumber) => (
-                <PaginationItem key={pageNumber}>
-                  <PaginationLink
-                    href={buildPageHref(pageNumber)}
-                    isActive={pageNumber === page.current_page}
-                  >
-                    {pageNumber}
-                  </PaginationLink>
-                </PaginationItem>
-              ),
+            {pageItems(page.current_page, page.total_pages).map(
+              (item, index) =>
+                item === ELLIPSIS ? (
+                  // biome-ignore lint/suspicious/noArrayIndexKey: at most two ellipses, each at a fixed position around the sibling window
+                  <PaginationItem key={`ellipsis-${index}`}>
+                    <PaginationEllipsis />
+                  </PaginationItem>
+                ) : (
+                  <PaginationItem key={item}>
+                    <PaginationLink
+                      href={buildPageHref(item)}
+                      isActive={item === page.current_page}
+                    >
+                      {item}
+                    </PaginationLink>
+                  </PaginationItem>
+                ),
             )}
             <PaginationItem>
               <PaginationNext
