@@ -27,9 +27,8 @@ import {
  */
 
 const submissionChecklist = [
-  "Items that need canvassing are routed there automatically; direct items let you pick a vendor now.",
+  "Items that need canvassing are routed there automatically.",
   "Every item needs a quantity before submitting.",
-  "Estimated costs are for approval routing only and aren't saved — the backend has no field for them yet.",
 ];
 
 const routingNote =

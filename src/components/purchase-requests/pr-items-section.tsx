@@ -10,9 +10,11 @@ import {
   canRecordPartialDelivery,
   isDeliverySelectable,
   isItemSelectable,
+  isProcessSelectable,
   isProofSelectable,
   PurchaseRequestItemsTable,
 } from "@/components/purchase-requests/pr-items-table";
+import { ProcessItemsDialog } from "@/components/purchase-requests/process-items-dialog";
 import {
   ProofOfOrderDialog,
   type ProofOfOrderSaveGroup,
@@ -23,16 +25,27 @@ import { PERMISSIONS } from "@/modules/auth/constants/permissions";
 import {
   createPurchaseRequestProof,
   markPurchaseRequestDelivered,
+  type ProcessItemDecision,
   type PurchaseRequestDetail,
   type PurchaseRequestItem,
+  processPurchaseRequestItems,
   purchaseRequestKeys,
   recordPartialDelivery,
 } from "@/modules/purchase-requests";
 
 /**
- * Items table plus the two bulk workflows that run off its checkbox column:
- * proof of order and delivery. Both read the same selection and each re-filters
- * it through its own eligibility rule, so one set of checkboxes serves both.
+ * Items table plus the three bulk workflows that run off its checkbox column:
+ * the approve/reject decision, proof of order and delivery. All read the same
+ * selection and each re-filters it through its own eligibility rule, so one
+ * set of checkboxes serves all three.
+ *
+ * Decision: one `PATCH /purchase-requests/{id}/items` covering the selection.
+ * FastAPI also exposes a per-item route and the BFF still carries it, but no
+ * row action calls it — a decision on one line goes through the same bar as a
+ * decision on twenty, so there is one path to audit rather than two.
+ * Approving is what raises the purchase order: since `StatusService` stopped
+ * creating one on submit, a directly-sourced item reaches `po-created` no
+ * other way.
  *
  * Proof of order: each vendor group in the dialog becomes its own
  * `POST /purchase-request-proofs` call — the backend takes one delivery date
@@ -59,15 +72,21 @@ export function PurchaseRequestItemsSection({
 }) {
   const queryClient = useQueryClient();
 
-  // Three separate endpoints, three separate grants — a warehouse user who can
-  // record deliveries need not be able to file proofs of order.
+  // Separate endpoints, separate grants — a warehouse user who can record
+  // deliveries need not be able to file proofs of order, and neither implies
+  // the authority to approve an item onto a purchase order.
   const canAddProof = useCan(PERMISSIONS.purchaseRequestProof.store);
   const canMarkDelivered = useCan(PERMISSIONS.purchaseRequestItem.delivered);
   const canRecordPartial = useCan(
     PERMISSIONS.purchaseRequestItem.partialDelivery,
   );
+  // The bulk decision route carries its own grant upstream, separate from the
+  // per-item `.process` one the BFF still exposes.
+  const canProcessSelection = useCan(
+    PERMISSIONS.purchaseRequestItem.massProcess,
+  );
   // Nothing to act on means nothing to select; the checkbox column goes too.
-  const canSelectItems = canAddProof || canMarkDelivered;
+  const canSelectItems = canAddProof || canMarkDelivered || canProcessSelection;
 
   const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
   const [dialogOpen, setDialogOpen] = React.useState(false);
@@ -80,6 +99,12 @@ export function PurchaseRequestItemsSection({
   // item itself so a refetch can't leave the dialog rendering a stale row.
   const [partialItemId, setPartialItemId] = React.useState<string | null>(null);
   const [partialError, setPartialError] = React.useState<string | null>(null);
+  // The decision awaiting confirmation. It always applies to the selection, so
+  // unlike `partialItemId` there is no row to remember alongside it.
+  const [decision, setDecision] = React.useState<ProcessItemDecision | null>(
+    null,
+  );
+  const [decisionError, setDecisionError] = React.useState<string | null>(null);
 
   const { mutateAsync: saveGroups, isPending: saving } = useMutation({
     mutationFn: async (groups: ProofOfOrderSaveGroup[]) => {
@@ -133,6 +158,14 @@ export function PurchaseRequestItemsSection({
       }),
   });
 
+  const { mutateAsync: submitDecision, isPending: deciding } = useMutation({
+    mutationFn: (input: { outcome: ProcessItemDecision; itemIds: string[] }) =>
+      processPurchaseRequestItems(request._id, {
+        status: input.outcome,
+        items: input.itemIds,
+      }),
+  });
+
   // Resolved from the live list, so a refetch that closes the item out drops
   // the dialog rather than leaving it pointed at a row that no longer applies.
   // Re-checked through the table's own rule, not just the delivery window, so
@@ -156,6 +189,13 @@ export function PurchaseRequestItemsSection({
   const selectedDeliveryItems = request.items.filter(
     (item) => selectedIds.has(item._id) && isDeliverySelectable(item),
   );
+  const selectedProcessItems = request.items.filter(
+    (item) => selectedIds.has(item._id) && isProcessSelectable(item),
+  );
+  // What the confirmation is actually about. Re-filtered from the live list
+  // above on every render, so an item the backend has since moved on drops
+  // out of the dialog instead of being submitted from it.
+  const decisionItems = decision ? selectedProcessItems : [];
   const deliveredCount = request.items.filter(
     (item) => item.status === "completed",
   ).length;
@@ -171,6 +211,14 @@ export function PurchaseRequestItemsSection({
   React.useEffect(() => {
     if (selectedDeliveryItems.length === 0) setDeliveredOpen(false);
   }, [selectedDeliveryItems.length]);
+
+  // Same reasoning, one step further: the decision dialog's `open` is derived
+  // from `decisionItems`, so an emptied selection closes it without
+  // `onOpenChange` firing. Left set, the intent would reopen it the moment the
+  // next eligible item was picked.
+  React.useEffect(() => {
+    if (decisionItems.length === 0) setDecision(null);
+  }, [decisionItems.length]);
 
   function toggleItem(id: string, checked: boolean) {
     setSelectedIds((prev) => {
@@ -210,6 +258,53 @@ export function PurchaseRequestItemsSection({
     setPartialItemId(null);
     toast.add({
       title: `${label}: ${amount} of ${partialItem.quantity} received`,
+      type: "success",
+    });
+  }
+
+  /**
+   * Sends the confirmed decision. Approving an item is what raises its
+   * purchase order upstream, so there is nothing to undo it with — the dialog
+   * in front of this is the only confirmation there will be.
+   *
+   * The bulk route applies its statuses one item at a time, so a failure can
+   * leave part of the selection already written. Nothing is overlaid locally
+   * either way: the refetch below is what says which items actually moved.
+   */
+  async function handleDecision() {
+    if (!decision || decisionItems.length === 0) return;
+
+    const outcome = decision;
+    const itemIds = decisionItems.map((item) => item._id);
+
+    setDecisionError(null);
+
+    try {
+      await submitDecision({ outcome, itemIds });
+    } catch (error) {
+      setDecisionError(
+        error instanceof Error ? error.message : "Something went wrong.",
+      );
+      return;
+    }
+
+    // The decided ids leave the selection; anything else the user had picked
+    // stays put.
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      for (const id of itemIds) next.delete(id);
+      return next;
+    });
+    queryClient.invalidateQueries({
+      queryKey: purchaseRequestKeys.detail(request._id),
+    });
+    queryClient.invalidateQueries({ queryKey: purchaseRequestKeys.lists() });
+
+    setDecision(null);
+    toast.add({
+      title: `${itemIds.length} item${itemIds.length === 1 ? "" : "s"} ${
+        outcome === "approved" ? "approved" : "rejected"
+      }`,
       type: "success",
     });
   }
@@ -321,11 +416,15 @@ export function PurchaseRequestItemsSection({
                 selectedItems={request.items.filter((item) =>
                   selectedIds.has(item._id),
                 )}
+                showProcess={canProcessSelection}
                 showAddProof={canAddProof}
                 showMarkDelivered={canMarkDelivered}
+                canProcess={selectedProcessItems.length > 0}
                 canAddProof={selectedItems.length > 0}
                 canMarkDelivered={selectedDeliveryItems.length > 0}
                 onClear={() => setSelectedIds(new Set())}
+                onApprove={() => setDecision("approved")}
+                onReject={() => setDecision("rejected")}
                 onAddProof={() => setDialogOpen(true)}
                 onMarkDelivered={() => setDeliveredOpen(true)}
               />
@@ -345,6 +444,21 @@ export function PurchaseRequestItemsSection({
           </>
         )}
       </CardContent>
+
+      <ProcessItemsDialog
+        open={decisionItems.length > 0}
+        onOpenChange={(next) => {
+          if (!next) {
+            setDecision(null);
+            setDecisionError(null);
+          }
+        }}
+        decision={decision}
+        items={decisionItems}
+        saving={deciding}
+        saveError={decisionError}
+        onConfirm={handleDecision}
+      />
 
       <ProofOfOrderDialog
         open={dialogOpen && selectedItems.length > 0}

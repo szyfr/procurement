@@ -7,6 +7,8 @@ import {
   type CreatePurchaseRequestInput,
   type CreatePurchaseRequestProofInput,
   type MarkPurchaseRequestDeliveredDto,
+  type ProcessPurchaseRequestItemDto,
+  type ProcessPurchaseRequestItemsDto,
   type RecordPartialDeliveryDto,
   type UpdatePurchaseRequestDto,
 } from "@/modules/purchase-requests/dto";
@@ -121,6 +123,45 @@ export function recordPartialDelivery(
     purchaseRequestEndpoints.partialDelivery(id, itemId),
     { method: "PATCH", body: payload },
   );
+}
+
+/**
+ * Approves or rejects one submitted item. Approving is what creates the
+ * purchase order: the backend dispatches its PO job from here, and since
+ * `StatusService` stopped creating one on submit this is the only way a
+ * directly-sourced item reaches `po-created`. Neither decision can be walked
+ * back from this UI.
+ *
+ * Returns nothing; callers refetch.
+ */
+export function processPurchaseRequestItem(
+  id: string,
+  itemId: string,
+  payload: ProcessPurchaseRequestItemDto,
+) {
+  return bffRequest<void>(purchaseRequestEndpoints.item(id, itemId), {
+    method: "PATCH",
+    body: payload,
+  });
+}
+
+/**
+ * The same decision across a selection, in one call — the whole selection
+ * approves or rejects together, so a mixed outcome is two calls.
+ *
+ * Deliberately not folded into `processPurchaseRequestItem`: upstream gates
+ * this route on `purchase_request_item.mass-process` and the single-item one on
+ * `purchase_request_item.process`, so a caller can hold one grant and not the
+ * other. Returns nothing; callers refetch.
+ */
+export function processPurchaseRequestItems(
+  id: string,
+  payload: ProcessPurchaseRequestItemsDto,
+) {
+  return bffRequest<void>(purchaseRequestEndpoints.items(id), {
+    method: "PATCH",
+    body: payload,
+  });
 }
 
 /**

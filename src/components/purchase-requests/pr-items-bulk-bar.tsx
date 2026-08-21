@@ -20,34 +20,43 @@ function vendorSummary(items: PurchaseRequestItem[]) {
  * Appears above the items table only while a row is selected; disappears once
  * the selection clears.
  *
- * Both bulk actions run off the one selection, and their eligibility differs —
- * a proof of order is only meaningful while an item is still `po-created`,
- * while delivery also closes out a `partially-completed` one. Each button is
- * disabled rather than hidden when its own rule fails, so the action doesn't
- * vanish as the selection grows.
+ * All three bulk actions run off the one selection, and their eligibility
+ * differs — a decision is only open while an item is still `pending`, a proof
+ * of order is only meaningful once it is `po-created`, and delivery also
+ * closes out a `partially-completed` one. Each button is disabled rather than
+ * hidden when its own rule fails, so the action doesn't vanish as the
+ * selection grows.
  */
 export function PurchaseRequestItemsBulkBar({
   selectedItems,
+  showProcess,
   showAddProof,
   showMarkDelivered,
+  canProcess,
   canAddProof,
   canMarkDelivered,
   onClear,
+  onApprove,
+  onReject,
   onAddProof,
   onMarkDelivered,
 }: {
   selectedItems: PurchaseRequestItem[];
   /**
-   * Whether the user holds the grant at all. Distinct from `canAddProof` and
-   * `canMarkDelivered` below, which are about *this selection*: an action the
-   * user could take on a different selection is disabled, one they can never
-   * take is absent.
+   * Whether the user holds the grant at all. Distinct from `canProcess`,
+   * `canAddProof` and `canMarkDelivered` below, which are about *this
+   * selection*: an action the user could take on a different selection is
+   * disabled, one they can never take is absent.
    */
+  showProcess: boolean;
   showAddProof: boolean;
   showMarkDelivered: boolean;
+  canProcess: boolean;
   canAddProof: boolean;
   canMarkDelivered: boolean;
   onClear: () => void;
+  onApprove: () => void;
+  onReject: () => void;
   onAddProof: () => void;
   onMarkDelivered: () => void;
 }) {
@@ -66,6 +75,21 @@ export function PurchaseRequestItemsBulkBar({
       <Button variant="ghost" size="sm" onClick={onClear}>
         Clear Selection
       </Button>
+      {showProcess ? (
+        <>
+          <Button
+            variant="destructive"
+            size="sm"
+            disabled={!canProcess}
+            onClick={onReject}
+          >
+            Reject
+          </Button>
+          <Button size="sm" disabled={!canProcess} onClick={onApprove}>
+            Approve
+          </Button>
+        </>
+      ) : null}
       {showAddProof ? (
         <Button
           variant="outline"

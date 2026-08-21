@@ -4,6 +4,9 @@ import type { Priority } from "@/lib/types";
 import type {
   CreatePurchaseRequestInput,
   MarkPurchaseRequestDeliveredDto,
+  ProcessItemDecision,
+  ProcessPurchaseRequestItemDto,
+  ProcessPurchaseRequestItemsDto,
   RecordPartialDeliveryDto,
   UpdatePurchaseRequestDto,
 } from "@/modules/purchase-requests/dto";
@@ -74,17 +77,19 @@ export function assertDateOnly(value: string, label: string): string {
   return value;
 }
 
-const ITEM_STATUSES = ["draft", "pending"] as const;
+const ITEM_STATUSES = ["draft", "pending", "pending-assessment"] as const;
+
+type ItemStatus = (typeof ITEM_STATUSES)[number];
 
 /**
  * Shared by create and update: every item needs a material and a quantity.
  *
  * `defaultStatus` stamps every item that didn't carry its own status. Create
- * passes the request's own status so a submitted request's items come in
- * `pending`; update passes `draft` because it has to pass something — see
- * `parseUpdatePayload`.
+ * passes `pending-assessment` for a submitted request, so its items land in
+ * the state the backend's assessment pass has yet to look at; update passes
+ * `draft` because it has to pass something — see `parseUpdatePayload`.
  */
-function parseItems(items: unknown, defaultStatus?: "draft" | "pending") {
+function parseItems(items: unknown, defaultStatus?: ItemStatus) {
   if (!Array.isArray(items) || items.length === 0) {
     throw invalid("Add at least one item.");
   }
@@ -103,10 +108,8 @@ function parseItems(items: unknown, defaultStatus?: "draft" | "pending") {
       throw invalid(`Item ${index + 1} needs a quantity greater than zero.`);
     }
 
-    const status = ITEM_STATUSES.includes(
-      item.status as (typeof ITEM_STATUSES)[number],
-    )
-      ? (item.status as (typeof ITEM_STATUSES)[number])
+    const status = ITEM_STATUSES.includes(item.status as ItemStatus)
+      ? (item.status as ItemStatus)
       : defaultStatus;
 
     return {
@@ -152,7 +155,10 @@ export function parseCreatePayload(body: unknown): CreatePurchaseRequestInput {
     date_needed: payload.date_needed,
     priority,
     justification: payload.justification.trim(),
-    items: parseItems(payload.items, payload.status ?? "draft"),
+    items: parseItems(
+      payload.items,
+      payload.status === "pending" ? "pending-assessment" : "draft",
+    ),
     status: payload.status,
   };
 }
@@ -252,4 +258,57 @@ export function parsePartialDeliveryPayload(
   }
 
   return { amount };
+}
+
+const ITEM_DECISIONS: ProcessItemDecision[] = ["approved", "rejected"];
+
+/**
+ * Shared by both process routes. The wire value is the decision, not the
+ * status it produces — upstream reads anything that isn't `approved` as a
+ * rejection, so an unrecognized value would silently reject the selection
+ * rather than fail. Checking it here is what makes that a 422 instead.
+ */
+function parseDecision(value: unknown): ProcessItemDecision {
+  const decision = ITEM_DECISIONS.find((allowed) => allowed === value);
+
+  if (!decision) {
+    throw invalid(`Decision must be one of: ${ITEM_DECISIONS.join(", ")}.`);
+  }
+
+  return decision;
+}
+
+export function parseProcessItemPayload(
+  body: unknown,
+): ProcessPurchaseRequestItemDto {
+  if (!body || typeof body !== "object")
+    throw invalid("Request body is missing.");
+
+  return { status: parseDecision((body as { status?: unknown }).status) };
+}
+
+/**
+ * The bulk body. Upstream declares `items: List[PyObjectId]` but then reads
+ * each entry as a mapping, so a well-formed call still fails there today; the
+ * ids are checked here regardless, so a malformed one is named rather than
+ * arriving as an upstream 500.
+ */
+export function parseProcessItemsPayload(
+  body: unknown,
+): ProcessPurchaseRequestItemsDto {
+  if (!body || typeof body !== "object")
+    throw invalid("Request body is missing.");
+
+  const payload = body as Partial<ProcessPurchaseRequestItemsDto>;
+
+  if (!Array.isArray(payload.items) || payload.items.length === 0) {
+    throw invalid("Select at least one item.");
+  }
+  payload.items.forEach((itemId, index) => {
+    if (typeof itemId !== "string" || !isObjectId(itemId)) {
+      throw invalid(`Item ${index + 1} is not valid.`);
+    }
+  });
+
+  return { status: parseDecision(payload.status), items: payload.items };
 }

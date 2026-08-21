@@ -27,11 +27,24 @@ import {
 } from "@/modules/purchase-requests";
 
 /**
- * The checkbox column feeds two bulk actions with different eligibility, so
- * all three rules are exported: the section above owns the selection and has
- * to apply the same ones — a refetch that moves an item on has to drop it from
+ * The checkbox column feeds three bulk actions with different eligibility, so
+ * every rule is exported: the section above owns the selection and has to
+ * apply the same ones — a refetch that moves an item on has to drop it from
  * the checkbox column and from whatever action was about to submit it.
  */
+
+/**
+ * The window in which the approve/reject decision is still open.
+ *
+ * `canvassing` is deliberately outside it: awarding a quote is that flow's
+ * approval, and an item routed there is decided on the canvassing screen
+ * instead. `pending-assessment` is inside it because a line can be seen in
+ * that state before the backend's assessment pass has read it — the decision
+ * is no less open for the check not having run yet.
+ */
+export function isProcessSelectable(item: PurchaseRequestItem) {
+  return item.status === "pending" || item.status === "pending-assessment";
+}
 
 /** The only status a proof of order can still be added for. */
 export function isProofSelectable(item: PurchaseRequestItem) {
@@ -47,9 +60,13 @@ export function isDeliverySelectable(item: PurchaseRequestItem) {
   return item.status === "po-created" || item.status === "partially-completed";
 }
 
-/** A row gets a checkbox when either bulk action can act on it. */
+/** A row gets a checkbox when any bulk action can act on it. */
 export function isItemSelectable(item: PurchaseRequestItem) {
-  return isProofSelectable(item) || isDeliverySelectable(item);
+  return (
+    isProcessSelectable(item) ||
+    isProofSelectable(item) ||
+    isDeliverySelectable(item)
+  );
 }
 
 /** How much of the order has yet to arrive. */
@@ -100,9 +117,9 @@ export function PurchaseRequestItemsTable({
 }: {
   request: PurchaseRequestDetail;
   /**
-   * False when the user holds neither bulk action's grant. The checkbox column
-   * stays as an empty cell rather than being removed, so the header and body
-   * keep the same shape as everywhere else the table renders.
+   * False when the user holds none of the bulk actions' grants. The checkbox
+   * column stays as an empty cell rather than being removed, so the header and
+   * body keep the same shape as everywhere else the table renders.
    */
   selectable: boolean;
   canRecordPartialDelivery: boolean;
@@ -266,7 +283,10 @@ export function PurchaseRequestItemsTable({
               </TableCell>
               <TableCell>
                 {/* Nothing to offer on a closed or not-yet-ordered row, so the
-                    trigger is absent rather than present-but-empty. */}
+                    trigger is absent rather than present-but-empty. The
+                    approve/reject decision is deliberately not here — it is
+                    the bulk bar's alone, so one line and twenty are decided
+                    the same way. */}
                 {partialDeliveryGranted && canRecordPartialDelivery(item) ? (
                   <PurchaseRequestItemRowActions
                     itemLabel={item.material?.description || item.material_id}

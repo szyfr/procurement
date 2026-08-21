@@ -34,7 +34,14 @@ export const PERMISSIONS = {
   purchaseRequestItem: {
     index: "purchase_request_item.index",
     delete: "purchase_request_item.delete",
+    /** Approve or reject one item (`PATCH .../items/{itemId}`). */
     process: "purchase_request_item.process",
+    /**
+     * The same decision across a selection (`PATCH .../items`). A grant of its
+     * own rather than a reuse of `.process`, so the two are independent and
+     * holding one says nothing about the other.
+     */
+    massProcess: "purchase_request_item.mass-process",
     updateStatus: "purchase_request_item.update-status",
     delivered: "purchase_request_item.delivered",
     partialDelivery: "purchase_request_item.partial-delivery",

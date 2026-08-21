@@ -32,7 +32,6 @@ import { cn, formatCurrency } from "@/lib/utils";
 import {
   type DraftLineItem,
   fetchMaterialOptions,
-  fetchVendorOptions,
   purchaseRequestKeys,
 } from "@/modules/purchase-requests";
 
@@ -42,10 +41,13 @@ import {
  * Sourcing is derived from the material's `is_needs_canvass` flag rather than
  * chosen here, matching the wireframe's "determined automatically" note.
  *
- * Unit costs come from the catalog and are read-only here; they drive the
- * on-screen totals only. FastAPI's item payload carries `material_id`,
- * `quantity` and `vendor_id` and nothing else, so cost estimates are not
- * persisted — the card footer says so plainly.
+ * Unit cost and vendor are deliberately not shown or editable here. Cost
+ * estimates are never persisted (FastAPI's item payload carries only
+ * `material_id`, `quantity` and `vendor_id`), so `unitCost` only drives the
+ * footer total. Dropping the vendor picker means a direct-sourced item now
+ * has no UI path to a `vendor_id` on create; `vendorId`/`vendorName` remain on
+ * `DraftLineItem` only so editing a request that already has one preserves it
+ * on save.
  */
 
 export function createDraftLine(key: string): DraftLineItem {
@@ -117,7 +119,7 @@ export function LineItemsEditor({
           <StatusDot tone="info" /> Needs Canvassing
         </span>
         <span className="flex items-center gap-1.5">
-          <StatusDot tone="neutral" /> Direct — Vendor Pre-selected
+          <StatusDot tone="neutral" /> Direct
         </span>
         <span className="italic">
           — determined automatically, not editable here
@@ -131,22 +133,17 @@ export function LineItemsEditor({
               <TableHead scope="col" className="w-8">
                 #
               </TableHead>
-              <TableHead scope="col" className="min-w-56">
+              <TableHead scope="col" className="w-72">
                 Item
               </TableHead>
-              <TableHead scope="col" className={numericCellClass}>
+              <TableHead scope="col" className={cn(numericCellClass, "w-24")}>
                 Qty
               </TableHead>
-              <TableHead scope="col">Unit</TableHead>
-              <TableHead scope="col" className={numericCellClass}>
-                Est. Unit Cost
+              <TableHead scope="col" className="w-20">
+                Unit
               </TableHead>
-              <TableHead scope="col" className={numericCellClass}>
-                Est. Total
-              </TableHead>
-              <TableHead scope="col">Sourcing</TableHead>
-              <TableHead scope="col" className="min-w-44">
-                Vendor
+              <TableHead scope="col" className="w-44">
+                Sourcing
               </TableHead>
               <TableHead scope="col" className="w-8">
                 <span className="sr-only">Remove</span>
@@ -197,7 +194,7 @@ export function LineItemsEditor({
                   />
                 </TableCell>
 
-                <TableCell>
+                <TableCell className={numericCellClass}>
                   <Input
                     type="number"
                     min={1}
@@ -214,24 +211,6 @@ export function LineItemsEditor({
 
                 <TableCell className="text-muted-foreground">
                   {line.unit ?? "—"}
-                </TableCell>
-
-                <TableCell className="text-muted-foreground">
-                  {line.unitCost === null
-                    ? "—"
-                    : formatCurrency(line.unitCost, true)}
-                </TableCell>
-
-                <TableCell
-                  className={cn(
-                    lineTotal(line) === null
-                      ? "text-muted-foreground"
-                      : "font-medium",
-                  )}
-                >
-                  {lineTotal(line) === null
-                    ? "Pending"
-                    : formatCurrency(lineTotal(line) as number, true)}
                 </TableCell>
 
                 <TableCell>
@@ -256,42 +235,6 @@ export function LineItemsEditor({
                       {line.sourcing === "canvassing"
                         ? "Needs Canvassing"
                         : "Direct"}
-                    </span>
-                  )}
-                </TableCell>
-
-                <TableCell>
-                  {line.sourcing === "direct" && line.materialId ? (
-                    <LookupPicker
-                      value={
-                        line.vendorId && line.vendorName
-                          ? { id: line.vendorId, label: line.vendorName }
-                          : null
-                      }
-                      queryKey={purchaseRequestKeys.vendorOptions()}
-                      loadPage={fetchVendorOptions}
-                      toOption={(vendor) => ({
-                        id: vendor._id,
-                        // Some synced vendors have a blank name; the number is
-                        // the only other thing that identifies them.
-                        label: vendor.name?.trim() || vendor.no,
-                        hint: vendor.no,
-                      })}
-                      placeholder="Select a vendor"
-                      searchPlaceholder="Search vendors…"
-                      ariaLabel={`Vendor for line ${index + 1}`}
-                      onSelect={(vendor) =>
-                        updateLine(line.key, {
-                          vendorId: vendor._id,
-                          vendorName: vendor.name?.trim() || vendor.no,
-                        })
-                      }
-                    />
-                  ) : (
-                    <span className="text-xs text-muted-foreground italic">
-                      {line.materialId === null
-                        ? "—"
-                        : "Empty — set during canvassing"}
                     </span>
                   )}
                 </TableCell>

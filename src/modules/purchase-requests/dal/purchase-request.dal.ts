@@ -9,6 +9,8 @@ import type {
   CreatePurchaseRequestDto,
   CreatePurchaseRequestInput,
   MarkPurchaseRequestDeliveredDto,
+  ProcessPurchaseRequestItemDto,
+  ProcessPurchaseRequestItemsDto,
   RecordPartialDeliveryDto,
   UpdatePurchaseRequestDto,
 } from "@/modules/purchase-requests/dto";
@@ -26,6 +28,7 @@ import type {
  */
 
 const NOT_FOUND = "Purchase request not found";
+const ITEM_NOT_FOUND = "Purchase request item not found";
 
 export interface ListPurchaseRequestsQuery {
   page?: number;
@@ -132,6 +135,56 @@ export async function updatePurchaseRequestStatus(
 }
 
 /**
+ * Approves or rejects one item. Upstream maps the decision onto a status
+ * itself — `approved` to `po-created`, `rejected` to `rejected` — and, for an
+ * approval, dispatches the job that creates the Business Central purchase
+ * order.
+ *
+ * That dispatch is the whole point of this route now. `StatusService` used to
+ * create the PO itself while assessing a newly submitted request; that code is
+ * commented out upstream, so a directly-sourced item stays `pending` until
+ * someone approves it here. Canvassed items still reach a PO through an award
+ * instead.
+ *
+ * FastAPI answers 200 with a `{}` body, which `serverFetch` drops.
+ */
+export async function processPurchaseRequestItem(
+  id: string,
+  itemId: string,
+  payload: ProcessPurchaseRequestItemDto,
+): Promise<void> {
+  assertObjectId(id, NOT_FOUND);
+  assertObjectId(itemId, ITEM_NOT_FOUND);
+
+  await serverFetch<null>(`/purchase-requests/${id}/items/${itemId}`, {
+    method: "PATCH",
+    body: payload,
+  });
+}
+
+/**
+ * The same decision across several items in one call. Upstream hangs it off
+ * the collection path — `PATCH` where the item list is a `GET`.
+ *
+ * Upstream applies the statuses one item at a time and dispatches a single PO
+ * job for the batch, so a partial failure leaves earlier items already
+ * written — callers refetch rather than assuming the whole selection moved.
+ * Like the single-item route, the 200 arrives with a `{}` body.
+ */
+export async function processPurchaseRequestItems(
+  id: string,
+  payload: ProcessPurchaseRequestItemsDto,
+): Promise<void> {
+  assertObjectId(id, NOT_FOUND);
+  for (const itemId of payload.items) assertObjectId(itemId, ITEM_NOT_FOUND);
+
+  await serverFetch<null>(`/purchase-requests/${id}/items`, {
+    method: "PATCH",
+    body: payload,
+  });
+}
+
+/**
  * Bulk delivery. Stamps `delivered_at` on every item named in the payload and
  * moves it to `completed`; the item ids carry the work, and the request id in
  * the path is not read by the controller at all.
@@ -177,7 +230,7 @@ export async function recordPartialDelivery(
   payload: RecordPartialDeliveryDto,
 ): Promise<void> {
   assertObjectId(id, NOT_FOUND);
-  assertObjectId(itemId, "Purchase request item not found");
+  assertObjectId(itemId, ITEM_NOT_FOUND);
 
   await serverFetch<null>(
     `/purchase-requests/${id}/items/${itemId}/partial-delivery`,

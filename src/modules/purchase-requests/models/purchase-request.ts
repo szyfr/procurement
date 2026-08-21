@@ -36,8 +36,18 @@ export type PurchaseRequestStatus =
  * `app/schemas/purchase_request_item_schema.py:Status` — a wider set than the
  * request's, because a single item can be rejected or completed while the rest
  * of the request moves on.
+ *
+ * `pending-assessment` is the item enum's alone: the request's own enum has no
+ * such member, so it can only ever describe a line, never the request above it.
+ *
+ * It marks a line the backend's `StatusService` has yet to look at, and it is
+ * what the create form stamps on every item of a submitted request. What the
+ * assessment decides is advisory now rather than binding: a conflicting
+ * material or an over-consuming quantity used to be auto-rejected and is left
+ * `pending` for someone to approve or reject by hand.
  */
 export type PurchaseRequestItemStatus =
+  | "pending-assessment"
   | "pending"
   | "draft"
   | "canvassing"
@@ -62,6 +72,12 @@ export interface PurchaseRequestItem {
   vendor_id: string | null;
   /** Set by `PATCH /canvassing/award/{quotation_id}` once a vendor is awarded. */
   quotation_id?: string | null;
+  /**
+   * `StatusService`'s reasoning for the item's assessment ("A purchase
+   * request already exists for this material" and friends). Set alongside
+   * `pending-assessment`; absent once nothing needed flagging.
+   */
+  suggestion?: string | null;
   /**
    * How much has arrived so far — a running total, not an increment. Both
    * writers `$set` it: `PATCH .../items/{id}/partial-delivery` stores whatever

@@ -10,4 +10,9 @@ export {
 } from "@/modules/purchase-requests/dto/create-purchase-request-proof.dto";
 export type { MarkPurchaseRequestDeliveredDto } from "@/modules/purchase-requests/dto/mark-delivered.dto";
 export type { RecordPartialDeliveryDto } from "@/modules/purchase-requests/dto/partial-delivery.dto";
+export type {
+  ProcessItemDecision,
+  ProcessPurchaseRequestItemDto,
+  ProcessPurchaseRequestItemsDto,
+} from "@/modules/purchase-requests/dto/process-item.dto";
 export type { UpdatePurchaseRequestDto } from "@/modules/purchase-requests/dto/update-purchase-request.dto";

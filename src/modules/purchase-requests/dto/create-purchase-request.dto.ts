@@ -3,14 +3,16 @@ import type { Priority } from "@/lib/types";
 /**
  * `app/http/requests/pr_request.py:itemRequest`. `status` defaults to `draft`
  * upstream when omitted — the create form sets it explicitly so a submitted
- * request's items land as `pending` alongside the request itself, rather than
- * staying `draft` until canvassing or PO processing touches them.
+ * request's items land as `pending-assessment`, the state the backend's
+ * `StatusService` has yet to look at, rather than staying `draft` until
+ * canvassing or PO processing touches them. The request itself is still
+ * `pending`: its own enum has no `pending-assessment` member.
  */
 export interface PurchaseRequestItemDto {
   material_id: string;
   quantity: number;
   vendor_id?: string | null;
-  status?: "draft" | "pending";
+  status?: "draft" | "pending" | "pending-assessment";
 }
 
 /**

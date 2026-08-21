@@ -58,6 +58,8 @@ export const purchaseRequestItemStatusLabels: Record<
   PurchaseRequestItemStatus,
   string
 > = {
+  // The backend's own automated check, before anyone is asked to decide.
+  "pending-assessment": "Pending Assessment",
   pending: "Pending",
   draft: "Draft",
   canvassing: "Canvassing",
@@ -75,6 +77,9 @@ export const purchaseRequestItemTone: Record<
   PurchaseRequestItemStatus,
   StatusTone
 > = {
+  // Shares `info` with canvassing: both say something is happening to the item
+  // rather than that it is waiting on a person.
+  "pending-assessment": "info",
   pending: "neutral",
   draft: "neutral",
   canvassing: "info",

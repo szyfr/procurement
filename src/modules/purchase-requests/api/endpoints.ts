@@ -14,6 +14,11 @@ export const purchaseRequestEndpoints = {
     `${BASE}/${encodeURIComponent(id)}/status/${encodeURIComponent(status)}`,
   /** Bulk delivery: closes out the items named in the body, not the request. */
   delivered: (id: string) => `${BASE}/${encodeURIComponent(id)}/delivered`,
+  /** Bulk approve/reject: one decision across the items named in the body. */
+  items: (id: string) => `${BASE}/${encodeURIComponent(id)}/items`,
+  /** Approve/reject a single item — a separate grant upstream, see the client. */
+  item: (id: string, itemId: string) =>
+    `${BASE}/${encodeURIComponent(id)}/items/${encodeURIComponent(itemId)}`,
   /** Partial delivery: how much of a single item arrived. */
   partialDelivery: (id: string, itemId: string) =>
     `${BASE}/${encodeURIComponent(id)}/items/${encodeURIComponent(itemId)}/partial-delivery`,

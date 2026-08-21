@@ -16,6 +16,8 @@ export {
   fetchPurchaseRequests,
   fetchVendorOptions,
   markPurchaseRequestDelivered,
+  processPurchaseRequestItem,
+  processPurchaseRequestItems,
   recordPartialDelivery,
   setPurchaseRequestStatus,
   updatePurchaseRequest,
@@ -35,6 +37,9 @@ export type {
   CreatePurchaseRequestInput,
   CreatePurchaseRequestProofInput,
   MarkPurchaseRequestDeliveredDto,
+  ProcessItemDecision,
+  ProcessPurchaseRequestItemDto,
+  ProcessPurchaseRequestItemsDto,
   RecordPartialDeliveryDto,
   UpdatePurchaseRequestDto,
 } from "@/modules/purchase-requests/dto";

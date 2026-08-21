@@ -21,9 +21,8 @@ import { createPurchaseRequest } from "@/modules/purchase-requests";
  */
 
 const submissionChecklist = [
-  "Items that need canvassing are routed there automatically; direct items let you pick a vendor now.",
+  "Items that need canvassing are routed there automatically.",
   "Every item needs a quantity before submitting.",
-  "Estimated costs are for approval routing only and aren't saved — the backend has no field for them yet.",
   "Save as Draft leaves the request in draft; Submit for Approval sends it in as pending straight away.",
 ];
 
@@ -46,10 +45,15 @@ export function NewPurchaseRequestForm() {
   function submit(status: "draft" | "pending") {
     const payload = form.validate();
     if (payload) {
+      // A submitted request's items go in as `pending-assessment`, the state
+      // the backend's assessment pass has yet to look at. The request itself
+      // stays `pending` — its own enum has no such member.
+      const itemStatus = status === "pending" ? "pending-assessment" : status;
+
       create({
         ...payload,
         status,
-        items: payload.items.map((item) => ({ ...item, status })),
+        items: payload.items.map((item) => ({ ...item, status: itemStatus })),
       });
     }
   }
