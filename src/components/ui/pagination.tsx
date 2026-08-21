@@ -3,6 +3,7 @@ import {
   ChevronRightIcon,
   MoreHorizontalIcon,
 } from "lucide-react";
+import Link from "next/link";
 import type * as React from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -38,8 +39,9 @@ function PaginationItem({ ...props }: React.ComponentProps<"li">) {
 
 type PaginationLinkProps = {
   isActive?: boolean;
+  href: string;
 } & Pick<React.ComponentProps<typeof Button>, "size"> &
-  React.ComponentProps<"a">;
+  Omit<React.ComponentProps<"a">, "href">;
 
 function PaginationLink({
   className,
@@ -58,7 +60,7 @@ function PaginationLink({
       // than on the client, which hydrates as a mismatch.
       data-slot="pagination-link"
       render={
-        <a
+        <Link
           aria-current={isActive ? "page" : undefined}
           data-active={isActive}
           {...props}
