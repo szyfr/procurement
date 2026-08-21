@@ -187,12 +187,6 @@ export function PurchaseRequestDetailView({ id }: { id: string }) {
     setValidationError(null);
     resetSubmit();
 
-    if (!request.title?.trim()) {
-      setValidationError(
-        "Add a title before submitting — use Continue Editing.",
-      );
-      return;
-    }
     if (request.items.length === 0) {
       setValidationError(
         "Add at least one item before submitting — use Continue Editing.",
@@ -221,9 +215,7 @@ export function PurchaseRequestDetailView({ id }: { id: string }) {
           <>
             <span className="block text-sm text-foreground">
               {request.title || (
-                <span className="italic text-muted-foreground">
-                  Untitled — add a title while editing
-                </span>
+                <span className="italic text-muted-foreground">Untitled</span>
               )}
             </span>
             <span className="block">{metaLine(request)}</span>

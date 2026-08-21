@@ -60,28 +60,19 @@ export function PurchaseRequestFormLayout({
           </CardHeader>
           <CardContent>
             <FieldGroup className="sm:grid sm:grid-cols-2 sm:gap-4">
-              <Field
-                className="sm:col-span-2"
-                data-invalid={fieldErrors.title ? true : undefined}
-              >
-                <FieldLabel htmlFor="title">Title</FieldLabel>
+              <Field className="sm:col-span-2">
+                <FieldLabel htmlFor="title">Title (optional)</FieldLabel>
                 <Input
                   id="title"
                   name="title"
                   value={form.title}
-                  onChange={(event) => {
-                    form.setTitle(event.target.value);
-                    form.clearFieldError("title");
-                  }}
+                  onChange={(event) => form.setTitle(event.target.value)}
                   placeholder='e.g. "Q3 Production Line Lubricants"'
-                  aria-invalid={fieldErrors.title ? true : undefined}
                 />
                 <FieldDescription>
-                  Required — the backend has no auto-titling yet.
+                  Left blank, the request shows as untitled — it is still
+                  identified by its request number.
                 </FieldDescription>
-                {fieldErrors.title ? (
-                  <FieldError>{fieldErrors.title}</FieldError>
-                ) : null}
               </Field>
 
               <Field data-invalid={fieldErrors.department ? true : undefined}>

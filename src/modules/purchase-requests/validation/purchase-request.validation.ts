@@ -128,8 +128,10 @@ export function parseCreatePayload(body: unknown): CreatePurchaseRequestInput {
 
   const payload = body as Partial<CreatePurchaseRequestInput>;
 
-  const title = payload.title?.trim();
-  if (!title) throw invalid("Title is required.");
+  // Optional, and normalized to "" rather than dropped: the stored request has
+  // a nullable title, but `PRRequest.title` upstream is still a required `str`
+  // and 422s on a missing or null one.
+  const title = payload.title?.trim() ?? "";
   if (!payload.department_id) throw invalid("Department is required.");
   if (!payload.date_needed) throw invalid("Date needed is required.");
   if (!payload.justification?.trim())

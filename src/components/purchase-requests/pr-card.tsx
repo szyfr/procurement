@@ -76,9 +76,7 @@ export function PurchaseRequestCard({ request }: { request: PurchaseRequest }) {
         {request.title ? (
           <p className="text-xs text-muted-foreground">{request.title}</p>
         ) : (
-          <p className="text-xs text-muted-foreground italic">
-            Untitled — add a title while editing
-          </p>
+          <p className="text-xs text-muted-foreground italic">Untitled</p>
         )}
 
         {meta.length > 0 ? (

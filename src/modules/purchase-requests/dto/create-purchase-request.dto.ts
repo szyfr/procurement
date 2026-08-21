@@ -24,6 +24,11 @@ export interface PurchaseRequestItemDto {
  */
 export interface CreatePurchaseRequestInput {
   department_id: string;
+  /**
+   * Optional to the user, required on the wire. `PurchaseRequestBase.title` is
+   * `Optional[str]` upstream, but `PRRequest.title` — what the create endpoint
+   * validates — is still a plain `str`, so an untitled request travels as "".
+   */
   title: string;
   /** `YYYY-MM-DD`; pydantic coerces it to a datetime. */
   date_needed: string;

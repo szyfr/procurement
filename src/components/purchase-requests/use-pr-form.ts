@@ -28,7 +28,6 @@ export const priorities = [
 ] as const;
 
 export interface PurchaseRequestFieldErrors {
-  title?: string;
   department?: string;
   dateNeeded?: string;
   justification?: string;
@@ -127,7 +126,6 @@ export function usePurchaseRequestForm(): PurchaseRequestFormState {
       }));
 
     const nextFieldErrors: PurchaseRequestFieldErrors = {};
-    if (!title.trim()) nextFieldErrors.title = "Title is required.";
     if (!department)
       nextFieldErrors.department = "Pick a department before submitting.";
     if (!dateNeeded) nextFieldErrors.dateNeeded = "Date needed is required.";
@@ -141,6 +139,9 @@ export function usePurchaseRequestForm(): PurchaseRequestFormState {
     if (Object.keys(nextFieldErrors).length > 0) return null;
 
     return {
+      // Optional, but sent as "" rather than omitted: the request is stored
+      // with a nullable title, while `PRRequest.title` upstream is still a
+      // required `str` and 422s on a missing or null one.
       title: title.trim(),
       department_id: (department as SelectedOption).id,
       date_needed: dateNeeded,
